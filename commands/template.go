@@ -84,22 +84,21 @@ func runTemplateCommand(path string) error {
 }
 
 func getCRDYaml(data ConstraintTemplate) (string, error) {
-	crdTemplate := template.Must(template.New("constraintTemplate").Parse(`
-apiVersion: templates.gatekeeper.sh/v1beta1
+	crdTemplate := template.Must(template.New("constraintTemplate").Parse(`apiVersion: templates.gatekeeper.sh/v1beta1
 kind: ConstraintTemplate
 metadata:
-	name: {{.Name}}
+  name: {{.Name}}
 spec:
-	crd:
-		spec:
-			names:
-				kind: {{.Kind}}
-				listKind: {{.ListKind}}
-				plural: {{.Plural}}
-				singular: {{.Singular}}
-	targets:
-		- target: admission.k8s.gatekeeper.sh
-			rego: |
+  crd:
+    spec:
+      names:
+        kind: {{.Kind}}
+        listKind: {{.ListKind}}
+        plural: {{.Plural}}
+        singular: {{.Singular}}
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
 {{.Rego}}`))
 
 	buffer := bytes.NewBuffer(nil)
@@ -117,7 +116,7 @@ func indentText(text string) string {
 
 	lines := strings.Split(text, "\n")
 	for _, line := range lines {
-		if len(line) > 1 {
+		if line != "" {
 			line = strings.Repeat(" ", IndentationSize) + line
 		}
 

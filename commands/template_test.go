@@ -5,22 +5,21 @@ import (
 )
 
 func TestGetCRDYaml(t *testing.T) {
-	expected := `
-apiVersion: templates.gatekeeper.sh/v1beta1
+	expected := `apiVersion: templates.gatekeeper.sh/v1beta1
 kind: ConstraintTemplate
 metadata:
-	name: name
+  name: name
 spec:
-	crd:
-		spec:
-			names:
-				kind: kind
-				listKind: listkindList
-				plural: plural
-				singular: singular
-	targets:
-		- target: admission.k8s.gatekeeper.sh
-			rego: |
+  crd:
+    spec:
+      names:
+        kind: kind
+        listKind: listkindList
+        plural: plural
+        singular: singular
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
 rego`
 
 	data := ConstraintTemplate{
