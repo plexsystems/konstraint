@@ -3,13 +3,11 @@ package main
 import (
 	"os"
 
-	"github.com/plexsystems/konstraint/commands"
+	"github.com/plexsystems/konstraint/internal/commands"
 )
 
 func main() {
-	err := commands.NewDefaultCommand().Execute()
-
-	if err != nil {
+	if err := commands.NewDefaultCommand().Execute(); err != nil {
 		os.Exit(1)
 	}
 }
