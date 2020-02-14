@@ -1,26 +1,17 @@
 package commands
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
-	"text/template"
 
+	"github.com/ghodss/yaml"
+	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-// ConstraintTemplate represents the fields of the CRD that can be set
-type ConstraintTemplate struct {
-	Name     string
-	Kind     string
-	ListKind string
-	Plural   string
-	Singular string
-	Rego     string
-}
 
 // NewTemplateCommand creates a new template command
 func NewTemplateCommand() *cobra.Command {
@@ -38,7 +29,6 @@ func NewTemplateCommand() *cobra.Command {
 }
 
 func runTemplateCommand(path string) error {
-
 	regoFile, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("unable to open path: %v", path)
@@ -54,74 +44,44 @@ func runTemplateCommand(path string) error {
 		return fmt.Errorf("unable to parse rego file")
 	}
 
+	const violationText = `violation[{"msg": msg}]`
+	violationRego := strings.ReplaceAll(string(regoContents), "deny[msg]", violationText)
+
 	regoPackage := strings.Split(string(regoAst.Package.Location.Text), " ")[1]
-	formattedRego := indentText(string(regoContents))
-	data := ConstraintTemplate{
-		Name:     regoPackage,
-		Kind:     regoPackage,
-		ListKind: regoPackage + "List",
-		Plural:   regoPackage,
-		Singular: regoPackage,
-		Rego:     formattedRego,
+
+	constraintTemplate := v1beta1.ConstraintTemplate{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "templates.gatekeeper.sh/v1beta1",
+			Kind:       "ConstraintTemplate",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: regoPackage,
+		},
+		Spec: v1beta1.ConstraintTemplateSpec{
+			CRD: v1beta1.CRD{
+				Spec: v1beta1.CRDSpec{
+					Names: v1beta1.Names{
+						Kind: regoPackage,
+					},
+				},
+			},
+			Targets: []v1beta1.Target{
+				{
+					Rego: violationRego,
+				},
+			},
+		},
 	}
 
-	crdText, err := getCRDYaml(data)
+	templateFile, err := yaml.Marshal(&constraintTemplate)
 	if err != nil {
-		return fmt.Errorf("unable to get yaml for CRD: %v", err)
+		return fmt.Errorf("marshal constraint: %w", err)
 	}
 
-	writer, err := os.Create("template.yaml")
+	err = ioutil.WriteFile("template.yaml", templateFile, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("unable to create yaml writer: %v", err)
-	}
-
-	_, err = writer.WriteString(crdText)
-	if err != nil {
-		return fmt.Errorf("unable to write CRD: %v", err)
+		return fmt.Errorf("writing yaml: %w", err)
 	}
 
 	return nil
-}
-
-func getCRDYaml(data ConstraintTemplate) (string, error) {
-	crdTemplate := template.Must(template.New("constraintTemplate").Parse(`apiVersion: templates.gatekeeper.sh/v1beta1
-kind: ConstraintTemplate
-metadata:
-  name: {{.Name}}
-spec:
-  crd:
-    spec:
-      names:
-        kind: {{.Kind}}
-        listKind: {{.ListKind}}
-        plural: {{.Plural}}
-        singular: {{.Singular}}
-  targets:
-    - target: admission.k8s.gatekeeper.sh
-      rego: |
-{{.Rego}}`))
-
-	buffer := bytes.NewBuffer(nil)
-	err := crdTemplate.Execute(buffer, data)
-	if err != nil {
-		return "", fmt.Errorf("unable to create CRD template: %v", err)
-	}
-
-	return string(buffer.Bytes()), nil
-}
-
-func indentText(text string) string {
-	var indentedText string
-	const IndentationSize = 8
-
-	lines := strings.Split(text, "\n")
-	for _, line := range lines {
-		if line != "" {
-			line = strings.Repeat(" ", IndentationSize) + line
-		}
-
-		indentedText += line + "\n"
-	}
-
-	return indentedText
 }
