@@ -10,6 +10,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,9 +28,15 @@ func NewCreateCommand() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := viper.BindPFlag("ignore", cmd.Flags().Lookup("ignore")); err != nil {
+				return fmt.Errorf("bind flag: %w", err)
+			}
+
 			return runCreateCommand(args[0])
 		},
 	}
+
+	cmd.Flags().StringP("ignore", "i", "", "ignore directory")
 
 	return &cmd
 }
@@ -128,6 +135,10 @@ func getRegoFiles(path string) (map[string]string, []string, error) {
 		}
 
 		if fileInfo.IsDir() && fileInfo.Name() == ".git" {
+			return filepath.SkipDir
+		}
+
+		if fileInfo.IsDir() && fileInfo.Name() == viper.GetString("ignore") {
 			return filepath.SkipDir
 		}
 
