@@ -47,7 +47,7 @@ func runCreateCommand(path string) error {
 		return fmt.Errorf("get rego files: %v", path)
 	}
 
-	for dir, contents := range policyContents {
+	for dir, policyContent := range policyContents {
 		kind := filepath.Base(dir)
 		kind = strings.ReplaceAll(kind, "-", " ")
 		kind = strings.Title(kind)
@@ -55,7 +55,7 @@ func runCreateCommand(path string) error {
 
 		name := strings.ToLower(kind)
 
-		constraintTemplate := getConstraintTemplate(name, kind, contents, libraryContents)
+		constraintTemplate := getConstraintTemplate(name, kind, policyContent, libraryContents)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
