@@ -12,10 +12,10 @@ func NewDefaultCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   path.Base(os.Args[0]),
 		Short: "Konstraint",
-		Long:  "A cli tool to create and manage Gatekeeper CRDs from Rego",
+		Long:  "A CLI tool to create and manage Gatekeeper CRDs from Rego",
 	}
 
-	cmd.AddCommand(NewTemplateCommand())
+	cmd.AddCommand(NewCreateCommand())
 
 	return &cmd
 }
