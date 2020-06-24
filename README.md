@@ -46,3 +46,45 @@ The tool works best with a folder structure similar to how Gatekeeper itself str
 Importing a library is also supported, a rego library should be placed in the `lib` folder.
 
 `Konstraint` will then add the Rego from the library into the `libs` section of the `ConstraintTemplate`.
+
+### Kubernetes library
+
+In the [examples/lib](examples/lib) directory, there is a `kubernetes.rego` file that enables policies to be written for both [Conftest](https://github.com/open-policy-agent/conftest) and [Gatekeeper](https://github.com/open-policy-agent/gatekeeper).
+
+#### Why
+
+When Gatekeeper receives an AdmissionReview, the input will be in the form `input.review.object`. However, when validating the manifests locally as `yaml` files, the input will just be `input`. This makes it impossible to use the same policy for both solutions.
+
+By first validating the Kubernetes manifests with `Conftest` on a local machine, we are able to catch manifests that would otherwise violate policy without needing to deploy to a cluster running Gatekeeper.
+
+## Future plans
+
+### Set Constraint matchers and documentation based on header comments
+
+Each `violation[msg]` rule defines a policy, the return `msg` being a message that describes how the policy was violated.
+
+To further promote that the `.rego` file is the source of truth for policy, a form of block comments on each `violation` rule could be added that includes a human readible description of what the policy does. This comment block could also be used to set the matchers on the `Constraint` itself.
+
+Proposal:
+
+```rego
+# All images deployed to the cluster must not contain a latest tag.
+# @Kinds Pod, DaemonSet, Deployment, StatefulSet
+violation[msg] {
+  has_latest_tag
+
+  msg := k8s.format(sprintf("(%s) %s: Images must not use the latest tag", [k8s.kind, k8s.name]))
+}
+```
+
+The human-readable content could then be extracted for automatic documentation generation, similar to [promdoc](https://github.com/plexsystems/promdoc).
+
+The values after the `@Kinds` text could be used to set the `matchers` on the constraint. `Konstraint` could keep a mapping of the `apiGroup` for each `kind`:
+
+```yaml
+spec:
+  match:
+    kinds:
+      - apiGroups: ["", "apps"]
+        kinds: ["Pod", "DaemonSet", "Deployment", "StatefulSet"]
+```
