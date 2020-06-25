@@ -4,9 +4,31 @@
 
 ![logo](images/logo.png)
 
-Konstraint is a CLI tool to assist with the creation and management of constraints when using [Gatekeeper](https://github.com/open-policy-agent/gatekeeper)
+Konstraint is a CLI tool to assist with the creation and management of constraints when using [Gatekeeper](https://github.com/open-policy-agent/gatekeeper).
 
-**NOTE: THIS TOOL IS CURRENTLY A WORK IN PROGRESS AND SUBJECT TO CHANGE**
+## Why this tool exists
+
+When writing policies for Gatekeeper, the Rego must be added to [ConstraintTemplates](https://github.com/open-policy-agent/gatekeeper#constraint-templates) in order for Gatekeeper to enforce the policy. This creates a scenario in which the Rego is written in a `.rego` file, and then copied into the ConstraintTemplate. When a change is needed to be made to the Rego, both instances must be updated.
+
+Gatekeeper also supports importing _libraries_ into `ConstraintTemplates` by leveraging the `libs` field. If a change is required in the imported library, each template must be updated to include this new change.
+
+Additionally, since policies are evaluated in the context of `AdmissionReviews`, the `input` used when evaluating the policy is different than if the policy was being evaluated against a plain `.yaml` file with [Conftest](https://github.com/open-policy-agent/conftest).
+
+`Konstraint` aims to:
+
+- Auto-generate both `ConstraintTemplates` and the Constraints themselves. Your `.rego` files are the source of truth.
+
+- Enable users to use the same policies for local development with `.yaml` and on a Kubernetes cluster with Gatekeeper. No need to write two different sets of policies! This is accomplished with the _Kubernetes library_.
+
+### Kubernetes library
+
+In the [examples/lib](examples/lib) directory, there is a `kubernetes.rego` file that enables policies to be written for both Conftest and Gatekeeper.
+
+#### Purpose
+
+When Gatekeeper receives an AdmissionReview, the input document in OPA will be of the form `input.review.object.kind`. However, when validating the manifests locally as `yaml` files, the input will just be `input.kind`. This makes it difficult to use the same policy for both solutions.
+
+By first validating the Kubernetes manifests with `Conftest` on a local machine, we are able to catch manifests that would otherwise violate policy without needing to deploy to a cluster running Gatekeeper.
 
 ## Installation
 
@@ -47,16 +69,6 @@ Importing a library is also supported, a rego library should be placed in the `l
 
 `Konstraint` will then add the Rego from the library into the `libs` section of the `ConstraintTemplate`.
 
-### Kubernetes library
-
-In the [examples/lib](examples/lib) directory, there is a `kubernetes.rego` file that enables policies to be written for both [Conftest](https://github.com/open-policy-agent/conftest) and [Gatekeeper](https://github.com/open-policy-agent/gatekeeper).
-
-#### Why
-
-When Gatekeeper receives an AdmissionReview, the input will be in the form `input.review.object`. However, when validating the manifests locally as `yaml` files, the input will just be `input`. This makes it impossible to use the same policy for both solutions.
-
-By first validating the Kubernetes manifests with `Conftest` on a local machine, we are able to catch manifests that would otherwise violate policy without needing to deploy to a cluster running Gatekeeper.
-
 ## Future plans
 
 ### Set Constraint matchers and documentation based on header comments
@@ -65,7 +77,7 @@ Each `violation[msg]` rule defines a policy, the return `msg` being a message th
 
 To further promote that the `.rego` file is the source of truth for policy, a form of block comments on each `violation` rule could be added that includes a human readible description of what the policy does. This comment block could also be used to set the matchers on the `Constraint` itself.
 
-Proposal:
+#### Proposal
 
 ```rego
 # All images deployed to the cluster must not contain a latest tag.
