@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -29,39 +30,68 @@ func NewCreateCommand() *cobra.Command {
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := viper.BindPFlag("ignore", cmd.Flags().Lookup("ignore")); err != nil {
-				return fmt.Errorf("bind flag: %w", err)
+				return fmt.Errorf("bind ignore flag: %w", err)
+			}
+
+			if err := viper.BindPFlag("lib", cmd.Flags().Lookup("lib")); err != nil {
+				return fmt.Errorf("bind lib flag: %w", err)
 			}
 
 			return runCreateCommand(args[0])
 		},
 	}
 
-	cmd.Flags().StringP("ignore", "i", "", "ignore directory")
-
 	return &cmd
 }
 
 func runCreateCommand(path string) error {
-	policyContents, libraryContents, err := getRegoFiles(path)
+	regoFilePaths, err := getRegoFilePaths(path)
 	if err != nil {
-		return fmt.Errorf("get rego files: %v", path)
+		return fmt.Errorf("get rego files: %w", err)
 	}
 
-	for dir, policyContent := range policyContents {
-		kind := filepath.Base(dir)
+	var libraryFilePaths []string
+	var policyFilePaths []string
+	for _, regoFilePath := range regoFilePaths {
+		if filepath.Base(filepath.Dir(regoFilePath)) != viper.GetString("lib") {
+			policyFilePaths = append(policyFilePaths, regoFilePath)
+		} else {
+			libraryFilePaths = append(libraryFilePaths, regoFilePath)
+		}
+	}
+
+	var libraryFileContents []string
+	for _, libraryFilePath := range libraryFilePaths {
+		libraryFileBytes, err := ioutil.ReadFile(libraryFilePath)
+		if err != nil {
+			return fmt.Errorf("read library file: %w", err)
+		}
+
+		libraryFileContents = append(libraryFileContents, string(libraryFileBytes))
+	}
+
+	for _, policyFilePath := range policyFilePaths {
+		kind := filepath.Base(filepath.Dir(policyFilePath))
 		kind = strings.ReplaceAll(kind, "-", " ")
 		kind = strings.Title(kind)
 		kind = strings.ReplaceAll(kind, " ", "")
 
 		name := strings.ToLower(kind)
 
-		constraintTemplate := getConstraintTemplate(name, kind, policyContent, libraryContents)
+		policyDirectory := filepath.Dir(policyFilePath)
+
+		policyFileBytes, err := ioutil.ReadFile(policyFilePath)
+		if err != nil {
+			return fmt.Errorf("read policy file: %w", err)
+		}
+
+		constraintTemplate := getConstraintTemplate(name, kind, string(policyFileBytes), libraryFileContents)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
 		}
 
-		err = ioutil.WriteFile(filepath.Join(dir, "template.yaml"), constraintTemplateBytes, os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(policyDirectory, "template.yaml"), constraintTemplateBytes, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("writing template: %w", err)
 		}
@@ -72,7 +102,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("marshal constraint: %w", err)
 		}
 
-		err = ioutil.WriteFile(filepath.Join(dir, "constraint.yaml"), constraintBytes, os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(policyDirectory, "constraint.yaml"), constraintBytes, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("writing constraint: %w", err)
 		}
@@ -125,11 +155,14 @@ func getConstraint(kind string) Constraint {
 	return constraint
 }
 
-func getRegoFiles(path string) (map[string]string, []string, error) {
-	var libraryContents []string
-	policyContents := make(map[string]string)
+func getRegoFilePaths(path string) ([]string, error) {
+	ignoreRegex, err := regexp.Compile(viper.GetString("ignore"))
+	if err != nil {
+		return nil, fmt.Errorf("compile regex: %w", err)
+	}
 
-	err := filepath.Walk(path, func(currentFilePath string, fileInfo os.FileInfo, err error) error {
+	var regoFilePaths []string
+	err = filepath.Walk(path, func(currentFilePath string, fileInfo os.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("walk path: %w", err)
 		}
@@ -138,11 +171,11 @@ func getRegoFiles(path string) (map[string]string, []string, error) {
 			return filepath.SkipDir
 		}
 
-		if fileInfo.IsDir() && fileInfo.Name() == viper.GetString("ignore") {
+		if fileInfo.IsDir() && ignoreRegex.MatchString(currentFilePath) {
 			return filepath.SkipDir
 		}
 
-		if fileInfo.IsDir() {
+		if ignoreRegex.MatchString(currentFilePath) {
 			return nil
 		}
 
@@ -150,22 +183,13 @@ func getRegoFiles(path string) (map[string]string, []string, error) {
 			return nil
 		}
 
-		regoContents, err := ioutil.ReadFile(currentFilePath)
-		if err != nil {
-			return fmt.Errorf("read file: %w", err)
-		}
-
-		if filepath.Base(filepath.Dir(currentFilePath)) == "lib" {
-			libraryContents = append(libraryContents, string(regoContents))
-		} else {
-			policyContents[filepath.Dir(currentFilePath)] = string(regoContents)
-		}
+		regoFilePaths = append(regoFilePaths, currentFilePath)
 
 		return nil
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return policyContents, libraryContents, nil
+	return regoFilePaths, nil
 }
