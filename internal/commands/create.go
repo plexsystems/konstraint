@@ -13,6 +13,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // Constraint is a Gatekeeper constraint
@@ -96,7 +98,11 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("writing template: %w", err)
 		}
 
-		constraint := getConstraint(kind)
+		constraint, err := getConstraint(kind, policyFileBytes)
+		if err != nil {
+			return fmt.Errorf("get constraint: %w", err)
+		}
+
 		constraintBytes, err := yaml.Marshal(&constraint)
 		if err != nil {
 			return fmt.Errorf("marshal constraint: %w", err)
@@ -141,18 +147,45 @@ func getConstraintTemplate(name string, kind string, policy string, libs []strin
 	return constraintTemplate
 }
 
-func getConstraint(kind string) Constraint {
-	constraint := Constraint{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "constraints.gatekeeper.sh/v1beta1",
-			Kind:       kind,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: strings.ToLower(kind),
-		},
+func getConstraint(kind string, policy []byte) (unstructured.Unstructured, error) {
+	constraint := unstructured.Unstructured{}
+	constraint.SetName(strings.ToLower(kind))
+	constraint.SetGroupVersionKind(schema.GroupVersionKind{Group: "constraints.gatekeeper.sh", Version: "v1beta1", Kind: kind})
+
+	policyCommentBlocks, err := getPolicyCommentBlocks(policy)
+	if err != nil {
+		return unstructured.Unstructured{}, fmt.Errorf("get policy comment blocks: %w", err)
 	}
 
-	return constraint
+	if len(policyCommentBlocks) == 0 {
+		return constraint, nil
+	}
+
+	var kinds []interface{}
+	var apiGroups []interface{}
+	for _, policyCommentBlock := range policyCommentBlocks {
+		for _, policyKind := range policyCommentBlock.Kinds {
+			kinds = append(kinds, policyKind)
+		}
+		for _, policyAPIGroup := range policyCommentBlock.APIGroups {
+			if policyAPIGroup == "core" {
+				policyAPIGroup = ""
+			}
+
+			apiGroups = append(apiGroups, policyAPIGroup)
+		}
+	}
+
+	constraintMatcher := map[string]interface{}{
+		"apiGroups": apiGroups,
+		"kinds":     kinds,
+	}
+
+	if err := unstructured.SetNestedSlice(constraint.Object, []interface{}{constraintMatcher}, "spec", "match", "kinds"); err != nil {
+		return unstructured.Unstructured{}, fmt.Errorf("set matchers: %w", err)
+	}
+
+	return constraint, nil
 }
 
 func getRegoFilePaths(path string) ([]string, error) {

@@ -2,6 +2,8 @@ package main
 
 import data.lib.k8s
 
+# Container images can not use the latest tag.
+# @Kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 violation[msg] {
   has_latest_tag
 
