@@ -46,12 +46,17 @@ Create `ConstraintTemplates` and Constraints from `Rego` policies:
 $ konstraint create <dir>
 ```
 
-This will generate both _templates_ (template.yaml) and _constraints_ (constraint.yaml) for the policies found in the directory (and subdirectories), ignored test files (`*_test.rego`).
+This will generate both _templates_ (template.yaml) and _constraints_ (constraint.yaml) for the policies found in the directory (and subdirectories), ignoring test files (`*_test.rego`).
 
-### Create flags
+#### Create flags
 
-`--ignore` A parameter that accepts `regex` to ignore files and directories
+`--ignore` A parameter that accepts `regex` to ignore files and directories.
+
 _Example: konstraint create . --ignore combined-policies/_
+
+`--lib` Set the name of the library folder. Defaults to `lib`.
+
+_Example: konstraint create . --lib library_
 
 ### Doc command
 
@@ -63,10 +68,11 @@ $ konstraint doc <dir>
 
 This will generate a single `policies.md` file that contains a description of all of the policies found as well as the API groups and Kinds that they enforce.
 
-### Doc flags
+#### Doc flags
 
-`--output` Set the output directory and filename for the policy documentation
-_Example: konstraint doc . --ignore examples/policies.md_
+`--output` Set the output directory and filename for the policy documentation.
+
+_Example: konstraint doc . --output examples/policies.md_
 
 ## Template and Constraint Naming
 
@@ -88,7 +94,7 @@ Importing a library is also supported, a rego library should be placed in the `l
 
 ## Experimental
 
-To further promote that the `.rego` file is the source of truth for policy, a form of block comments on each `violation` rule can be added that includes a human readible description of what the policy does. This comment block is also used to set the matchers on the `Constraint` itself.
+To further promote that the `.rego` file is the source of truth for policy, a form of block comments on each `violation` rule can be added that includes a human readable description of what the policy does. This comment block is also used to set the matchers on the `Constraint` itself.
 
 ```rego
 # All images deployed to the cluster must not contain a latest tag.
