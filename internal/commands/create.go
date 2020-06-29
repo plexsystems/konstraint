@@ -11,6 +11,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"github.com/open-policy-agent/opa/ast"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,10 +50,21 @@ func NewCreateCommand() *cobra.Command {
 		},
 	}
 
+	cmd.PersistentFlags().StringSliceP("exclude-namespace", "e", []string{}, "A namespace to exclude from the constraints. This can be specified more than once.")
+	viper.BindPFlag("exclude-namespace", cmd.PersistentFlags().Lookup("exclude-namespace"))
+	cmd.PersistentFlags().StringSliceP("include-namespace", "i", []string{}, "Only apply the constraint to this namespace. This can be specified more than once.")
+	viper.BindPFlag("include-namespace", cmd.PersistentFlags().Lookup("include-namespace"))
+
 	return &cmd
 }
 
 func runCreateCommand(path string) error {
+	excludedNamespaces := viper.GetStringSlice("exclude-namespace")
+	includedNamespaces := viper.GetStringSlice("include-namespace")
+	if len(excludedNamespaces) > 0 && len(includedNamespaces) > 0 {
+		return fmt.Errorf("the exclude-namespace and include-namespace flags cannot be specified simultaneously")
+	}
+
 	regoFilePaths, err := getRegoFilePaths(path)
 	if err != nil {
 		return fmt.Errorf("get rego files: %w", err)
@@ -89,7 +101,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("writing template: %w", err)
 		}
 
-		constraint, err := getConstraint(kind, []byte(policies[i].rego))
+		constraint, err := getConstraint(kind, []byte(policies[i].rego), excludedNamespaces, includedNamespaces)
 		if err != nil {
 			return fmt.Errorf("get constraint: %w", err)
 		}
@@ -138,7 +150,7 @@ func getConstraintTemplate(name string, kind string, policy string, libs []strin
 	return constraintTemplate
 }
 
-func getConstraint(kind string, policy []byte) (unstructured.Unstructured, error) {
+func getConstraint(kind string, policy []byte, excludedNamespaces []string, includeNamespaces []string) (unstructured.Unstructured, error) {
 	constraint := unstructured.Unstructured{}
 	constraint.SetName(strings.ToLower(kind))
 	constraint.SetGroupVersionKind(schema.GroupVersionKind{Group: "constraints.gatekeeper.sh", Version: "v1beta1", Kind: kind})
@@ -175,6 +187,18 @@ func getConstraint(kind string, policy []byte) (unstructured.Unstructured, error
 
 	if err := unstructured.SetNestedSlice(constraint.Object, []interface{}{constraintMatcher}, "spec", "match", "kinds"); err != nil {
 		return unstructured.Unstructured{}, fmt.Errorf("set constraint matchers: %w", err)
+	}
+
+	if len(excludedNamespaces) > 0 {
+		if err := unstructured.SetNestedStringSlice(constraint.Object, excludedNamespaces, "spec", "match", "excludedNamespaces"); err != nil {
+			return unstructured.Unstructured{}, errors.Wrap(err, "set excluded namespaces matchers")
+		}
+	}
+
+	if len(includeNamespaces) > 0 {
+		if err := unstructured.SetNestedStringSlice(constraint.Object, includeNamespaces, "spec", "match", "namespaces"); err != nil {
+			return unstructured.Unstructured{}, errors.Wrap(err, "set included namespaces matchers")
+		}
 	}
 
 	return constraint, nil
