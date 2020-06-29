@@ -18,18 +18,22 @@ func NewDocCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "doc <dir>",
 		Short: "Generate documentation from Rego policies",
-		Args:  cobra.ExactArgs(1),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := viper.BindPFlag("output", cmd.Flags().Lookup("output")); err != nil {
 				return fmt.Errorf("bind output flag: %w", err)
 			}
 
-			return runDocCommand(args[0])
+			path := "."
+			if len(args) > 0 {
+				path = args[0]
+			}
+
+			return runDocCommand(path)
 		},
 	}
 
-	cmd.Flags().StringP("output", "o", "policies.md", "output directory for the policy documentation")
+	cmd.Flags().StringP("output", "o", "policies.md", "output location (including filename) for the policy documentation")
 
 	return &cmd
 }
@@ -49,7 +53,7 @@ func runDocCommand(path string) error {
 
 	err = ioutil.WriteFile(filepath.Join(path, viper.GetString("output")), []byte(policyDocumentation), os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("writing constraint: %w", err)
+		return fmt.Errorf("writing documentation: %w", err)
 	}
 
 	return nil
@@ -61,26 +65,26 @@ func getPolicyDocumentation(path string) (string, error) {
 		return "", fmt.Errorf("get rego files: %w", err)
 	}
 
-	var policyCommentBlocks []PolicyCommentBlock
+	var allPolicyCommentBlocks []PolicyCommentBlock
 	for _, regoFilePath := range regoFilePaths {
 		policyBytes, err := ioutil.ReadFile(regoFilePath)
 		if err != nil {
 			return "", fmt.Errorf("reading file: %w", err)
 		}
 
-		policyCommentBlock, err := getPolicyCommentBlocks(policyBytes)
+		policyCommentBlocks, err := getPolicyCommentBlocks(policyBytes)
 		if err != nil {
-			return "", fmt.Errorf("get policy comment block: %w", err)
+			return "", fmt.Errorf("get policy comment blocks: %w", err)
 		}
 
-		policyCommentBlocks = append(policyCommentBlocks, policyCommentBlock...)
+		allPolicyCommentBlocks = append(allPolicyCommentBlocks, policyCommentBlocks...)
 	}
 
 	policyDocument := "# Policies\n\n"
 	policyDocument += "|API Groups|Kinds|Description|\n"
 	policyDocument += "|---|---|---|\n"
 
-	for _, policyCommentBlock := range policyCommentBlocks {
+	for _, policyCommentBlock := range allPolicyCommentBlocks {
 		apiGroups := strings.Join(policyCommentBlock.APIGroups, ", ")
 		kinds := strings.Join(policyCommentBlock.Kinds, ", ")
 		policyDocument += fmt.Sprintf("|%s|%s|%s|\n", apiGroups, kinds, policyCommentBlock.Description)
@@ -96,35 +100,36 @@ func getPolicyCommentBlocks(policy []byte) ([]PolicyCommentBlock, error) {
 		return nil, fmt.Errorf("parsing rego: %w", errors)
 	}
 
-	var description string
 	var policyCommentBlocks []PolicyCommentBlock
+	var description string
 	for _, policyComment := range policyComments {
 		commentText := string(policyComment.Text)
-		if strings.Contains(commentText, "@Kinds") {
-			kindGroups := strings.Split(commentText, " ")
-			kindGroups = kindGroups[2:]
-
-			var apiGroups []string
-			var kinds []string
-			for _, kindGroup := range kindGroups {
-				kindTokens := strings.Split(kindGroup, "/")
-
-				apiGroups = append(apiGroups, kindTokens[0])
-				kinds = append(kinds, kindTokens[1])
-			}
-
-			dedupedGroups := getDedupedGroups(apiGroups)
-
-			policyCommentBlock := PolicyCommentBlock{
-				APIGroups:   dedupedGroups,
-				Kinds:       kinds,
-				Description: strings.Trim(description, " "),
-			}
-
-			policyCommentBlocks = append(policyCommentBlocks, policyCommentBlock)
-		} else {
+		if !strings.Contains(commentText, "@Kinds") {
 			description = commentText
+			continue
 		}
+
+		kindGroups := strings.Split(commentText, " ")
+		kindGroups = kindGroups[2:]
+
+		var apiGroups []string
+		var kinds []string
+		for _, kindGroup := range kindGroups {
+			kindTokens := strings.Split(kindGroup, "/")
+
+			apiGroups = append(apiGroups, kindTokens[0])
+			kinds = append(kinds, kindTokens[1])
+		}
+
+		dedupedGroups := getDedupedGroups(apiGroups)
+
+		policyCommentBlock := PolicyCommentBlock{
+			APIGroups:   dedupedGroups,
+			Kinds:       kinds,
+			Description: strings.Trim(description, " "),
+		}
+
+		policyCommentBlocks = append(policyCommentBlocks, policyCommentBlock)
 	}
 
 	return policyCommentBlocks, nil

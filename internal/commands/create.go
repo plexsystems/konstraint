@@ -39,7 +39,12 @@ func NewCreateCommand() *cobra.Command {
 				return fmt.Errorf("bind lib flag: %w", err)
 			}
 
-			return runCreateCommand(args[0])
+			path := "."
+			if len(args) > 0 {
+				path = args[0]
+			}
+
+			return runCreateCommand(path)
 		},
 	}
 
@@ -73,11 +78,7 @@ func runCreateCommand(path string) error {
 	}
 
 	for _, policyFilePath := range policyFilePaths {
-		kind := filepath.Base(filepath.Dir(policyFilePath))
-		kind = strings.ReplaceAll(kind, "-", " ")
-		kind = strings.Title(kind)
-		kind = strings.ReplaceAll(kind, " ", "")
-
+		kind := getKindFromPath(policyFilePath)
 		name := strings.ToLower(kind)
 
 		policyDirectory := filepath.Dir(policyFilePath)
@@ -167,7 +168,9 @@ func getConstraint(kind string, policy []byte) (unstructured.Unstructured, error
 		for _, policyKind := range policyCommentBlock.Kinds {
 			kinds = append(kinds, policyKind)
 		}
+
 		for _, policyAPIGroup := range policyCommentBlock.APIGroups {
+			// The core API group is represented as a blank string in YAML files
 			if policyAPIGroup == "core" {
 				policyAPIGroup = ""
 			}
@@ -182,7 +185,7 @@ func getConstraint(kind string, policy []byte) (unstructured.Unstructured, error
 	}
 
 	if err := unstructured.SetNestedSlice(constraint.Object, []interface{}{constraintMatcher}, "spec", "match", "kinds"); err != nil {
-		return unstructured.Unstructured{}, fmt.Errorf("set matchers: %w", err)
+		return unstructured.Unstructured{}, fmt.Errorf("set constraint matchers: %w", err)
 	}
 
 	return constraint, nil
@@ -191,7 +194,7 @@ func getConstraint(kind string, policy []byte) (unstructured.Unstructured, error
 func getRegoFilePaths(path string) ([]string, error) {
 	ignoreRegex, err := regexp.Compile(viper.GetString("ignore"))
 	if err != nil {
-		return nil, fmt.Errorf("compile regex: %w", err)
+		return nil, fmt.Errorf("compile ignore regex: %w", err)
 	}
 
 	var regoFilePaths []string
@@ -225,4 +228,13 @@ func getRegoFilePaths(path string) ([]string, error) {
 	}
 
 	return regoFilePaths, nil
+}
+
+func getKindFromPath(path string) string {
+	kind := filepath.Base(filepath.Dir(path))
+	kind = strings.ReplaceAll(kind, "-", " ")
+	kind = strings.Title(kind)
+	kind = strings.ReplaceAll(kind, " ", "")
+
+	return kind
 }

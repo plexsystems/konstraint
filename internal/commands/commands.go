@@ -8,11 +8,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	IgnoreFlagDefault    = "^$"
-	LibraryFolderDefault = "lib"
-)
-
 // NewDefaultCommand creates a new default command
 func NewDefaultCommand() *cobra.Command {
 	cmd := cobra.Command{
@@ -21,8 +16,12 @@ func NewDefaultCommand() *cobra.Command {
 		Long:  "A CLI tool to create and manage Gatekeeper CRDs from Rego",
 	}
 
-	cmd.PersistentFlags().String("ignore", IgnoreFlagDefault, "A regex pattern which can be used for ignoring directories and files")
-	cmd.PersistentFlags().String("lib", LibraryFolderDefault, "The name of the folder where the Rego libarie(s) are")
+	// ^$ is for match nothing and do not ignore anything
+	ignoreFlagDefault := "^$"
+	libFlagDefault := "lib"
+
+	cmd.PersistentFlags().String("ignore", ignoreFlagDefault, "A regex pattern which can be used for ignoring directories and files")
+	cmd.PersistentFlags().String("lib", libFlagDefault, "The name of the folder where the Rego librarie(s) are")
 
 	viper.BindPFlag("ignore", cmd.PersistentFlags().Lookup("ignore"))
 	viper.BindPFlag("lib", cmd.PersistentFlags().Lookup("lib"))
