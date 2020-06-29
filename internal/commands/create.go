@@ -21,6 +21,7 @@ import (
 
 type regoPolicy struct {
 	path      string
+	rego      string
 	policy    *ast.Module
 	libraries []string
 }
@@ -80,12 +81,7 @@ func runCreateCommand(path string) error {
 
 		policyDirectory := filepath.Dir(policy.path)
 
-		policyFileBytes, err := ioutil.ReadFile(policy.path)
-		if err != nil {
-			return fmt.Errorf("read policy file: %w", err)
-		}
-
-		constraintTemplate := getConstraintTemplate(name, kind, string(policyFileBytes), policy.libraries)
+		constraintTemplate := getConstraintTemplate(name, kind, policy.rego, policy.libraries)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
@@ -96,7 +92,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("writing template: %w", err)
 		}
 
-		constraint, err := getConstraint(kind, policyFileBytes)
+		constraint, err := getConstraint(kind, []byte(policy.rego))
 		if err != nil {
 			return fmt.Errorf("get constraint: %w", err)
 		}
@@ -244,14 +240,7 @@ func parsePolicies(policyPaths []string, libraryPaths []string) ([]*regoPolicy, 
 				if library == nil {
 					return nil, fmt.Errorf("imported library %s not found", i.Path.String())
 				}
-
-				// We read the file again from disk to perserve the formatting of the policy
-				// The OPA parser removes a lot of the nice syntax sugar that makes it easier for us to read
-				data, err := ioutil.ReadFile(library.path)
-				if err != nil {
-					return nil, errors.Wrap(err, "reading library")
-				}
-				p.libraries = append(p.libraries, string(data))
+				p.libraries = append(p.libraries, library.rego)
 			}
 		}
 	}
@@ -270,7 +259,7 @@ func loadPolicies(paths []string) ([]*regoPolicy, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "parsing policy file")
 		}
-		policies = append(policies, &regoPolicy{path: file, policy: policy})
+		policies = append(policies, &regoPolicy{path: file, rego: string(data), policy: policy})
 	}
 	return policies, nil
 }
