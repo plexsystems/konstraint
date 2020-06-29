@@ -11,6 +11,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"github.com/open-policy-agent/opa/ast"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -70,7 +71,7 @@ func runCreateCommand(path string) error {
 
 	policies, err := parsePolicies(policyFilePaths, libraryFilePaths)
 	if err != nil {
-		return fmt.Errorf("parsing policies: %s", err)
+		return errors.Wrap(err, "parsing policies")
 	}
 
 	for _, policy := range policies {
@@ -229,11 +230,11 @@ func getRegoFilePaths(path string) ([]string, error) {
 func parsePolicies(policyPaths []string, libraryPaths []string) ([]*regoPolicy, error) {
 	policies, err := loadPolicies(policyPaths)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "loading policies")
 	}
 	libraries, err := loadPolicies(libraryPaths)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "loading libraries")
 	}
 
 	for _, p := range policies {
@@ -246,9 +247,10 @@ func parsePolicies(policyPaths []string, libraryPaths []string) ([]*regoPolicy, 
 
 				// We read the file again from disk to perserve the formatting of the policy
 				// The OPA parser removes a lot of the nice syntax sugar that makes it easier for us to read
-				// ---
-				// We just read the library a few milliseconds ago, assuming errors won't happen on the second read
-				data, _ := ioutil.ReadFile(library.path)
+				data, err := ioutil.ReadFile(library.path)
+				if err != nil {
+					return nil, errors.Wrap(err, "reading library")
+				}
 				p.libraries = append(p.libraries, string(data))
 			}
 		}
@@ -262,11 +264,11 @@ func loadPolicies(paths []string) ([]*regoPolicy, error) {
 	for _, file := range paths {
 		data, err := ioutil.ReadFile(file)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "reading policy file")
 		}
 		policy, err := ast.ParseModule("", string(data))
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "parsing policy file")
 		}
 		policies = append(policies, &regoPolicy{path: file, policy: policy})
 	}
