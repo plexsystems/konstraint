@@ -234,14 +234,15 @@ func parsePolicies(policyPaths []string, libraryPaths []string) ([]*regoPolicy, 
 	}
 
 	for _, p := range policies {
-		if len(p.policy.Imports) > 0 {
-			for _, i := range p.policy.Imports {
-				library := getLibrary(libraries, i.Path.String())
-				if library == nil {
-					return nil, fmt.Errorf("imported library %s not found", i.Path.String())
-				}
-				p.libraries = append(p.libraries, library.rego)
+		if len(p.policy.Imports) == 0 {
+			continue
+		}
+		for _, i := range p.policy.Imports {
+			library := getLibrary(libraries, i.Path.String())
+			if library == nil {
+				return nil, fmt.Errorf("imported library %s not found", i.Path.String())
 			}
+			p.libraries = append(p.libraries, library.rego)
 		}
 	}
 
