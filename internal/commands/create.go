@@ -76,6 +76,7 @@ func runCreateCommand(path string) error {
 	for i := range policies {
 		kind := getKindFromPath(policies[i].path)
 		name := strings.ToLower(kind)
+		policyDir := filepath.Dir(policies[i].path)
 
 		constraintTemplate := getConstraintTemplate(name, kind, policies[i].rego, policies[i].libraries)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
@@ -83,7 +84,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
 		}
 
-		err = ioutil.WriteFile(filepath.Join(policies[i].path, "template.yaml"), constraintTemplateBytes, os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(policyDir, "template.yaml"), constraintTemplateBytes, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("writing template: %w", err)
 		}
@@ -98,7 +99,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("marshal constraint: %w", err)
 		}
 
-		err = ioutil.WriteFile(filepath.Join(policies[i].path, "constraint.yaml"), constraintBytes, os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(policyDir, "constraint.yaml"), constraintBytes, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("writing constraint: %w", err)
 		}
