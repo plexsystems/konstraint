@@ -22,7 +22,7 @@ import (
 type regoPolicy struct {
 	path      string
 	rego      string
-	policy    *ast.Module
+	module    *ast.Module
 	libraries []string
 }
 
@@ -234,10 +234,10 @@ func parsePolicies(policyPaths []string, libraryPaths []string) ([]*regoPolicy, 
 	}
 
 	for _, p := range policies {
-		if len(p.policy.Imports) == 0 {
+		if len(p.module.Imports) == 0 {
 			continue
 		}
-		for _, i := range p.policy.Imports {
+		for _, i := range p.module.Imports {
 			library := getLibrary(libraries, i.Path.String())
 			if library == nil {
 				return nil, fmt.Errorf("imported library %s not found", i.Path.String())
@@ -256,18 +256,18 @@ func loadPolicies(paths []string) ([]*regoPolicy, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "reading policy file")
 		}
-		policy, err := ast.ParseModule("", string(data))
+		module, err := ast.ParseModule("", string(data))
 		if err != nil {
 			return nil, errors.Wrap(err, "parsing policy file")
 		}
-		policies = append(policies, &regoPolicy{path: file, rego: string(data), policy: policy})
+		policies = append(policies, &regoPolicy{path: file, rego: string(data), module: module})
 	}
 	return policies, nil
 }
 
 func getLibrary(libraries []*regoPolicy, path string) *regoPolicy {
 	for _, library := range libraries {
-		if library.policy.Package.Path.String() == path {
+		if library.module.Package.Path.String() == path {
 			return library
 		}
 	}
