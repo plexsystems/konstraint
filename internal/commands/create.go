@@ -17,12 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// Constraint is a Gatekeeper constraint
-type Constraint struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-}
-
 // NewCreateCommand creates a new create command
 func NewCreateCommand() *cobra.Command {
 	cmd := cobra.Command{

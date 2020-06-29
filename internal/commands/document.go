@@ -87,6 +87,7 @@ func getPolicyDocumentation(path string) (string, error) {
 	for _, policyCommentBlock := range allPolicyCommentBlocks {
 		apiGroups := strings.Join(policyCommentBlock.APIGroups, ", ")
 		kinds := strings.Join(policyCommentBlock.Kinds, ", ")
+
 		policyDocument += fmt.Sprintf("|%s|%s|%s|\n", apiGroups, kinds, policyCommentBlock.Description)
 	}
 
@@ -109,22 +110,22 @@ func getPolicyCommentBlocks(policy []byte) ([]PolicyCommentBlock, error) {
 			continue
 		}
 
-		kindGroups := strings.Split(commentText, " ")
-		kindGroups = kindGroups[2:]
+		kindGroups := strings.Split(commentText, " ")[2:]
 
 		var apiGroups []string
 		var kinds []string
 		for _, kindGroup := range kindGroups {
 			kindTokens := strings.Split(kindGroup, "/")
 
-			apiGroups = append(apiGroups, kindTokens[0])
+			if !contains(apiGroups, kindTokens[0]) {
+				apiGroups = append(apiGroups, kindTokens[0])
+			}
+
 			kinds = append(kinds, kindTokens[1])
 		}
 
-		dedupedGroups := getDedupedGroups(apiGroups)
-
 		policyCommentBlock := PolicyCommentBlock{
-			APIGroups:   dedupedGroups,
+			APIGroups:   apiGroups,
 			Kinds:       kinds,
 			Description: strings.Trim(description, " "),
 		}
@@ -135,20 +136,9 @@ func getPolicyCommentBlocks(policy []byte) ([]PolicyCommentBlock, error) {
 	return policyCommentBlocks, nil
 }
 
-func getDedupedGroups(groups []string) []string {
-	var dedupedGroups []string
-	for _, group := range groups {
-		if !contains(dedupedGroups, group) {
-			dedupedGroups = append(dedupedGroups, group)
-		}
-	}
-
-	return dedupedGroups
-}
-
-func contains(groups []string, group string) bool {
-	for _, currentGroup := range groups {
-		if strings.EqualFold(currentGroup, group) {
+func contains(collection []string, item string) bool {
+	for _, value := range collection {
+		if strings.EqualFold(value, item) {
 			return true
 		}
 	}
