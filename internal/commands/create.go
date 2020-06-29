@@ -10,12 +10,21 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	"github.com/open-policy-agent/opa/ast"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
+
+type regoPolicy struct {
+	path      string
+	rego      string
+	module    *ast.Module
+	libraries []string
+}
 
 // NewCreateCommand creates a new create command
 func NewCreateCommand() *cobra.Command {
@@ -60,28 +69,18 @@ func runCreateCommand(path string) error {
 		}
 	}
 
-	var libraryFileContents []string
-	for _, libraryFilePath := range libraryFilePaths {
-		libraryFileBytes, err := ioutil.ReadFile(libraryFilePath)
-		if err != nil {
-			return fmt.Errorf("read library file: %w", err)
-		}
-
-		libraryFileContents = append(libraryFileContents, string(libraryFileBytes))
+	policies, err := parsePolicies(policyFilePaths, libraryFilePaths)
+	if err != nil {
+		return errors.Wrap(err, "parsing policies")
 	}
 
-	for _, policyFilePath := range policyFilePaths {
-		kind := getKindFromPath(policyFilePath)
+	for _, policy := range policies {
+		kind := getKindFromPath(policy.path)
 		name := strings.ToLower(kind)
 
-		policyDirectory := filepath.Dir(policyFilePath)
+		policyDirectory := filepath.Dir(policy.path)
 
-		policyFileBytes, err := ioutil.ReadFile(policyFilePath)
-		if err != nil {
-			return fmt.Errorf("read policy file: %w", err)
-		}
-
-		constraintTemplate := getConstraintTemplate(name, kind, string(policyFileBytes), libraryFileContents)
+		constraintTemplate := getConstraintTemplate(name, kind, policy.rego, policy.libraries)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
@@ -92,7 +91,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("writing template: %w", err)
 		}
 
-		constraint, err := getConstraint(kind, policyFileBytes)
+		constraint, err := getConstraint(kind, []byte(policy.rego))
 		if err != nil {
 			return fmt.Errorf("get constraint: %w", err)
 		}
@@ -221,6 +220,57 @@ func getRegoFilePaths(path string) ([]string, error) {
 	}
 
 	return regoFilePaths, nil
+}
+
+func parsePolicies(policyPaths []string, libraryPaths []string) ([]*regoPolicy, error) {
+	policies, err := loadPolicies(policyPaths)
+	if err != nil {
+		return nil, errors.Wrap(err, "loading policies")
+	}
+	libraries, err := loadPolicies(libraryPaths)
+	if err != nil {
+		return nil, errors.Wrap(err, "loading libraries")
+	}
+
+	for _, p := range policies {
+		if len(p.module.Imports) == 0 {
+			continue
+		}
+		for _, i := range p.module.Imports {
+			library := getLibrary(libraries, i.Path.String())
+			if library == nil {
+				return nil, fmt.Errorf("imported library %s not found", i.Path.String())
+			}
+			p.libraries = append(p.libraries, library.rego)
+		}
+	}
+
+	return policies, nil
+}
+
+func loadPolicies(paths []string) ([]*regoPolicy, error) {
+	var policies []*regoPolicy
+	for _, file := range paths {
+		data, err := ioutil.ReadFile(file)
+		if err != nil {
+			return nil, errors.Wrap(err, "reading policy file")
+		}
+		module, err := ast.ParseModule("", string(data))
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing policy file")
+		}
+		policies = append(policies, &regoPolicy{path: file, rego: string(data), module: module})
+	}
+	return policies, nil
+}
+
+func getLibrary(libraries []*regoPolicy, path string) *regoPolicy {
+	for _, library := range libraries {
+		if library.module.Package.Path.String() == path {
+			return library
+		}
+	}
+	return nil
 }
 
 func getKindFromPath(path string) string {
