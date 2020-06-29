@@ -22,7 +22,6 @@ func NewCreateCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "create <dir>",
 		Short: "Create Gatekeeper constraints from Rego policies",
-		Args:  cobra.ExactArgs(1),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := viper.BindPFlag("ignore", cmd.Flags().Lookup("ignore")); err != nil {
