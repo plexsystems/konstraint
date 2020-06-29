@@ -11,7 +11,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"github.com/open-policy-agent/opa/ast"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,27 +70,25 @@ func runCreateCommand(path string) error {
 
 	policies, err := parsePolicies(policyFilePaths, libraryFilePaths)
 	if err != nil {
-		return errors.Wrap(err, "parsing policies")
+		return fmt.Errorf("parse policies: %w", err)
 	}
 
-	for _, policy := range policies {
-		kind := getKindFromPath(policy.path)
+	for i := range policies {
+		kind := getKindFromPath(policies[i].path)
 		name := strings.ToLower(kind)
 
-		policyDirectory := filepath.Dir(policy.path)
-
-		constraintTemplate := getConstraintTemplate(name, kind, policy.rego, policy.libraries)
+		constraintTemplate := getConstraintTemplate(name, kind, policies[i].rego, policies[i].libraries)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
 		}
 
-		err = ioutil.WriteFile(filepath.Join(policyDirectory, "template.yaml"), constraintTemplateBytes, os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(policies[i].path, "template.yaml"), constraintTemplateBytes, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("writing template: %w", err)
 		}
 
-		constraint, err := getConstraint(kind, []byte(policy.rego))
+		constraint, err := getConstraint(kind, []byte(policies[i].rego))
 		if err != nil {
 			return fmt.Errorf("get constraint: %w", err)
 		}
@@ -101,7 +98,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("marshal constraint: %w", err)
 		}
 
-		err = ioutil.WriteFile(filepath.Join(policyDirectory, "constraint.yaml"), constraintBytes, os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(policies[i].path, "constraint.yaml"), constraintBytes, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("writing constraint: %w", err)
 		}
@@ -162,7 +159,6 @@ func getConstraint(kind string, policy []byte) (unstructured.Unstructured, error
 		}
 
 		for _, policyAPIGroup := range policyCommentBlock.APIGroups {
-			// The core API group is represented as a blank string in YAML files
 			if policyAPIGroup == "core" {
 				policyAPIGroup = ""
 			}
@@ -225,23 +221,26 @@ func getRegoFilePaths(path string) ([]string, error) {
 func parsePolicies(policyPaths []string, libraryPaths []string) ([]*regoPolicy, error) {
 	policies, err := loadPolicies(policyPaths)
 	if err != nil {
-		return nil, errors.Wrap(err, "loading policies")
-	}
-	libraries, err := loadPolicies(libraryPaths)
-	if err != nil {
-		return nil, errors.Wrap(err, "loading libraries")
+		return nil, fmt.Errorf("load policies; %w", err)
 	}
 
-	for _, p := range policies {
-		if len(p.module.Imports) == 0 {
+	libraries, err := loadPolicies(libraryPaths)
+	if err != nil {
+		return nil, fmt.Errorf("load libraries; %w", err)
+	}
+
+	for p := range policies {
+		if len(policies[p].module.Imports) == 0 {
 			continue
 		}
-		for _, i := range p.module.Imports {
-			library := getLibrary(libraries, i.Path.String())
+
+		for i := range policies[p].module.Imports {
+			library := getLibrary(libraries, policies[p].module.Imports[i].Path.String())
 			if library == nil {
-				return nil, fmt.Errorf("imported library %s not found", i.Path.String())
+				return nil, fmt.Errorf("imported library not found: %v", policies[p].module.Imports[i].Path.String())
 			}
-			p.libraries = append(p.libraries, library.rego)
+
+			policies[p].libraries = append(policies[p].libraries, library.rego)
 		}
 	}
 
@@ -253,23 +252,33 @@ func loadPolicies(paths []string) ([]*regoPolicy, error) {
 	for _, file := range paths {
 		data, err := ioutil.ReadFile(file)
 		if err != nil {
-			return nil, errors.Wrap(err, "reading policy file")
+			return nil, fmt.Errorf("read policy file: %w", err)
 		}
+
 		module, err := ast.ParseModule("", string(data))
 		if err != nil {
-			return nil, errors.Wrap(err, "parsing policy file")
+			return nil, fmt.Errorf("parse module: %w", err)
 		}
-		policies = append(policies, &regoPolicy{path: file, rego: string(data), module: module})
+
+		regoPolicy := regoPolicy{
+			path:   file,
+			rego:   string(data),
+			module: module,
+		}
+
+		policies = append(policies, &regoPolicy)
 	}
+
 	return policies, nil
 }
 
 func getLibrary(libraries []*regoPolicy, path string) *regoPolicy {
-	for _, library := range libraries {
-		if library.module.Package.Path.String() == path {
-			return library
+	for l := range libraries {
+		if libraries[l].module.Package.Path.String() == path {
+			return libraries[l]
 		}
 	}
+
 	return nil
 }
 

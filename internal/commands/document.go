@@ -103,8 +103,8 @@ func getPolicyCommentBlocks(policy []byte) ([]PolicyCommentBlock, error) {
 
 	var policyCommentBlocks []PolicyCommentBlock
 	var description string
-	for _, policyComment := range policyComments {
-		commentText := string(policyComment.Text)
+	for c := range policyComments {
+		commentText := string(policyComments[c].Text)
 		if !strings.Contains(commentText, "@Kinds") {
 			description = commentText
 			continue
