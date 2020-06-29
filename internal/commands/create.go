@@ -227,34 +227,15 @@ func getRegoFilePaths(path string) ([]string, error) {
 }
 
 func parsePolicies(policyPaths []string, libraryPaths []string) ([]*regoPolicy, error) {
-	var policies, libraries []*regoPolicy
-
-	// Load the policies and libraries into memory
-	for _, file := range policyPaths {
-		data, err := ioutil.ReadFile(file)
-		if err != nil {
-			return nil, err
-		}
-		policy, err := ast.ParseModule("", string(data))
-		if err != nil {
-			return nil, err
-		}
-		policies = append(policies, &regoPolicy{path: file, policy: policy})
+	policies, err := loadPolicies(policyPaths)
+	if err != nil {
+		return nil, err
+	}
+	libraries, err := loadPolicies(libraryPaths)
+	if err != nil {
+		return nil, err
 	}
 
-	for _, file := range libraryPaths {
-		data, err := ioutil.ReadFile(file)
-		if err != nil {
-			return nil, err
-		}
-		library, err := ast.ParseModule("", string(data))
-		if err != nil {
-			return nil, err
-		}
-		libraries = append(libraries, &regoPolicy{path: file, policy: library})
-	}
-
-	// Match each policy's imports to those available
 	for _, p := range policies {
 		if len(p.policy.Imports) > 0 {
 			for _, i := range p.policy.Imports {
@@ -273,6 +254,22 @@ func parsePolicies(policyPaths []string, libraryPaths []string) ([]*regoPolicy, 
 		}
 	}
 
+	return policies, nil
+}
+
+func loadPolicies(paths []string) ([]*regoPolicy, error) {
+	var policies []*regoPolicy
+	for _, file := range paths {
+		data, err := ioutil.ReadFile(file)
+		if err != nil {
+			return nil, err
+		}
+		policy, err := ast.ParseModule("", string(data))
+		if err != nil {
+			return nil, err
+		}
+		policies = append(policies, &regoPolicy{path: file, policy: policy})
+	}
 	return policies, nil
 }
 
