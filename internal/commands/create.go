@@ -272,7 +272,7 @@ func parsePolicies(policyPaths []string, libraryPaths []string) ([]*regoPolicy, 
 				// We read the file again from disk to perserve the formatting of the policy
 				// The OPA parser removes a lot of the nice syntax sugar that makes it easier for us to read
 				// ---
-				// We just read the librarya few milliseconds ago, assuming errors won't happen on the second read
+				// We just read the library a few milliseconds ago, assuming errors won't happen on the second read
 				data, _ := ioutil.ReadFile(library.path)
 				p.libraries = append(p.libraries, string(data))
 			}
