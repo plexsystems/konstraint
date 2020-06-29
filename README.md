@@ -66,6 +66,14 @@ _Example: konstraint create --ignore combined-policies/_
 
 _Example: konstraint create --lib library_
 
+`--exclude-namespace` or `-e` excludes a namespace from the constraint. This flag can be specified more than once. Cannot be used with `--include-namespace`.
+
+_Example: konstraint create -e kube-system -e gatekeeper-system_
+
+`--include-namespace` or `-i` specifies a namespace to apply the constraint to, excluding all others. This flag can be specified more than once. Cannot be used with `--exclude-namespace`. 
+
+_Example: konstraint create -i unique-namespace_
+
 ### Doc command
 
 Generate documentation from policies that set `@Kinds` in their comment headers
