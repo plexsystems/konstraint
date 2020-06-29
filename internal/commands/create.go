@@ -10,12 +10,24 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	"github.com/open-policy-agent/opa/ast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
+
+type regoPolicy struct {
+	path      string
+	policy    *ast.Module
+	libraries []string
+}
+
+type regoLibrary struct {
+	path   string
+	policy *ast.Module
+}
 
 // NewCreateCommand creates a new create command
 func NewCreateCommand() *cobra.Command {
@@ -61,28 +73,23 @@ func runCreateCommand(path string) error {
 		}
 	}
 
-	var libraryFileContents []string
-	for _, libraryFilePath := range libraryFilePaths {
-		libraryFileBytes, err := ioutil.ReadFile(libraryFilePath)
-		if err != nil {
-			return fmt.Errorf("read library file: %w", err)
-		}
-
-		libraryFileContents = append(libraryFileContents, string(libraryFileBytes))
+	policies, err := parsePolicies(policyFilePaths, libraryFilePaths)
+	if err != nil {
+		return fmt.Errorf("parsing policies: %s", err)
 	}
 
-	for _, policyFilePath := range policyFilePaths {
-		kind := getKindFromPath(policyFilePath)
+	for _, policy := range policies {
+		kind := getKindFromPath(policy.path)
 		name := strings.ToLower(kind)
 
-		policyDirectory := filepath.Dir(policyFilePath)
+		policyDirectory := filepath.Dir(policy.path)
 
-		policyFileBytes, err := ioutil.ReadFile(policyFilePath)
+		policyFileBytes, err := ioutil.ReadFile(policy.path)
 		if err != nil {
 			return fmt.Errorf("read policy file: %w", err)
 		}
 
-		constraintTemplate := getConstraintTemplate(name, kind, string(policyFileBytes), libraryFileContents)
+		constraintTemplate := getConstraintTemplate(name, kind, string(policyFileBytes), policy.libraries)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
@@ -222,6 +229,66 @@ func getRegoFilePaths(path string) ([]string, error) {
 	}
 
 	return regoFilePaths, nil
+}
+
+func parsePolicies(policyPaths []string, libraryPaths []string) ([]*regoPolicy, error) {
+	var policies []*regoPolicy
+	var libraries []*regoLibrary
+
+	// Load the policies and libraries into memory
+	for _, file := range policyPaths {
+		data, err := ioutil.ReadFile(file)
+		if err != nil {
+			return nil, err
+		}
+		policy, err := ast.ParseModule("", string(data))
+		if err != nil {
+			return nil, err
+		}
+		policies = append(policies, &regoPolicy{path: file, policy: policy})
+	}
+
+	for _, file := range libraryPaths {
+		data, err := ioutil.ReadFile(file)
+		if err != nil {
+			return nil, err
+		}
+		library, err := ast.ParseModule("", string(data))
+		if err != nil {
+			return nil, err
+		}
+		libraries = append(libraries, &regoLibrary{path: file, policy: library})
+	}
+
+	// Match each policy's imports to those available
+	for _, p := range policies {
+		if len(p.policy.Imports) > 0 {
+			for _, i := range p.policy.Imports {
+				library := getLibrary(libraries, i.Path.String())
+				if library == nil {
+					return nil, fmt.Errorf("imported library %s not found", i.Path.String())
+				}
+
+				// We read the file again from disk to perserve the formatting of the policy
+				// The OPA parser removes a lot of the nice syntax sugar that makes it easier for us to read
+				// ---
+				// We just read the librarya few milliseconds ago, assuming errors won't happen on the second read
+				data, _ := ioutil.ReadFile(library.path)
+				p.libraries = append(p.libraries, string(data))
+			}
+		}
+	}
+
+	return policies, nil
+}
+
+func getLibrary(libraries []*regoLibrary, path string) *regoLibrary {
+	for _, library := range libraries {
+		if library.policy.Package.Path.String() == path {
+			return library
+		}
+	}
+	return nil
 }
 
 func getKindFromPath(path string) string {
