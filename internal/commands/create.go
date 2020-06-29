@@ -24,11 +24,6 @@ type regoPolicy struct {
 	libraries []string
 }
 
-type regoLibrary struct {
-	path   string
-	policy *ast.Module
-}
-
 // NewCreateCommand creates a new create command
 func NewCreateCommand() *cobra.Command {
 	cmd := cobra.Command{
@@ -232,8 +227,7 @@ func getRegoFilePaths(path string) ([]string, error) {
 }
 
 func parsePolicies(policyPaths []string, libraryPaths []string) ([]*regoPolicy, error) {
-	var policies []*regoPolicy
-	var libraries []*regoLibrary
+	var policies, libraries []*regoPolicy
 
 	// Load the policies and libraries into memory
 	for _, file := range policyPaths {
@@ -257,7 +251,7 @@ func parsePolicies(policyPaths []string, libraryPaths []string) ([]*regoPolicy, 
 		if err != nil {
 			return nil, err
 		}
-		libraries = append(libraries, &regoLibrary{path: file, policy: library})
+		libraries = append(libraries, &regoPolicy{path: file, policy: library})
 	}
 
 	// Match each policy's imports to those available
@@ -282,7 +276,7 @@ func parsePolicies(policyPaths []string, libraryPaths []string) ([]*regoPolicy, 
 	return policies, nil
 }
 
-func getLibrary(libraries []*regoLibrary, path string) *regoLibrary {
+func getLibrary(libraries []*regoPolicy, path string) *regoPolicy {
 	for _, library := range libraries {
 		if library.policy.Package.Path.String() == path {
 			return library
