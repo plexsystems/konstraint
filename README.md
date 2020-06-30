@@ -40,6 +40,8 @@ By first validating the Kubernetes manifests with `Conftest` on a local machine,
 
 ## Installation
 
+Once you have executed the below, it will either be installed into your $GOPATH or $HOME/go.
+
 ```text
 GO111MODULE=on go get github.com/plexsystems/konstraint
 ```
