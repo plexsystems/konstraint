@@ -1,0 +1,11 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: VirtualServiceNaming
+metadata:
+  name: virtualservicenaming
+spec:
+  match:
+    kinds:
+    - apiGroups:
+      - networking.istio.io/v1alpha3
+      kinds:
+      - VirtualService
