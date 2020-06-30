@@ -116,13 +116,12 @@ func getPolicyCommentBlocks(policy []byte) ([]PolicyCommentBlock, error) {
 		var kinds []string
 		for _, kindGroup := range kindGroups {
 			kindTokens := strings.Split(kindGroup, "/")
-			apiGroup := strings.Join(kindTokens[:len(kindTokens)-1], "/")
 
-			if !contains(apiGroups, apiGroup) {
-				apiGroups = append(apiGroups, apiGroup)
+			if !contains(apiGroups, kindTokens[0]) {
+				apiGroups = append(apiGroups, kindTokens[0])
 			}
 
-			kinds = append(kinds, kindTokens[len(kindTokens)-1])
+			kinds = append(kinds, kindTokens[1])
 		}
 
 		policyCommentBlock := PolicyCommentBlock{

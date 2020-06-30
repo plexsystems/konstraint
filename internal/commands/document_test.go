@@ -23,7 +23,7 @@ violation[msg] {
 func TestGetPolicyCommentBlocks(t *testing.T) {
 	policy := `
 # First description
-# @Kinds core/Pods apps/Deployments apps/DaemonSet networking.istio.io/v1alpha3/VirtualService
+# @Kinds core/Pod apps/Deployment apps/DaemonSet
 violation[msg] {
 	false
 }`
@@ -38,32 +38,22 @@ violation[msg] {
 		t.Errorf("expected policy block to exist, but one did not.")
 	}
 
-	expectedAPIGroupCount := 3
+	expectedAPIGroupCount := 2
 	if len(actual[0].APIGroups) != expectedAPIGroupCount {
 		t.Errorf("expected %v APIGroups to exists but %v were found", expectedAPIGroupCount, len(actual[0].APIGroups))
 	}
 
-	if !contains(actual[0].APIGroups, "core") {
-		t.Errorf("expected policy block to contain 'core' APIGroup, but was not found.")
+	expectedGroups := []string{"core", "apps"}
+	for _, expectedGroup := range expectedGroups {
+		if !contains(actual[0].APIGroups, expectedGroup) {
+			t.Errorf("expected policy block to contain '%v' APIGroup, but was not found.", expectedGroup)
+		}
 	}
 
-	if !contains(actual[0].APIGroups, "apps") {
-		t.Errorf("expected policy block to contain 'apps' APIGroup, but was not found.")
-	}
-
-	if !contains(actual[0].APIGroups, "networking.istio.io/v1alpha3") {
-		t.Errorf("expected policy block to contain 'apps' APIGroup, but was not found.")
-	}
-
-	if !contains(actual[0].Kinds, "Pods") {
-		t.Errorf("expected policy block to contain 'Pods' Kind, but was not found.")
-	}
-
-	if !contains(actual[0].Kinds, "Deployments") {
-		t.Errorf("expected policy block to contain 'Deployments' Kind, but was not found.")
-	}
-
-	if !contains(actual[0].Kinds, "VirtualService") {
-		t.Errorf("expected policy block to contain 'VirtualService' Kind, but was not found.")
+	expectedKinds := []string{"Pod", "DaemonSet", "Deployment"}
+	for _, expectedKind := range expectedKinds {
+		if !contains(actual[0].Kinds, expectedKind) {
+			t.Errorf("expected policy block to contain '%v' APIGroup, but was not found.", expectedKind)
+		}
 	}
 }

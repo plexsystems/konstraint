@@ -1,7 +1,7 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: PodContainerImages
+kind: ContainerImages
 metadata:
-  name: podcontainerimages
+  name: containerimages
 spec:
   match:
     kinds:

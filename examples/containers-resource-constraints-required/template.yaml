@@ -2,12 +2,12 @@ apiVersion: templates.gatekeeper.sh/v1beta1
 kind: ConstraintTemplate
 metadata:
   creationTimestamp: null
-  name: virtualservicenaming
+  name: containersresourceconstraintsrequired
 spec:
   crd:
     spec:
       names:
-        kind: VirtualServiceNaming
+        kind: ContainersResourceConstraintsRequired
   targets:
   - libs:
     - |
@@ -297,13 +297,24 @@ spec:
 
       import data.lib.k8s
 
-      # VirtualServices must not be named virtual-service
-      # @Kinds networking.istio.io/v1alpha3/VirtualService
+      # Containers must have resource constraints specified
+      # @Kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
       violation[msg] {
-        k8s.kind == "VirtualService"
-        k8s.name == "virtual-service"
+        containers_resource_constraints_required
 
-        msg := k8s.format(sprintf("(%s) %s: VirtualServices must not be named virtual-service", [k8s.kind, k8s.name]))
+        msg := k8s.format(sprintf("(%s) %s: Container resource constraints must be specified", [k8s.kind, k8s.name]))
+      }
+
+      containers_resource_constraints_required {
+        k8s.is_workload
+        not container_resources_provided
+      }
+
+      container_resources_provided {
+        k8s.containers[_].resources.requests.cpu
+        k8s.containers[_].resources.requests.memory
+        k8s.containers[_].resources.limits.cpu
+        k8s.containers[_].resources.limits.memory
       }
     target: admission.k8s.gatekeeper.sh
 status: {}
