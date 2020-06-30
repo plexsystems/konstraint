@@ -2,7 +2,7 @@ package policy
 
 import data.lib.k8s
 
-# Containers must have resource constraints specified
+# Containers must have resource constraints specified.
 # @Kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 violation[msg] {
   containers_resource_constraints_required
