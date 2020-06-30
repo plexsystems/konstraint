@@ -3,4 +3,4 @@
 |API Groups|Kinds|Description|
 |---|---|---|
 |apps, core|DaemonSet, Deployment, StatefulSet, Pod|Container images can not use the latest tag.|
-|apps, core|DaemonSet, Deployment, StatefulSet, Pod|EmptyDir volume mounts must specify a size limit.|
+|networking.istio.io/v1alpha3|VirtualService|VirtualServices must not be named virtual-service.|
