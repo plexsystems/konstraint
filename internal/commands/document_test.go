@@ -9,8 +9,7 @@ violation[msg] {
 	false
 }`
 
-	policyBytes := []byte(policy)
-	actual, err := getPolicyCommentBlocks(policyBytes)
+	actual, err := getPolicyCommentBlocks(policy)
 	if err != nil {
 		t.Fatal("get policy comment blocks:", err)
 	}
@@ -28,8 +27,7 @@ violation[msg] {
 	false
 }`
 
-	policyBytes := []byte(policy)
-	actual, err := getPolicyCommentBlocks(policyBytes)
+	actual, err := getPolicyCommentBlocks(policy)
 	if err != nil {
 		t.Fatal("get policy comment blocks:", err)
 	}

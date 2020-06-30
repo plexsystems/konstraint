@@ -26,8 +26,8 @@ func NewDefaultCommand() *cobra.Command {
 	viper.BindPFlag("ignore", cmd.PersistentFlags().Lookup("ignore"))
 	viper.BindPFlag("lib", cmd.PersistentFlags().Lookup("lib"))
 
-	cmd.AddCommand(NewCreateCommand())
-	cmd.AddCommand(NewDocCommand())
+	cmd.AddCommand(newCreateCommand())
+	cmd.AddCommand(newDocCommand())
 
 	return &cmd
 }

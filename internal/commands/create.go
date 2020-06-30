@@ -19,14 +19,34 @@ import (
 )
 
 type regoFile struct {
-	filePath    string
-	packageName string
-	imports     []*ast.Import
-	contents    string
+	filePath       string
+	packageName    string
+	importPackages []string
+	contents       string
 }
 
-// NewCreateCommand creates a new create command
-func NewCreateCommand() *cobra.Command {
+func newRegoFile(filePath string, contents string) (regoFile, error) {
+	module, err := ast.ParseModule(filePath, contents)
+	if err != nil {
+		return regoFile{}, fmt.Errorf("parse module: %w", err)
+	}
+
+	var importPackages []string
+	for i := range module.Imports {
+		importPackages = append(importPackages, module.Imports[i].Path.String())
+	}
+
+	regoFile := regoFile{
+		filePath:       filePath,
+		packageName:    module.Package.Path.String(),
+		importPackages: importPackages,
+		contents:       contents,
+	}
+
+	return regoFile, nil
+}
+
+func newCreateCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "create <dir>",
 		Short: "Create Gatekeeper constraints from Rego policies",
@@ -78,10 +98,10 @@ func runCreateCommand(path string) error {
 		return fmt.Errorf("load libraries: %w", err)
 	}
 
-	for i := range policies {
-		policyDir := filepath.Dir(policies[i].filePath)
+	for _, policy := range policies {
+		policyDir := filepath.Dir(policy.filePath)
 
-		constraintTemplate := getConstraintTemplate(policies[i], libraries)
+		constraintTemplate := getConstraintTemplate(policy, libraries)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
@@ -92,7 +112,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("writing template: %w", err)
 		}
 
-		constraint, err := getConstraint(policies[i])
+		constraint, err := getConstraint(policy)
 		if err != nil {
 			return fmt.Errorf("get constraint: %w", err)
 		}
@@ -111,17 +131,17 @@ func runCreateCommand(path string) error {
 	return nil
 }
 
-func getConstraintTemplate(policy *regoFile, libraries []*regoFile) v1beta1.ConstraintTemplate {
-	kind := getKindFromPath(policy.filePath)
-
+func getConstraintTemplate(policy regoFile, libraries []regoFile) v1beta1.ConstraintTemplate {
 	var libs []string
-	for i := range policy.imports {
-		for l := range libraries {
-			if policy.imports[i].Path.String() == libraries[l].packageName {
-				libs = append(libs, libraries[l].contents)
+	for _, importPackage := range policy.importPackages {
+		for _, library := range libraries {
+			if importPackage == library.packageName {
+				libs = append(libs, library.contents)
 			}
 		}
 	}
+
+	kind := getKindFromPath(policy.filePath)
 
 	constraintTemplate := v1beta1.ConstraintTemplate{
 		TypeMeta: metav1.TypeMeta{
@@ -152,7 +172,7 @@ func getConstraintTemplate(policy *regoFile, libraries []*regoFile) v1beta1.Cons
 	return constraintTemplate
 }
 
-func getConstraint(policy *regoFile) (unstructured.Unstructured, error) {
+func getConstraint(policy regoFile) (unstructured.Unstructured, error) {
 	kind := getKindFromPath(policy.filePath)
 	constraint := unstructured.Unstructured{}
 	constraint.SetName(strings.ToLower(kind))
@@ -234,27 +254,20 @@ func getRegoFilePaths(path string) ([]string, error) {
 	return regoFilePaths, nil
 }
 
-func loadRegoFiles(filePaths []string) ([]*regoFile, error) {
-	var regoFiles []*regoFile
+func loadRegoFiles(filePaths []string) ([]regoFile, error) {
+	var regoFiles []regoFile
 	for _, filePath := range filePaths {
 		data, err := ioutil.ReadFile(filePath)
 		if err != nil {
 			return nil, fmt.Errorf("read policy file: %w", err)
 		}
 
-		module, err := ast.ParseModule(filePath, string(data))
+		regoFile, err := newRegoFile(filePath, string(data))
 		if err != nil {
-			return nil, fmt.Errorf("parse module: %w", err)
+			return nil, fmt.Errorf("new rego file: %w", err)
 		}
 
-		regoFile := regoFile{
-			filePath:    filePath,
-			packageName: module.Package.Path.String(),
-			imports:     module.Imports,
-			contents:    string(data),
-		}
-
-		regoFiles = append(regoFiles, &regoFile)
+		regoFiles = append(regoFiles, regoFile)
 	}
 
 	return regoFiles, nil

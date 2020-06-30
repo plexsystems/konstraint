@@ -12,8 +12,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-// NewDocCommand creates a new doc command
-func NewDocCommand() *cobra.Command {
+// PolicyCommentBlock represent a comment block in a rego file
+type PolicyCommentBlock struct {
+	APIGroups   []string
+	Kinds       []string
+	Description string
+}
+
+func newDocCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "doc <dir>",
 		Short: "Generate documentation from Rego policies",
@@ -35,13 +41,6 @@ func NewDocCommand() *cobra.Command {
 	cmd.Flags().StringP("output", "o", "policies.md", "output location (including filename) for the policy documentation")
 
 	return &cmd
-}
-
-// PolicyCommentBlock represent a comment block in a rego file
-type PolicyCommentBlock struct {
-	APIGroups   []string
-	Kinds       []string
-	Description string
 }
 
 func runDocCommand(path string) error {
