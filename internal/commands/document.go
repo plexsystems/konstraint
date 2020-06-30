@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -72,7 +71,7 @@ func getPolicyDocumentation(path string) (string, error) {
 			return "", fmt.Errorf("reading file: %w", err)
 		}
 
-		policyCommentBlocks, err := getPolicyCommentBlocks(policyBytes)
+		policyCommentBlocks, err := getPolicyCommentBlocks(string(policyBytes))
 		if err != nil {
 			return "", fmt.Errorf("get policy comment blocks: %w", err)
 		}
@@ -94,9 +93,9 @@ func getPolicyDocumentation(path string) (string, error) {
 	return policyDocument, nil
 }
 
-func getPolicyCommentBlocks(policy []byte) ([]PolicyCommentBlock, error) {
-	byteReader := bytes.NewReader(policy)
-	_, policyComments, errors := ast.NewParser().WithReader(byteReader).Parse()
+func getPolicyCommentBlocks(policy string) ([]PolicyCommentBlock, error) {
+	stringReader := strings.NewReader(policy)
+	_, policyComments, errors := ast.NewParser().WithReader(stringReader).Parse()
 	if len(errors) > 0 {
 		return nil, fmt.Errorf("parsing rego: %w", errors)
 	}
