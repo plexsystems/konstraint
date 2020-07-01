@@ -16,7 +16,7 @@ func TestGetConstraint_NoKinds_ReturnsEmptyMatcher(t *testing.T) {
 		t.Fatal("new rego file:", err)
 	}
 
-	actual, err := getConstraint(rego)
+	actual, err := getConstraint(rego, false)
 	if err != nil {
 		t.Fatal("get constraint:", err)
 	}
@@ -36,7 +36,7 @@ func TestGetConstraint_KindsInComment_ReturnsKinds(t *testing.T) {
 		t.Fatal("new rego file:", err)
 	}
 
-	actual, err := getConstraint(rego)
+	actual, err := getConstraint(rego, false)
 	if err != nil {
 		t.Fatal("get constraint:", err)
 	}
