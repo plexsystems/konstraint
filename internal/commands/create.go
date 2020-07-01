@@ -71,6 +71,8 @@ func newCreateCommand() *cobra.Command {
 
 	cmd.PersistentFlags().StringP("output", "o", "", "Specify an output directory for the Gatekeeper resources")
 	viper.BindPFlag("output", cmd.PersistentFlags().Lookup("output"))
+	cmd.PersistentFlags().BoolP("dryrun", "d", false, "Sets the enforcement action of the constraints to dryrun")
+	viper.BindPFlag("dryrun", cmd.PersistentFlags().Lookup("dryrun"))
 
 	return &cmd
 }
@@ -110,6 +112,8 @@ func runCreateCommand(path string) error {
 		outputDir = outputFlag
 	}
 
+	dryrun := viper.GetBool("dryrun")
+
 	for _, policy := range policies {
 		policyDir := filepath.Dir(policy.filePath)
 
@@ -138,7 +142,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("writing template: %w", err)
 		}
 
-		constraint, err := getConstraint(policy)
+		constraint, err := getConstraint(policy, dryrun)
 		if err != nil {
 			return fmt.Errorf("get constraint: %w", err)
 		}
@@ -198,7 +202,7 @@ func getConstraintTemplate(policy regoFile, libraries []regoFile) v1beta1.Constr
 	return constraintTemplate
 }
 
-func getConstraint(policy regoFile) (unstructured.Unstructured, error) {
+func getConstraint(policy regoFile, dryrun bool) (unstructured.Unstructured, error) {
 	kind := getKindFromPath(policy.filePath)
 	constraint := unstructured.Unstructured{}
 	constraint.SetName(strings.ToLower(kind))
@@ -236,6 +240,12 @@ func getConstraint(policy regoFile) (unstructured.Unstructured, error) {
 
 	if err := unstructured.SetNestedSlice(constraint.Object, []interface{}{constraintMatcher}, "spec", "match", "kinds"); err != nil {
 		return unstructured.Unstructured{}, fmt.Errorf("set constraint matchers: %w", err)
+	}
+
+	if dryrun {
+		if err := unstructured.SetNestedField(constraint.Object, "dryrun", "spec", "enforcementAction"); err != nil {
+			return unstructured.Unstructured{}, fmt.Errorf("set constraint dryrun: %w", err)
+		}
 	}
 
 	return constraint, nil
