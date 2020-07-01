@@ -1,0 +1,40 @@
+name: Pull Request
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  go-test:
+    name: Golang Tests
+    strategy:
+      matrix:
+        go-version: [1.13.x, 1.14.x]
+        platform: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+    - name: Configure Go environment
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Get dependencies
+      run: go mod download
+    - name: Lint
+      run: golint ./...
+    - name: Unit tests
+      run: go test ./...
+    - name: Test build
+      run: go build -o konstraint main.go
+
+  rego-test:
+    name: Policy Tests
+    runs-on: ubuntu-latest
+    container: 
+      image: instrumenta/conftest:latest # TODO: Update to OPA's Dockerhub once they start publishing conftest images
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Test policies
+      run: conftest verify -p examples
