@@ -69,6 +69,9 @@ func newCreateCommand() *cobra.Command {
 		},
 	}
 
+	cmd.PersistentFlags().StringP("output", "o", "", "Specify an output directory for the Gatekeeper resources")
+	viper.BindPFlag("output", cmd.PersistentFlags().Lookup("output"))
+
 	return &cmd
 }
 
@@ -98,8 +101,28 @@ func runCreateCommand(path string) error {
 		return fmt.Errorf("load libraries: %w", err)
 	}
 
+	outputFlag := viper.GetString("output")
+
 	for _, policy := range policies {
 		policyDir := filepath.Dir(policy.filePath)
+
+		var templateFileName, constraintFileName, outputDir string
+		if outputFlag == "" {
+			templateFileName = "template.yaml"
+			constraintFileName = "constraint.yaml"
+			outputDir = policyDir
+		} else {
+			templateFileName = fmt.Sprintf("%s_template.yaml", filepath.Base(policyDir))
+			constraintFileName = fmt.Sprintf("%s_constraint.yaml", filepath.Base(policyDir))
+			outputDir = outputFlag
+		}
+
+		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+			err := os.Mkdir(outputDir, os.ModePerm)
+			if err != nil {
+				return fmt.Errorf("unable to create output directory: %w", err)
+			}
+		}
 
 		constraintTemplate := getConstraintTemplate(policy, libraries)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
@@ -107,7 +130,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
 		}
 
-		err = ioutil.WriteFile(filepath.Join(policyDir, "template.yaml"), constraintTemplateBytes, os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(outputDir, templateFileName), constraintTemplateBytes, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("writing template: %w", err)
 		}
@@ -122,7 +145,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("marshal constraint: %w", err)
 		}
 
-		err = ioutil.WriteFile(filepath.Join(policyDir, "constraint.yaml"), constraintBytes, os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(outputDir, constraintFileName), constraintBytes, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("writing constraint: %w", err)
 		}
