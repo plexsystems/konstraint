@@ -68,6 +68,10 @@ _Example: konstraint create --ignore combined-policies/_
 
 _Example: konstraint create --lib library_
 
+`--output` / `-o` Specify an output folder for the resources.
+
+_Example: konstraint create -o gatekeeper-resources_
+
 ### Doc command
 
 Generate documentation from policies that set `@Kinds` in their comment headers
