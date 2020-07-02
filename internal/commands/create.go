@@ -101,26 +101,29 @@ func runCreateCommand(path string) error {
 		return fmt.Errorf("load libraries: %w", err)
 	}
 
+	var templateFileName, constraintFileName, outputDir string
 	outputFlag := viper.GetString("output")
+	if outputFlag == "" {
+		templateFileName = "template.yaml"
+		constraintFileName = "constraint.yaml"
+	} else {
+		outputDir = outputFlag
+	}
 
 	for _, policy := range policies {
 		policyDir := filepath.Dir(policy.filePath)
 
-		var templateFileName, constraintFileName, outputDir string
 		if outputFlag == "" {
-			templateFileName = "template.yaml"
-			constraintFileName = "constraint.yaml"
 			outputDir = policyDir
 		} else {
-			templateFileName = fmt.Sprintf("%s_template.yaml", filepath.Base(policyDir))
-			constraintFileName = fmt.Sprintf("%s_constraint.yaml", filepath.Base(policyDir))
-			outputDir = outputFlag
+			templateFileName = fmt.Sprintf("template_%s.yaml", getKindFromPath(policy.filePath))
+			constraintFileName = fmt.Sprintf("constraint_%s.yaml", getKindFromPath(policy.filePath))
 		}
 
 		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-			err := os.Mkdir(outputDir, os.ModePerm)
+			err := os.MkdirAll(outputDir, os.ModePerm)
 			if err != nil {
-				return fmt.Errorf("unable to create output directory: %w", err)
+				return fmt.Errorf("create output directory: %w", err)
 			}
 		}
 
