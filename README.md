@@ -101,6 +101,12 @@ For example, a policy found in: `policies/pod-volume-size-limits/src.rego` gener
 
 _While not technically required, the tool works best with a folder structure similar to how Gatekeeper itself [structures policies and templates](https://github.com/open-policy-agent/gatekeeper/tree/master/library)._
 
+## How library importing works
+
+Libraries can be stored in a folder named `lib` or the name of the folder set with the `--lib` flag.
+
+Libraries will be added to the `ConstraintTemplate` if and only if the associated policy imports the library. This helps prevent importing Rego code that will go unused.
+
 ## Experimental
 
 To further promote that the `.rego` file is the source of truth for policy, a form of block comments on each `violation` rule can be added that includes a human readable description of what the policy does. This comment block is also used to set the matchers on the `Constraint` itself.
