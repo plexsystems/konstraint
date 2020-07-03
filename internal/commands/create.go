@@ -71,6 +71,8 @@ func newCreateCommand() *cobra.Command {
 
 	cmd.PersistentFlags().StringP("output", "o", "", "Specify an output directory for the Gatekeeper resources")
 	viper.BindPFlag("output", cmd.PersistentFlags().Lookup("output"))
+	cmd.PersistentFlags().BoolP("dryrun", "d", false, "Sets the enforcement action of the constraints to dryrun")
+	viper.BindPFlag("dryrun", cmd.PersistentFlags().Lookup("dryrun"))
 
 	return &cmd
 }
@@ -236,6 +238,13 @@ func getConstraint(policy regoFile) (unstructured.Unstructured, error) {
 
 	if err := unstructured.SetNestedSlice(constraint.Object, []interface{}{constraintMatcher}, "spec", "match", "kinds"); err != nil {
 		return unstructured.Unstructured{}, fmt.Errorf("set constraint matchers: %w", err)
+	}
+
+	dryrun := viper.GetBool("dryrun")
+	if dryrun {
+		if err := unstructured.SetNestedField(constraint.Object, "dryrun", "spec", "enforcementAction"); err != nil {
+			return unstructured.Unstructured{}, fmt.Errorf("set constraint dryrun: %w", err)
+		}
 	}
 
 	return constraint, nil

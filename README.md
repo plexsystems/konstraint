@@ -72,6 +72,10 @@ _Example: konstraint create --lib library_
 
 _Example: konstraint create -o gatekeeper-resources_
 
+`--dryrun` / `-d` Sets the enforcement action of the constraints to dryrun.
+
+_Example: konstraint create -o gatekeeper-resources --dryrun_
+
 ### Doc command
 
 Generate documentation from policies that set `@Kinds` in their comment headers
