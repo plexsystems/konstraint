@@ -38,8 +38,6 @@ func newRegoFile(filePath string, module *ast.Module, contents string) (regoFile
 		contents:       contents,
 	}
 
-	fmt.Printf("%v\n", regoFile)
-
 	return regoFile, nil
 }
 
@@ -325,7 +323,6 @@ func loadPolicyFiles(filePaths []string) ([]regoFile, error) {
 	}
 
 	for path, contents := range policyFilesContents {
-		fmt.Println(path)
 		policyFile, err := newPolicyFile(path, contents)
 		if err != nil {
 			return nil, fmt.Errorf("creating policy file: %w", err)
