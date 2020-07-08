@@ -47,7 +47,7 @@ func newPolicyFile(filePath string, contents string) (regoFile, error) {
 		return regoFile{}, fmt.Errorf("parse module: %w", err)
 	}
 
-	if moduleHasViolationRules(module) == false {
+	if moduleHasViolationRule(module) == false {
 		return regoFile{}, nil
 	}
 
@@ -63,7 +63,7 @@ func newLibraryFile(filePath string, contents string) (regoFile, error) {
 	return newRegoFile(filePath, module, contents)
 }
 
-func moduleHasViolationRules(module *ast.Module) bool {
+func moduleHasViolationRule(module *ast.Module) bool {
 	for _, rule := range module.Rules {
 		if strings.HasPrefix(rule.Head.String(), "violation[") {
 			return true
