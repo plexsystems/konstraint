@@ -2,6 +2,8 @@ package commands
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -101,6 +103,64 @@ import data.lib.foo`
 	actualLibraryCount := len(actual.Spec.Targets[0].Libs)
 	if actualLibraryCount != 1 {
 		t.Errorf("expected 1 library to be added, but found %v", actualLibraryCount)
+	}
+}
+
+func TestLoadPolicyFiles_MissingViolationRule(t *testing.T) {
+	policyMissingViolationRule := `package test
+default a = true`
+
+	file, err := ioutil.TempFile("", "policy")
+	if err != nil {
+		t.Fatal("create temp policy file:", err)
+	}
+	defer os.Remove(file.Name())
+
+	_, err = file.WriteString(policyMissingViolationRule)
+	if err != nil {
+		t.Fatal("write temp policy file:", err)
+	}
+
+	var policyFiles []string
+	policyFiles = append(policyFiles, file.Name())
+
+	policies, err := loadPolicyFiles(policyFiles)
+	if err != nil {
+		t.Fatal("load policy files:", err)
+	}
+
+	if len(policies) != 0 {
+		t.Error("policy without violation rule was loaded")
+	}
+}
+
+func TestLoadPolicyFiles_WithViolationRule(t *testing.T) {
+	policyMissingViolationRule := `package test
+violation[msg] {
+	msg = "test"
+}`
+
+	file, err := ioutil.TempFile("", "policy")
+	if err != nil {
+		t.Fatal("create temp policy file:", err)
+	}
+	defer os.Remove(file.Name())
+
+	_, err = file.WriteString(policyMissingViolationRule)
+	if err != nil {
+		t.Fatal("write temp policy file:", err)
+	}
+
+	var policyFiles []string
+	policyFiles = append(policyFiles, file.Name())
+
+	policies, err := loadPolicyFiles(policyFiles)
+	if err != nil {
+		t.Fatal("load policy files:", err)
+	}
+
+	if len(policies) != 1 {
+		t.Error("policy with violation rule was not loaded")
 	}
 }
 
