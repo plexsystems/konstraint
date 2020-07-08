@@ -25,7 +25,12 @@ type regoFile struct {
 	contents       string
 }
 
-func newRegoFile(filePath string, module *ast.Module, contents string) (regoFile, error) {
+func newRegoFile(filePath string, contents string) (regoFile, error) {
+	module, err := ast.ParseModule(filePath, contents)
+	if err != nil {
+		return regoFile{}, fmt.Errorf("parse module: %w", err)
+	}
+
 	var importPackages []string
 	for i := range module.Imports {
 		importPackages = append(importPackages, module.Imports[i].Path.String())
@@ -39,28 +44,6 @@ func newRegoFile(filePath string, module *ast.Module, contents string) (regoFile
 	}
 
 	return regoFile, nil
-}
-
-func newPolicyFile(filePath string, contents string) (regoFile, error) {
-	module, err := ast.ParseModule(filePath, contents)
-	if err != nil {
-		return regoFile{}, fmt.Errorf("parse module: %w", err)
-	}
-
-	if moduleHasViolationRule(module) == false {
-		return regoFile{}, nil
-	}
-
-	return newRegoFile(filePath, module, contents)
-}
-
-func newLibraryFile(filePath string, contents string) (regoFile, error) {
-	module, err := ast.ParseModule(filePath, contents)
-	if err != nil {
-		return regoFile{}, fmt.Errorf("parse module: %w", err)
-	}
-
-	return newRegoFile(filePath, module, contents)
 }
 
 func moduleHasViolationRule(module *ast.Module) bool {
@@ -323,12 +306,17 @@ func loadPolicyFiles(filePaths []string) ([]regoFile, error) {
 	}
 
 	for path, contents := range policyFilesContents {
-		policyFile, err := newPolicyFile(path, contents)
+		module, err := ast.ParseModule(path, contents)
 		if err != nil {
-			return nil, fmt.Errorf("creating policy file: %w", err)
+			return nil, fmt.Errorf("parse module: %w", err)
 		}
 
-		if policyFile.packageName != "" {
+		if moduleHasViolationRule(module) {
+			policyFile, err := newRegoFile(path, contents)
+			if err != nil {
+				return nil, fmt.Errorf("new rego file: %w", err)
+			}
+
 			policyFiles = append(policyFiles, policyFile)
 		}
 	}
@@ -344,9 +332,9 @@ func loadLibraryFiles(filePaths []string) ([]regoFile, error) {
 	}
 
 	for path, contents := range libraryFilesContents {
-		libraryFile, err := newLibraryFile(path, contents)
+		libraryFile, err := newRegoFile(path, contents)
 		if err != nil {
-			return nil, fmt.Errorf("creating library file: %w", err)
+			return nil, fmt.Errorf("new rego file: %w", err)
 		}
 
 		libraryFiles = append(libraryFiles, libraryFile)
