@@ -135,7 +135,7 @@ default a = true`
 }
 
 func TestLoadPolicyFiles_WithViolationRule(t *testing.T) {
-	policyMissingViolationRule := `package test
+	policyWithViolationRule := `package test
 violation[msg] {
 	msg = "test"
 }`
@@ -146,7 +146,7 @@ violation[msg] {
 	}
 	defer os.Remove(file.Name())
 
-	_, err = file.WriteString(policyMissingViolationRule)
+	_, err = file.WriteString(policyWithViolationRule)
 	if err != nil {
 		t.Fatal("write temp policy file:", err)
 	}
