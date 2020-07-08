@@ -13,3 +13,7 @@ violation[msg] {
 has_latest_tag {
   endswith(k8s.container_images[_], ":latest")
 }
+
+has_latest_tag {
+  contains(k8s.container_images[_], ":") == false
+}

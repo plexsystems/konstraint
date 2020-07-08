@@ -21,3 +21,14 @@ test_input_as_image_with_latest_tag {
 
   has_latest_tag with input as input
 }
+
+test_input_as_image_with_no_tag {
+  input := {
+    "kind": "Pod",
+    "spec": {
+      "containers": [{"image": "image"}]
+    }
+  }
+
+  has_latest_tag with input as input
+}
