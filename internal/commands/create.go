@@ -102,12 +102,20 @@ func runCreateCommand(path string) error {
 		}
 	}
 
-	policies, err := loadPolicyFiles(policyFilePaths)
+	policyContents, err := readFilesContents(policyFilePaths)
+	if err != nil {
+		return fmt.Errorf("read policy contents")
+	}
+	policies, err := loadPolicyFiles(policyContents)
 	if err != nil {
 		return fmt.Errorf("load policies: %w", err)
 	}
 
-	libraries, err := loadLibraryFiles(libraryFilePaths)
+	libraryContents, err := readFilesContents(libraryFilePaths)
+	if err != nil {
+		return fmt.Errorf("read library contents")
+	}
+	libraries, err := loadLibraryFiles(libraryContents)
 	if err != nil {
 		return fmt.Errorf("load libraries: %w", err)
 	}
@@ -298,14 +306,9 @@ func getRegoFilePaths(path string) ([]string, error) {
 	return regoFilePaths, nil
 }
 
-func loadPolicyFiles(filePaths []string) ([]regoFile, error) {
+func loadPolicyFiles(policyContents map[string]string) ([]regoFile, error) {
 	var policyFiles []regoFile
-	policyFilesContents, err := readFilesContents(filePaths)
-	if err != nil {
-		return nil, fmt.Errorf("reading files: %w", err)
-	}
-
-	for path, contents := range policyFilesContents {
+	for path, contents := range policyContents {
 		module, err := ast.ParseModule(path, contents)
 		if err != nil {
 			return nil, fmt.Errorf("parse module: %w", err)
@@ -326,14 +329,9 @@ func loadPolicyFiles(filePaths []string) ([]regoFile, error) {
 	return policyFiles, nil
 }
 
-func loadLibraryFiles(filePaths []string) ([]regoFile, error) {
+func loadLibraryFiles(libraryContents map[string]string) ([]regoFile, error) {
 	var libraryFiles []regoFile
-	libraryFilesContents, err := readFilesContents(filePaths)
-	if err != nil {
-		return nil, fmt.Errorf("reading files: %w", err)
-	}
-
-	for path, contents := range libraryFilesContents {
+	for path, contents := range libraryContents {
 		libraryFile, err := newRegoFile(path, contents)
 		if err != nil {
 			return nil, fmt.Errorf("new rego file: %w", err)

@@ -2,8 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -106,61 +104,41 @@ import data.lib.foo`
 	}
 }
 
-func TestLoadPolicyFiles_MissingViolationRule(t *testing.T) {
-	policyMissingViolationRule := `package test
+func TestLoadPolicyFiles(t *testing.T) {
+	policyContents := make(map[string]string)
+	policyContents["missingViolation.rego"] = `package test
 default a = true`
-
-	file, err := ioutil.TempFile("", "policy")
-	if err != nil {
-		t.Fatal("create temp policy file:", err)
-	}
-	defer os.Remove(file.Name())
-
-	_, err = file.WriteString(policyMissingViolationRule)
-	if err != nil {
-		t.Fatal("write temp policy file:", err)
-	}
-
-	var policyFiles []string
-	policyFiles = append(policyFiles, file.Name())
-
-	policies, err := loadPolicyFiles(policyFiles)
-	if err != nil {
-		t.Fatal("load policy files:", err)
-	}
-
-	if len(policies) != 0 {
-		t.Error("policy without violation rule was loaded")
-	}
-}
-
-func TestLoadPolicyFiles_WithViolationRule(t *testing.T) {
-	policyWithViolationRule := `package test
+	policyContents["withViolation.rego"] = `package test
 violation[msg] {
 	msg = "test"
 }`
 
-	file, err := ioutil.TempFile("", "policy")
-	if err != nil {
-		t.Fatal("create temp policy file:", err)
-	}
-	defer os.Remove(file.Name())
-
-	_, err = file.WriteString(policyWithViolationRule)
-	if err != nil {
-		t.Fatal("write temp policy file:", err)
-	}
-
-	var policyFiles []string
-	policyFiles = append(policyFiles, file.Name())
-
-	policies, err := loadPolicyFiles(policyFiles)
+	policies, err := loadPolicyFiles(policyContents)
 	if err != nil {
 		t.Fatal("load policy files:", err)
 	}
 
 	if len(policies) != 1 {
-		t.Error("policy with violation rule was not loaded")
+		t.Error("incorrect number of policies loaded")
+	}
+}
+
+func TestLoadLibraryFiles(t *testing.T) {
+	libraryContents := make(map[string]string)
+	libraryContents["missingViolation.rego"] = `package test
+default a = true`
+	libraryContents["withViolation.rego"] = `package test
+violation[msg] {
+	msg = "test"
+}`
+
+	policies, err := loadLibraryFiles(libraryContents)
+	if err != nil {
+		t.Fatal("load library files:", err)
+	}
+
+	if len(policies) != 2 {
+		t.Error("incorrect number of libraries loaded")
 	}
 }
 
