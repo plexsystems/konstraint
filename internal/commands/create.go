@@ -104,7 +104,7 @@ func runCreateCommand(path string) error {
 
 	policyContents, err := readFilesContents(policyFilePaths)
 	if err != nil {
-		return fmt.Errorf("read policy contents")
+		return fmt.Errorf("read policy contents: %w", err)
 	}
 	policies, err := loadPolicyFiles(policyContents)
 	if err != nil {
@@ -113,7 +113,7 @@ func runCreateCommand(path string) error {
 
 	libraryContents, err := readFilesContents(libraryFilePaths)
 	if err != nil {
-		return fmt.Errorf("read library contents")
+		return fmt.Errorf("read library contents: %w", err)
 	}
 	libraries, err := loadLibraryFiles(libraryContents)
 	if err != nil {
