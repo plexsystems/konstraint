@@ -311,14 +311,16 @@ func loadPolicyFiles(filePaths []string) ([]regoFile, error) {
 			return nil, fmt.Errorf("parse module: %w", err)
 		}
 
-		if moduleHasViolationRule(module) {
-			policyFile, err := newRegoFile(path, contents)
-			if err != nil {
-				return nil, fmt.Errorf("new rego file: %w", err)
-			}
-
-			policyFiles = append(policyFiles, policyFile)
+		if !moduleHasViolationRule(module) {
+			continue
 		}
+
+		policyFile, err := newRegoFile(path, contents)
+		if err != nil {
+			return nil, fmt.Errorf("new rego file: %w", err)
+		}
+
+		policyFiles = append(policyFiles, policyFile)
 	}
 
 	return policyFiles, nil
