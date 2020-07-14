@@ -46,6 +46,15 @@ func newRegoFile(filePath string, contents string) (regoFile, error) {
 	return regoFile, nil
 }
 
+func moduleHasViolationRule(module *ast.Module) bool {
+	for _, rule := range module.Rules {
+		if strings.HasPrefix(rule.Head.String(), "violation[") {
+			return true
+		}
+	}
+	return false
+}
+
 func newCreateCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "create <dir>",
@@ -93,12 +102,20 @@ func runCreateCommand(path string) error {
 		}
 	}
 
-	policies, err := loadRegoFiles(policyFilePaths)
+	policyContents, err := readFilesContents(policyFilePaths)
+	if err != nil {
+		return fmt.Errorf("read policy contents: %w", err)
+	}
+	policies, err := loadPolicyFiles(policyContents)
 	if err != nil {
 		return fmt.Errorf("load policies: %w", err)
 	}
 
-	libraries, err := loadRegoFiles(libraryFilePaths)
+	libraryContents, err := readFilesContents(libraryFilePaths)
+	if err != nil {
+		return fmt.Errorf("read library contents: %w", err)
+	}
+	libraries, err := loadLibraryFiles(libraryContents)
 	if err != nil {
 		return fmt.Errorf("load libraries: %w", err)
 	}
@@ -289,23 +306,55 @@ func getRegoFilePaths(path string) ([]string, error) {
 	return regoFilePaths, nil
 }
 
-func loadRegoFiles(filePaths []string) ([]regoFile, error) {
-	var regoFiles []regoFile
-	for _, filePath := range filePaths {
-		data, err := ioutil.ReadFile(filePath)
+func loadPolicyFiles(policyContents map[string]string) ([]regoFile, error) {
+	var policyFiles []regoFile
+	for path, contents := range policyContents {
+		module, err := ast.ParseModule(path, contents)
 		if err != nil {
-			return nil, fmt.Errorf("read policy file: %w", err)
+			return nil, fmt.Errorf("parse module: %w", err)
 		}
 
-		regoFile, err := newRegoFile(filePath, string(data))
+		if !moduleHasViolationRule(module) {
+			continue
+		}
+
+		policyFile, err := newRegoFile(path, contents)
 		if err != nil {
 			return nil, fmt.Errorf("new rego file: %w", err)
 		}
 
-		regoFiles = append(regoFiles, regoFile)
+		policyFiles = append(policyFiles, policyFile)
 	}
 
-	return regoFiles, nil
+	return policyFiles, nil
+}
+
+func loadLibraryFiles(libraryContents map[string]string) ([]regoFile, error) {
+	var libraryFiles []regoFile
+	for path, contents := range libraryContents {
+		libraryFile, err := newRegoFile(path, contents)
+		if err != nil {
+			return nil, fmt.Errorf("new rego file: %w", err)
+		}
+
+		libraryFiles = append(libraryFiles, libraryFile)
+	}
+
+	return libraryFiles, nil
+}
+
+func readFilesContents(filePaths []string) (map[string]string, error) {
+	filesContents := make(map[string]string)
+	for _, filePath := range filePaths {
+		data, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			return nil, fmt.Errorf("read file: %w", err)
+		}
+
+		filesContents[filePath] = string(data)
+	}
+
+	return filesContents, nil
 }
 
 func getKindFromPath(path string) string {
