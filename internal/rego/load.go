@@ -96,7 +96,7 @@ func newRegoFile(filePath string, contents string) (File, error) {
 
 func getModuleRulesActions(rules []*ast.Rule) []string {
 	var rulesActions []string
-	re := regexp.MustCompile("^\\s*([a-z]+)\\[")
+	re := regexp.MustCompile("^\\s*([a-z]+)\\[msg")
 	for _, rule := range rules {
 		match := re.FindStringSubmatch(rule.Head.String())
 		if len(match) == 0 {
@@ -110,7 +110,7 @@ func getModuleRulesActions(rules []*ast.Rule) []string {
 func getModuleComments(module *ast.Module) []string {
 	var comments []string
 	for _, comment := range module.Comments {
-		comments = append(comments, comment.String())
+		comments = append(comments, string(comment.Text))
 	}
 	return comments
 }
