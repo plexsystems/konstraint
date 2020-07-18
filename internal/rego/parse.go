@@ -33,8 +33,7 @@ func LoadLibraries(filesContents map[string]string) ([]RegoFile, error) {
 		return nil, fmt.Errorf("load rego files: %w", err)
 	}
 
-	libraries := getLibraries(regoFiles)
-	return libraries, nil
+	return regoFiles, nil
 }
 
 func getPoliciesWithAction(regoFiles []RegoFile, action string) []RegoFile {
@@ -54,17 +53,6 @@ func getPolicies(regoFiles []RegoFile) []RegoFile {
 	var matchingPolicies []RegoFile
 	for _, regoFile := range regoFiles {
 		if len(regoFile.RulesActions) > 0 {
-			matchingPolicies = append(matchingPolicies, regoFile)
-		}
-	}
-
-	return matchingPolicies
-}
-
-func getLibraries(regoFiles []RegoFile) []RegoFile {
-	var matchingPolicies []RegoFile
-	for _, regoFile := range regoFiles {
-		if len(regoFile.RulesActions) != 0 {
 			matchingPolicies = append(matchingPolicies, regoFile)
 		}
 	}
