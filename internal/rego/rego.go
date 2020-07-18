@@ -7,4 +7,5 @@ type File struct {
 	ImportPackages []string
 	Contents       string
 	RulesActions   []string
+	Comments       []string
 }

@@ -88,6 +88,7 @@ func newRegoFile(filePath string, contents string) (File, error) {
 		ImportPackages: importPackages,
 		Contents:       contents,
 		RulesActions:   getModuleRulesActions(module.Rules),
+		Comments:       getModuleComments(module),
 	}
 
 	return File, nil
@@ -104,4 +105,12 @@ func getModuleRulesActions(rules []*ast.Rule) []string {
 		rulesActions = append(rulesActions, match[1])
 	}
 	return rulesActions
+}
+
+func getModuleComments(module *ast.Module) []string {
+	var comments []string
+	for _, comment := range module.Comments {
+		comments = append(comments, comment.String())
+	}
+	return comments
 }
