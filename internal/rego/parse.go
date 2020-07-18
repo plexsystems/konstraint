@@ -7,6 +7,7 @@ import (
 	"github.com/open-policy-agent/opa/ast"
 )
 
+// LoadPoliciesWithAction loads all policies from rego with rules with a given action name
 func LoadPoliciesWithAction(filesContents map[string]string, action string) ([]RegoFile, error) {
 	regoFiles, err := loadRegoFiles(filesContents)
 	if err != nil {
@@ -17,16 +18,18 @@ func LoadPoliciesWithAction(filesContents map[string]string, action string) ([]R
 	return policies, nil
 }
 
+// LoadPolicies loads all policies from rego with rules
 func LoadPolicies(filesContents map[string]string) ([]RegoFile, error) {
 	regoFiles, err := loadRegoFiles(filesContents)
 	if err != nil {
 		return nil, fmt.Errorf("load rego files: %w", err)
 	}
 
-	policies := getPolicies(regoFiles)
+	policies := getPoliciesWithAction(regoFiles, "")
 	return policies, nil
 }
 
+// LoadLibraries loads all libraries from rego
 func LoadLibraries(filesContents map[string]string) ([]RegoFile, error) {
 	regoFiles, err := loadRegoFiles(filesContents)
 	if err != nil {
@@ -39,21 +42,15 @@ func LoadLibraries(filesContents map[string]string) ([]RegoFile, error) {
 func getPoliciesWithAction(regoFiles []RegoFile, action string) []RegoFile {
 	var matchingPolicies []RegoFile
 	for _, regoFile := range regoFiles {
+		if action == "" && len(regoFile.RulesActions) > 0 {
+			matchingPolicies = append(matchingPolicies, regoFile)
+			continue
+		}
+
 		for _, ruleAction := range regoFile.RulesActions {
 			if ruleAction == action {
 				matchingPolicies = append(matchingPolicies, regoFile)
 			}
-		}
-	}
-
-	return matchingPolicies
-}
-
-func getPolicies(regoFiles []RegoFile) []RegoFile {
-	var matchingPolicies []RegoFile
-	for _, regoFile := range regoFiles {
-		if len(regoFile.RulesActions) > 0 {
-			matchingPolicies = append(matchingPolicies, regoFile)
 		}
 	}
 
