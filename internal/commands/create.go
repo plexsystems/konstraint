@@ -10,50 +10,13 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
-	"github.com/open-policy-agent/opa/ast"
+	"github.com/plexsystems/konstraint/internal/rego"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
-
-type regoFile struct {
-	filePath       string
-	packageName    string
-	importPackages []string
-	contents       string
-}
-
-func newRegoFile(filePath string, contents string) (regoFile, error) {
-	module, err := ast.ParseModule(filePath, contents)
-	if err != nil {
-		return regoFile{}, fmt.Errorf("parse module: %w", err)
-	}
-
-	var importPackages []string
-	for i := range module.Imports {
-		importPackages = append(importPackages, module.Imports[i].Path.String())
-	}
-
-	regoFile := regoFile{
-		filePath:       filePath,
-		packageName:    module.Package.Path.String(),
-		importPackages: importPackages,
-		contents:       contents,
-	}
-
-	return regoFile, nil
-}
-
-func moduleHasViolationRule(module *ast.Module) bool {
-	for _, rule := range module.Rules {
-		if strings.HasPrefix(rule.Head.String(), "violation[") {
-			return true
-		}
-	}
-	return false
-}
 
 func newCreateCommand() *cobra.Command {
 	cmd := cobra.Command{
@@ -106,7 +69,7 @@ func runCreateCommand(path string) error {
 	if err != nil {
 		return fmt.Errorf("read policy contents: %w", err)
 	}
-	policies, err := loadPolicyFiles(policyContents)
+	policies, err := rego.LoadPoliciesWithAction(policyContents, "violation")
 	if err != nil {
 		return fmt.Errorf("load policies: %w", err)
 	}
@@ -115,7 +78,7 @@ func runCreateCommand(path string) error {
 	if err != nil {
 		return fmt.Errorf("read library contents: %w", err)
 	}
-	libraries, err := loadLibraryFiles(libraryContents)
+	libraries, err := rego.LoadLibraries(libraryContents)
 	if err != nil {
 		return fmt.Errorf("load libraries: %w", err)
 	}
@@ -130,13 +93,13 @@ func runCreateCommand(path string) error {
 	}
 
 	for _, policy := range policies {
-		policyDir := filepath.Dir(policy.filePath)
+		policyDir := filepath.Dir(policy.FilePath)
 
 		if outputFlag == "" {
 			outputDir = policyDir
 		} else {
-			templateFileName = fmt.Sprintf("template_%s.yaml", getKindFromPath(policy.filePath))
-			constraintFileName = fmt.Sprintf("constraint_%s.yaml", getKindFromPath(policy.filePath))
+			templateFileName = fmt.Sprintf("template_%s.yaml", getKindFromPath(policy.FilePath))
+			constraintFileName = fmt.Sprintf("constraint_%s.yaml", getKindFromPath(policy.FilePath))
 		}
 
 		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
@@ -176,17 +139,17 @@ func runCreateCommand(path string) error {
 	return nil
 }
 
-func getConstraintTemplate(policy regoFile, libraries []regoFile) v1beta1.ConstraintTemplate {
+func getConstraintTemplate(policy rego.RegoFile, libraries []rego.RegoFile) v1beta1.ConstraintTemplate {
 	var libs []string
-	for _, importPackage := range policy.importPackages {
+	for _, importPackage := range policy.ImportPackages {
 		for _, library := range libraries {
-			if importPackage == library.packageName {
-				libs = append(libs, library.contents)
+			if importPackage == library.PackageName {
+				libs = append(libs, library.Contents)
 			}
 		}
 	}
 
-	kind := getKindFromPath(policy.filePath)
+	kind := getKindFromPath(policy.FilePath)
 
 	constraintTemplate := v1beta1.ConstraintTemplate{
 		TypeMeta: metav1.TypeMeta{
@@ -208,7 +171,7 @@ func getConstraintTemplate(policy regoFile, libraries []regoFile) v1beta1.Constr
 				{
 					Target: "admission.k8s.gatekeeper.sh",
 					Libs:   libs,
-					Rego:   policy.contents,
+					Rego:   policy.Contents,
 				},
 			},
 		},
@@ -217,8 +180,8 @@ func getConstraintTemplate(policy regoFile, libraries []regoFile) v1beta1.Constr
 	return constraintTemplate
 }
 
-func getConstraint(policy regoFile) (unstructured.Unstructured, error) {
-	kind := getKindFromPath(policy.filePath)
+func getConstraint(policy rego.RegoFile) (unstructured.Unstructured, error) {
+	kind := getKindFromPath(policy.FilePath)
 	constraint := unstructured.Unstructured{}
 	constraint.SetName(strings.ToLower(kind))
 	constraint.SetGroupVersionKind(schema.GroupVersionKind{Group: "constraints.gatekeeper.sh", Version: "v1beta1", Kind: kind})
@@ -230,7 +193,7 @@ func getConstraint(policy regoFile) (unstructured.Unstructured, error) {
 		}
 	}
 
-	policyCommentBlocks, err := getPolicyCommentBlocks(policy.contents)
+	policyCommentBlocks, err := getPolicyCommentBlocks(policy.Contents)
 	if err != nil {
 		return unstructured.Unstructured{}, fmt.Errorf("get policy comment blocks: %w", err)
 	}
@@ -304,43 +267,6 @@ func getRegoFilePaths(path string) ([]string, error) {
 	}
 
 	return regoFilePaths, nil
-}
-
-func loadPolicyFiles(policyContents map[string]string) ([]regoFile, error) {
-	var policyFiles []regoFile
-	for path, contents := range policyContents {
-		module, err := ast.ParseModule(path, contents)
-		if err != nil {
-			return nil, fmt.Errorf("parse module: %w", err)
-		}
-
-		if !moduleHasViolationRule(module) {
-			continue
-		}
-
-		policyFile, err := newRegoFile(path, contents)
-		if err != nil {
-			return nil, fmt.Errorf("new rego file: %w", err)
-		}
-
-		policyFiles = append(policyFiles, policyFile)
-	}
-
-	return policyFiles, nil
-}
-
-func loadLibraryFiles(libraryContents map[string]string) ([]regoFile, error) {
-	var libraryFiles []regoFile
-	for path, contents := range libraryContents {
-		libraryFile, err := newRegoFile(path, contents)
-		if err != nil {
-			return nil, fmt.Errorf("new rego file: %w", err)
-		}
-
-		libraryFiles = append(libraryFiles, libraryFile)
-	}
-
-	return libraryFiles, nil
 }
 
 func readFilesContents(filePaths []string) (map[string]string, error) {
