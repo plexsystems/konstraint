@@ -33,7 +33,7 @@ func TestGetModulesRulesActions(t *testing.T) {
 	}
 }
 
-func TestLoadPolies(t *testing.T) {
+func TestLoadPolicies(t *testing.T) {
 	policyContents := make(map[string]string)
 	policyContents["missingViolation.rego"] = `package test
 default a = true`
@@ -43,6 +43,29 @@ violation[msg] {
 }`
 
 	policies, err := LoadPolicies(policyContents)
+	if err != nil {
+		t.Fatal("load policy files:", err)
+	}
+
+	if len(policies) != 1 {
+		t.Error("incorrect number of policies loaded")
+	}
+}
+
+func TestLoadPoliciesWithAction(t *testing.T) {
+	policyContents := make(map[string]string)
+	policyContents["missingViolation.rego"] = `package test
+default a = true`
+	policyContents["withViolation.rego"] = `package test
+violation[msg] {
+	msg = "test"
+}`
+	policyContents["withWarn.rego"] = `package test
+warn[msg] {
+	msg = "test"
+}`
+
+	policies, err := LoadPoliciesWithAction(policyContents, "warn")
 	if err != nil {
 		t.Fatal("load policy files:", err)
 	}
