@@ -98,17 +98,6 @@ rule[msg] { msg = true }`
 	}
 }
 
-func TestGetKindFromPath(t *testing.T) {
-	path := "/path/to/rego/container-resource-limits/something.rego"
-
-	expected := "ContainerResourceLimits"
-	actual := getKindFromPath(path)
-
-	if actual != expected {
-		t.Errorf("expected Kind of %v, but got %v", expected, actual)
-	}
-}
-
 // Helpers to extract the collection of
 // apiGroup and kind matchers in a Constraint
 type kindMatcher struct {
