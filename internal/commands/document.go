@@ -79,8 +79,8 @@ func getPolicyDocumentation(path string) (string, error) {
 	}
 
 	policyDocument := "# Policies\n\n"
-	policyDocument += "|Policy|Action|API Groups|Kinds|Description|\n"
-	policyDocument += "|---|---|---|---|---|\n"
+	policyDocument += "|API Groups|Kinds|Description|\n"
+	policyDocument += "|---|---|---|\n"
 
 	for _, policyCommentBlock := range allPolicyCommentBlocks {
 		apiGroups := strings.Join(policyCommentBlock.APIGroups, ", ")
