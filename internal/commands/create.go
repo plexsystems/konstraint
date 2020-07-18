@@ -98,8 +98,8 @@ func runCreateCommand(path string) error {
 		if outputFlag == "" {
 			outputDir = policyDir
 		} else {
-			templateFileName = fmt.Sprintf("template_%s.yaml", getKindFromPath(policy.FilePath))
-			constraintFileName = fmt.Sprintf("constraint_%s.yaml", getKindFromPath(policy.FilePath))
+			templateFileName = fmt.Sprintf("template_%s.yaml", policy.Kind())
+			constraintFileName = fmt.Sprintf("constraint_%s.yaml", policy.Kind())
 		}
 
 		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
@@ -149,7 +149,7 @@ func getConstraintTemplate(policy rego.File, libraries []rego.File) v1beta1.Cons
 		}
 	}
 
-	kind := getKindFromPath(policy.FilePath)
+	kind := policy.Kind()
 
 	constraintTemplate := v1beta1.ConstraintTemplate{
 		TypeMeta: metav1.TypeMeta{
@@ -181,7 +181,7 @@ func getConstraintTemplate(policy rego.File, libraries []rego.File) v1beta1.Cons
 }
 
 func getConstraint(policy rego.File) (unstructured.Unstructured, error) {
-	kind := getKindFromPath(policy.FilePath)
+	kind := policy.Kind()
 	constraint := unstructured.Unstructured{}
 	constraint.SetName(strings.ToLower(kind))
 	constraint.SetGroupVersionKind(schema.GroupVersionKind{Group: "constraints.gatekeeper.sh", Version: "v1beta1", Kind: kind})
@@ -281,13 +281,4 @@ func readFilesContents(filePaths []string) (map[string]string, error) {
 	}
 
 	return filesContents, nil
-}
-
-func getKindFromPath(path string) string {
-	kind := filepath.Base(filepath.Dir(path))
-	kind = strings.ReplaceAll(kind, "-", " ")
-	kind = strings.Title(kind)
-	kind = strings.ReplaceAll(kind, " ", "")
-
-	return kind
 }
