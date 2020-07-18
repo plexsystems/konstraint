@@ -1,7 +1,7 @@
 package rego
 
-// RegoFile is a parsed Rego file
-type RegoFile struct {
+// File is a parsed Rego file
+type File struct {
 	FilePath       string
 	PackageName    string
 	ImportPackages []string

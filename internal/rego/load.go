@@ -8,7 +8,7 @@ import (
 )
 
 // LoadPoliciesWithAction loads all policies from rego with rules with a given action name
-func LoadPoliciesWithAction(filesContents map[string]string, action string) ([]RegoFile, error) {
+func LoadPoliciesWithAction(filesContents map[string]string, action string) ([]File, error) {
 	regoFiles, err := loadRegoFiles(filesContents)
 	if err != nil {
 		return nil, fmt.Errorf("load rego files: %w", err)
@@ -19,7 +19,7 @@ func LoadPoliciesWithAction(filesContents map[string]string, action string) ([]R
 }
 
 // LoadPolicies loads all policies from rego with rules
-func LoadPolicies(filesContents map[string]string) ([]RegoFile, error) {
+func LoadPolicies(filesContents map[string]string) ([]File, error) {
 	regoFiles, err := loadRegoFiles(filesContents)
 	if err != nil {
 		return nil, fmt.Errorf("load rego files: %w", err)
@@ -30,7 +30,7 @@ func LoadPolicies(filesContents map[string]string) ([]RegoFile, error) {
 }
 
 // LoadLibraries loads all libraries from rego
-func LoadLibraries(filesContents map[string]string) ([]RegoFile, error) {
+func LoadLibraries(filesContents map[string]string) ([]File, error) {
 	regoFiles, err := loadRegoFiles(filesContents)
 	if err != nil {
 		return nil, fmt.Errorf("load rego files: %w", err)
@@ -39,8 +39,8 @@ func LoadLibraries(filesContents map[string]string) ([]RegoFile, error) {
 	return regoFiles, nil
 }
 
-func getPoliciesWithAction(regoFiles []RegoFile, action string) []RegoFile {
-	var matchingPolicies []RegoFile
+func getPoliciesWithAction(regoFiles []File, action string) []File {
+	var matchingPolicies []File
 	for _, regoFile := range regoFiles {
 		if action == "" && len(regoFile.RulesActions) > 0 {
 			matchingPolicies = append(matchingPolicies, regoFile)
@@ -57,8 +57,8 @@ func getPoliciesWithAction(regoFiles []RegoFile, action string) []RegoFile {
 	return matchingPolicies
 }
 
-func loadRegoFiles(filesContents map[string]string) ([]RegoFile, error) {
-	var regoFiles []RegoFile
+func loadRegoFiles(filesContents map[string]string) ([]File, error) {
+	var regoFiles []File
 	for path, contents := range filesContents {
 		regoFile, err := newRegoFile(path, contents)
 		if err != nil {
@@ -71,10 +71,10 @@ func loadRegoFiles(filesContents map[string]string) ([]RegoFile, error) {
 	return regoFiles, nil
 }
 
-func newRegoFile(filePath string, contents string) (RegoFile, error) {
+func newRegoFile(filePath string, contents string) (File, error) {
 	module, err := ast.ParseModule(filePath, contents)
 	if err != nil {
-		return RegoFile{}, fmt.Errorf("parse module: %w", err)
+		return File{}, fmt.Errorf("parse module: %w", err)
 	}
 
 	var importPackages []string
@@ -82,7 +82,7 @@ func newRegoFile(filePath string, contents string) (RegoFile, error) {
 		importPackages = append(importPackages, module.Imports[i].Path.String())
 	}
 
-	RegoFile := RegoFile{
+	File := File{
 		FilePath:       filePath,
 		PackageName:    module.Package.Path.String(),
 		ImportPackages: importPackages,
@@ -90,7 +90,7 @@ func newRegoFile(filePath string, contents string) (RegoFile, error) {
 		RulesActions:   getModuleRulesActions(module.Rules),
 	}
 
-	return RegoFile, nil
+	return File, nil
 }
 
 func getModuleRulesActions(rules []*ast.Rule) []string {

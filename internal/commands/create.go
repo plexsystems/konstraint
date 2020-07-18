@@ -139,7 +139,7 @@ func runCreateCommand(path string) error {
 	return nil
 }
 
-func getConstraintTemplate(policy rego.RegoFile, libraries []rego.RegoFile) v1beta1.ConstraintTemplate {
+func getConstraintTemplate(policy rego.File, libraries []rego.File) v1beta1.ConstraintTemplate {
 	var libs []string
 	for _, importPackage := range policy.ImportPackages {
 		for _, library := range libraries {
@@ -180,7 +180,7 @@ func getConstraintTemplate(policy rego.RegoFile, libraries []rego.RegoFile) v1be
 	return constraintTemplate
 }
 
-func getConstraint(policy rego.RegoFile) (unstructured.Unstructured, error) {
+func getConstraint(policy rego.File) (unstructured.Unstructured, error) {
 	kind := getKindFromPath(policy.FilePath)
 	constraint := unstructured.Unstructured{}
 	constraint.SetName(strings.ToLower(kind))
