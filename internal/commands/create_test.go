@@ -13,12 +13,12 @@ func TestGetConstraint_NoKinds_ReturnsEmptyMatcher(t *testing.T) {
 # Description
 rule[msg] { msg = true }`
 
-	parsedPolicy, err := rego.LoadPolicies(makeContentsMap([]string{policy}))
+	parsedPolicy, err := rego.NewRegoFile("test.rego", policy)
 	if err != nil {
 		t.Fatal("load policy rego file:", err)
 	}
 
-	actual, err := getConstraint(parsedPolicy[0])
+	actual, err := getConstraint(parsedPolicy)
 	if err != nil {
 		t.Fatal("get constraint:", err)
 	}
@@ -34,12 +34,12 @@ func TestGetConstraint_KindsInComment_ReturnsKinds(t *testing.T) {
 # @Kinds core/Pod apps/Deployment
 rule[msg] { msg = true }`
 
-	parsedPolicy, err := rego.LoadPolicies(makeContentsMap([]string{policy}))
+	parsedPolicy, err := rego.NewRegoFile("test.rego", policy)
 	if err != nil {
 		t.Fatal("load policy rego file:", err)
 	}
 
-	actual, err := getConstraint(parsedPolicy[0])
+	actual, err := getConstraint(parsedPolicy)
 	if err != nil {
 		t.Fatal("get constraint:", err)
 	}
@@ -76,14 +76,24 @@ rule[msg] { msg = true }`
 
 	libraryRegos := []string{`package lib.foo`, `package lib.bar`}
 
-	policyFiles, err := rego.LoadPolicies(makeContentsMap([]string{policyImportsFoo}))
+	policyFile, err := rego.NewRegoFile("/foo/test-kind/src.rego", policyImportsFoo)
 	if err != nil {
 		t.Fatal("new rego file:", err)
 	}
 
-	libraries, err := rego.LoadLibraries(makeContentsMap(libraryRegos))
+	var libraries []rego.File
+	for key, library := range libraryRegos {
+		libraryPath := fmt.Sprintf("/foo/lib/library-%v.rego", key)
 
-	actual := getConstraintTemplate(policyFiles[0], libraries)
+		libraryFile, err := rego.NewRegoFile(libraryPath, library)
+		if err != nil {
+			t.Fatal("new rego file:", err)
+		}
+
+		libraries = append(libraries, libraryFile)
+	}
+
+	actual := getConstraintTemplate(policyFile, libraries)
 	if err != nil {
 		t.Fatal("get constraint:", err)
 	}
@@ -95,6 +105,17 @@ rule[msg] { msg = true }`
 	actualLibraryCount := len(actual.Spec.Targets[0].Libs)
 	if actualLibraryCount != 1 {
 		t.Errorf("expected 1 library to be added, but found %v", actualLibraryCount)
+	}
+}
+
+func TestGetKindFromPath(t *testing.T) {
+	path := "/path/to/rego/container-resource-limits/something.rego"
+
+	expected := "ContainerResourceLimits"
+	actual := getKindFromPath(path)
+
+	if actual != expected {
+		t.Errorf("expected Kind of %v, but got %v", expected, actual)
 	}
 }
 
@@ -139,13 +160,4 @@ func getConstraintKindMatchers(constraint unstructured.Unstructured) ([]kindMatc
 	}
 
 	return kindMatchers, nil
-}
-
-func makeContentsMap(contents []string) map[string]string {
-	contentsMap := make(map[string]string)
-	for i, content := range contents {
-		key := fmt.Sprintf("test-%d.rego", i)
-		contentsMap[key] = content
-	}
-	return contentsMap
 }

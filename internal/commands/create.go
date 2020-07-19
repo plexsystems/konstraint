@@ -65,20 +65,12 @@ func runCreateCommand(path string) error {
 		}
 	}
 
-	policyContents, err := readFilesContents(policyFilePaths)
-	if err != nil {
-		return fmt.Errorf("read policy contents: %w", err)
-	}
-	policies, err := rego.LoadPoliciesWithAction(policyContents, "violation")
+	policies, err := rego.LoadPoliciesWithAction(policyFilePaths, "violation")
 	if err != nil {
 		return fmt.Errorf("load policies: %w", err)
 	}
 
-	libraryContents, err := readFilesContents(libraryFilePaths)
-	if err != nil {
-		return fmt.Errorf("read library contents: %w", err)
-	}
-	libraries, err := rego.LoadLibraries(libraryContents)
+	libraries, err := rego.LoadLibraries(libraryFilePaths)
 	if err != nil {
 		return fmt.Errorf("load libraries: %w", err)
 	}
@@ -98,8 +90,8 @@ func runCreateCommand(path string) error {
 		if outputFlag == "" {
 			outputDir = policyDir
 		} else {
-			templateFileName = fmt.Sprintf("template_%s.yaml", policy.Kind())
-			constraintFileName = fmt.Sprintf("constraint_%s.yaml", policy.Kind())
+			templateFileName = fmt.Sprintf("template_%s.yaml", getKindFromPath(policy.FilePath))
+			constraintFileName = fmt.Sprintf("constraint_%s.yaml", getKindFromPath(policy.FilePath))
 		}
 
 		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
@@ -149,7 +141,7 @@ func getConstraintTemplate(policy rego.File, libraries []rego.File) v1beta1.Cons
 		}
 	}
 
-	kind := policy.Kind()
+	kind := getKindFromPath(policy.FilePath)
 
 	constraintTemplate := v1beta1.ConstraintTemplate{
 		TypeMeta: metav1.TypeMeta{
@@ -181,7 +173,7 @@ func getConstraintTemplate(policy rego.File, libraries []rego.File) v1beta1.Cons
 }
 
 func getConstraint(policy rego.File) (unstructured.Unstructured, error) {
-	kind := policy.Kind()
+	kind := getKindFromPath(policy.FilePath)
 	constraint := unstructured.Unstructured{}
 	constraint.SetName(strings.ToLower(kind))
 	constraint.SetGroupVersionKind(schema.GroupVersionKind{Group: "constraints.gatekeeper.sh", Version: "v1beta1", Kind: kind})
@@ -269,16 +261,11 @@ func getRegoFilePaths(path string) ([]string, error) {
 	return regoFilePaths, nil
 }
 
-func readFilesContents(filePaths []string) (map[string]string, error) {
-	filesContents := make(map[string]string)
-	for _, filePath := range filePaths {
-		data, err := ioutil.ReadFile(filePath)
-		if err != nil {
-			return nil, fmt.Errorf("read file: %w", err)
-		}
+func getKindFromPath(path string) string {
+	kind := filepath.Base(filepath.Dir(path))
+	kind = strings.ReplaceAll(kind, "-", " ")
+	kind = strings.Title(kind)
+	kind = strings.ReplaceAll(kind, " ", "")
 
-		filesContents[filePath] = string(data)
-	}
-
-	return filesContents, nil
+	return kind
 }

@@ -18,7 +18,7 @@ func TestGetModulesRulesActions(t *testing.T) {
 	}
 
 	for _, test := range rulesActionsTests {
-		regoFile, err := newRegoFile("test.rego", test.policy)
+		regoFile, err := NewRegoFile("test.rego", test.policy)
 		if err != nil {
 			t.Fatal("newRegoFile")
 		}
@@ -33,63 +33,52 @@ func TestGetModulesRulesActions(t *testing.T) {
 	}
 }
 
-func TestLoadPolicies(t *testing.T) {
-	policyContents := make(map[string]string)
-	policyContents["missingViolation.rego"] = `package test
-default a = true`
-	policyContents["withViolation.rego"] = `package test
-violation[msg] {
-	msg = "test"
-}`
-
-	policies, err := LoadPolicies(policyContents)
-	if err != nil {
-		t.Fatal("load policy files:", err)
+func TestGetPolicies(t *testing.T) {
+	regoFiles := []File{
+		{
+			FilePath:     "missingViolation.rego",
+			Contents:     "package test\ndefault a = true",
+			RulesActions: nil,
+		},
+		{
+			FilePath:     "withViolation.rego",
+			Contents:     "package test\nviolation[msg] { msg = true }",
+			RulesActions: []string{"violation"},
+		},
+		{
+			FilePath:     "withWarn.rego",
+			Contents:     "package test\nwarn[msg] { msg = true }",
+			RulesActions: []string{"warn"},
+		},
 	}
 
-	if len(policies) != 1 {
-		t.Error("incorrect number of policies loaded")
-	}
-}
-
-func TestLoadPoliciesWithAction(t *testing.T) {
-	policyContents := make(map[string]string)
-	policyContents["missingViolation.rego"] = `package test
-default a = true`
-	policyContents["withViolation.rego"] = `package test
-violation[msg] {
-	msg = "test"
-}`
-	policyContents["withWarn.rego"] = `package test
-warn[msg] {
-	msg = "test"
-}`
-
-	policies, err := LoadPoliciesWithAction(policyContents, "warn")
-	if err != nil {
-		t.Fatal("load policy files:", err)
-	}
-
-	if len(policies) != 1 {
-		t.Error("incorrect number of policies loaded")
-	}
-}
-
-func TestLoadLibraries(t *testing.T) {
-	libraryContents := make(map[string]string)
-	libraryContents["missingViolation.rego"] = `package test
-default a = true`
-	libraryContents["withViolation.rego"] = `package test
-violation[msg] {
-	msg = "test"
-}`
-
-	policies, err := LoadLibraries(libraryContents)
-	if err != nil {
-		t.Fatal("load library files:", err)
-	}
-
+	policies := getPolicies(regoFiles)
 	if len(policies) != 2 {
-		t.Error("incorrect number of libraries loaded")
+		t.Error("incorrect number of policies loaded")
+	}
+}
+
+func TestGetPoliciesWithAction(t *testing.T) {
+	regoFiles := []File{
+		{
+			FilePath:     "missingViolation.rego",
+			Contents:     "package test\ndefault a = true",
+			RulesActions: nil,
+		},
+		{
+			FilePath:     "withViolation.rego",
+			Contents:     "package test\nviolation[msg] { msg = true }",
+			RulesActions: []string{"violation"},
+		},
+		{
+			FilePath:     "withWarn.rego",
+			Contents:     "package test\nwarn[msg] { msg = true }",
+			RulesActions: []string{"warn"},
+		},
+	}
+
+	matchingPolicies := getPoliciesWithAction(regoFiles, "warn")
+	if len(matchingPolicies) != 1 {
+		t.Error("incorrect number of policies loaded")
 	}
 }
