@@ -15,7 +15,7 @@ rule[msg] { msg = true }`
 
 	parsedPolicy, err := rego.NewRegoFile("test.rego", policy)
 	if err != nil {
-		t.Fatal("load policy rego file:", err)
+		t.Fatal("new rego file:", err)
 	}
 
 	actual, err := getConstraint(parsedPolicy)
@@ -34,12 +34,12 @@ func TestGetConstraint_KindsInComment_ReturnsKinds(t *testing.T) {
 # @Kinds core/Pod apps/Deployment
 rule[msg] { msg = true }`
 
-	parsedPolicy, err := rego.NewRegoFile("test.rego", policy)
+	rego, err := rego.NewRegoFile("test.rego", policy)
 	if err != nil {
 		t.Fatal("load policy rego file:", err)
 	}
 
-	actual, err := getConstraint(parsedPolicy)
+	actual, err := getConstraint(rego)
 	if err != nil {
 		t.Fatal("get constraint:", err)
 	}
