@@ -5,6 +5,26 @@ import (
 	"testing"
 )
 
+var (
+	testRegoFiles = []File{
+		{
+			FilePath:     "missingViolation.rego",
+			Contents:     "package test\ndefault a = true",
+			RulesActions: nil,
+		},
+		{
+			FilePath:     "withViolation.rego",
+			Contents:     "package test\nviolation[msg] { msg = true }",
+			RulesActions: []string{"violation"},
+		},
+		{
+			FilePath:     "withWarn.rego",
+			Contents:     "package test\nwarn[msg] { msg = true }",
+			RulesActions: []string{"warn"},
+		},
+	}
+)
+
 func TestGetModulesRulesActions(t *testing.T) {
 	var rulesActionsTests = []struct {
 		policy      string
@@ -34,50 +54,14 @@ func TestGetModulesRulesActions(t *testing.T) {
 }
 
 func TestGetPolicies(t *testing.T) {
-	regoFiles := []File{
-		{
-			FilePath:     "missingViolation.rego",
-			Contents:     "package test\ndefault a = true",
-			RulesActions: nil,
-		},
-		{
-			FilePath:     "withViolation.rego",
-			Contents:     "package test\nviolation[msg] { msg = true }",
-			RulesActions: []string{"violation"},
-		},
-		{
-			FilePath:     "withWarn.rego",
-			Contents:     "package test\nwarn[msg] { msg = true }",
-			RulesActions: []string{"warn"},
-		},
-	}
-
-	policies := getPolicies(regoFiles)
+	policies := getPolicies(testRegoFiles)
 	if len(policies) != 2 {
 		t.Error("incorrect number of policies loaded")
 	}
 }
 
 func TestGetPoliciesWithAction(t *testing.T) {
-	regoFiles := []File{
-		{
-			FilePath:     "missingViolation.rego",
-			Contents:     "package test\ndefault a = true",
-			RulesActions: nil,
-		},
-		{
-			FilePath:     "withViolation.rego",
-			Contents:     "package test\nviolation[msg] { msg = true }",
-			RulesActions: []string{"violation"},
-		},
-		{
-			FilePath:     "withWarn.rego",
-			Contents:     "package test\nwarn[msg] { msg = true }",
-			RulesActions: []string{"warn"},
-		},
-	}
-
-	matchingPolicies := getPoliciesWithAction(regoFiles, "warn")
+	matchingPolicies := getPoliciesWithAction(testRegoFiles, "warn")
 	if len(matchingPolicies) != 1 {
 		t.Error("incorrect number of policies loaded")
 	}

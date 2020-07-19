@@ -40,6 +40,30 @@ func LoadLibraries(files []string) ([]File, error) {
 	return regoFiles, nil
 }
 
+// NewRegoFile parses the rego and creates a File
+func NewRegoFile(filePath string, contents string) (File, error) {
+	module, err := ast.ParseModule(filePath, contents)
+	if err != nil {
+		return File{}, fmt.Errorf("parse module: %w", err)
+	}
+
+	var importPackages []string
+	for i := range module.Imports {
+		importPackages = append(importPackages, module.Imports[i].Path.String())
+	}
+
+	file := File{
+		FilePath:       filePath,
+		PackageName:    module.Package.Path.String(),
+		ImportPackages: importPackages,
+		Contents:       contents,
+		RulesActions:   getModuleRulesActions(module),
+		Comments:       getModuleComments(module),
+	}
+
+	return file, nil
+}
+
 func getPoliciesWithAction(regoFiles []File, action string) []File {
 	var matchingPolicies []File
 	allPolicies := getPolicies(regoFiles)
@@ -66,12 +90,12 @@ func getPolicies(regoFiles []File) []File {
 }
 
 func loadRegoFiles(files []string) ([]File, error) {
-	var regoFiles []File
 	filesContents, err := readFilesContents(files)
 	if err != nil {
 		return nil, fmt.Errorf("read files: %w", err)
 	}
 
+	var regoFiles []File
 	for path, contents := range filesContents {
 		regoFile, err := NewRegoFile(path, contents)
 		if err != nil {
@@ -84,33 +108,9 @@ func loadRegoFiles(files []string) ([]File, error) {
 	return regoFiles, nil
 }
 
-// NewRegoFile parses the rego and creates a File
-func NewRegoFile(filePath string, contents string) (File, error) {
-	module, err := ast.ParseModule(filePath, contents)
-	if err != nil {
-		return File{}, fmt.Errorf("parse module: %w", err)
-	}
-
-	var importPackages []string
-	for i := range module.Imports {
-		importPackages = append(importPackages, module.Imports[i].Path.String())
-	}
-
-	File := File{
-		FilePath:       filePath,
-		PackageName:    module.Package.Path.String(),
-		ImportPackages: importPackages,
-		Contents:       contents,
-		RulesActions:   getModuleRulesActions(module),
-		Comments:       getModuleComments(module),
-	}
-
-	return File, nil
-}
-
 func getModuleRulesActions(module *ast.Module) []string {
 	var rulesActions []string
-	re := regexp.MustCompile("^\\s*([a-z]+)\\[msg")
+	re := regexp.MustCompile("^\\s*([a-z]+)\\s*\\[\\s*msg")
 	for _, rule := range module.Rules {
 		match := re.FindStringSubmatch(rule.Head.String())
 		if len(match) == 0 {
