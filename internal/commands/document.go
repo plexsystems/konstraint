@@ -160,9 +160,9 @@ func getRelativePolicyPath(baseDir string, policyPath string) (string, error) {
 }
 
 func getNameFromPath(path string) string {
-	kind := filepath.Base(filepath.Dir(path))
-	kind = strings.ReplaceAll(kind, "-", " ")
-	kind = strings.Title(kind)
+	name := filepath.Base(filepath.Dir(path))
+	name = strings.ReplaceAll(name, "-", " ")
+	name = strings.Title(name)
 
-	return kind
+	return name
 }
