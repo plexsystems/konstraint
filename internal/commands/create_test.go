@@ -4,19 +4,21 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/plexsystems/konstraint/internal/rego"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func TestGetConstraint_NoKinds_ReturnsEmptyMatcher(t *testing.T) {
 	policy := `package test
-# Description`
+# Description
+rule[msg] { msg = true }`
 
-	rego, err := newRegoFile("/foo/test-kind", policy)
+	parsedPolicy, err := rego.NewRegoFile("test.rego", policy)
 	if err != nil {
 		t.Fatal("new rego file:", err)
 	}
 
-	actual, err := getConstraint(rego)
+	actual, err := getConstraint(parsedPolicy)
 	if err != nil {
 		t.Fatal("get constraint:", err)
 	}
@@ -29,11 +31,12 @@ func TestGetConstraint_NoKinds_ReturnsEmptyMatcher(t *testing.T) {
 func TestGetConstraint_KindsInComment_ReturnsKinds(t *testing.T) {
 	policy := `package test
 # Description
-# @Kinds core/Pod apps/Deployment`
+# @Kinds core/Pod apps/Deployment
+rule[msg] { msg = true }`
 
-	rego, err := newRegoFile("/foo/test-kind", policy)
+	rego, err := rego.NewRegoFile("test.rego", policy)
 	if err != nil {
-		t.Fatal("new rego file:", err)
+		t.Fatal("load policy rego file:", err)
 	}
 
 	actual, err := getConstraint(rego)
@@ -68,20 +71,21 @@ func TestGetConstraint_KindsInComment_ReturnsKinds(t *testing.T) {
 func TestGetConstraintTemplate_CorrectLibrariesImported(t *testing.T) {
 	policyImportsFoo := `package test
 
-import data.lib.foo`
+import data.lib.foo
+rule[msg] { msg = true }`
 
 	libraryRegos := []string{`package lib.foo`, `package lib.bar`}
 
-	policyFile, err := newRegoFile("/foo/test-kind/src.rego", policyImportsFoo)
+	policyFile, err := rego.NewRegoFile("/foo/test-kind/src.rego", policyImportsFoo)
 	if err != nil {
 		t.Fatal("new rego file:", err)
 	}
 
-	var libraries []regoFile
+	var libraries []rego.File
 	for key, library := range libraryRegos {
 		libraryPath := fmt.Sprintf("/foo/lib/library-%v.rego", key)
 
-		libraryFile, err := newRegoFile(libraryPath, library)
+		libraryFile, err := rego.NewRegoFile(libraryPath, library)
 		if err != nil {
 			t.Fatal("new rego file:", err)
 		}
@@ -101,44 +105,6 @@ import data.lib.foo`
 	actualLibraryCount := len(actual.Spec.Targets[0].Libs)
 	if actualLibraryCount != 1 {
 		t.Errorf("expected 1 library to be added, but found %v", actualLibraryCount)
-	}
-}
-
-func TestLoadPolicyFiles(t *testing.T) {
-	policyContents := make(map[string]string)
-	policyContents["missingViolation.rego"] = `package test
-default a = true`
-	policyContents["withViolation.rego"] = `package test
-violation[msg] {
-	msg = "test"
-}`
-
-	policies, err := loadPolicyFiles(policyContents)
-	if err != nil {
-		t.Fatal("load policy files:", err)
-	}
-
-	if len(policies) != 1 {
-		t.Error("incorrect number of policies loaded")
-	}
-}
-
-func TestLoadLibraryFiles(t *testing.T) {
-	libraryContents := make(map[string]string)
-	libraryContents["missingViolation.rego"] = `package test
-default a = true`
-	libraryContents["withViolation.rego"] = `package test
-violation[msg] {
-	msg = "test"
-}`
-
-	policies, err := loadLibraryFiles(libraryContents)
-	if err != nil {
-		t.Fatal("load library files:", err)
-	}
-
-	if len(policies) != 2 {
-		t.Error("incorrect number of libraries loaded")
 	}
 }
 
