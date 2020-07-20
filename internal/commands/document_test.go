@@ -1,15 +1,24 @@
 package commands
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/plexsystems/konstraint/internal/rego"
+)
 
 func TestGetPolicyCommentBlocks_NoKinds(t *testing.T) {
-	policy := `
+	policy := `package test
 # Description
 violation[msg] {
 	false
 }`
 
-	actual, err := getPolicyCommentBlocks(policy)
+	regoFile, err := rego.NewRegoFile("test.rego", policy)
+	if err != nil {
+		t.Fatal("new rego file", err)
+	}
+
+	actual, err := getPolicyCommentBlocks(regoFile.Comments)
 	if err != nil {
 		t.Fatal("get policy comment blocks:", err)
 	}
@@ -20,14 +29,19 @@ violation[msg] {
 }
 
 func TestGetPolicyCommentBlocks(t *testing.T) {
-	policy := `
+	policy := `package test
 # First description
 # @Kinds core/Pod apps/Deployment apps/DaemonSet
 violation[msg] {
 	false
 }`
 
-	actual, err := getPolicyCommentBlocks(policy)
+	regoFile, err := rego.NewRegoFile("test.rego", policy)
+	if err != nil {
+		t.Fatal("new rego file", err)
+	}
+
+	actual, err := getPolicyCommentBlocks(regoFile.Comments)
 	if err != nil {
 		t.Fatal("get policy comment blocks:", err)
 	}

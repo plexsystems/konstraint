@@ -185,7 +185,7 @@ func getConstraint(policy rego.File) (unstructured.Unstructured, error) {
 		}
 	}
 
-	policyCommentBlocks, err := getPolicyCommentBlocks(policy.Contents)
+	policyCommentBlocks, err := getPolicyCommentBlocks(policy.Comments)
 	if err != nil {
 		return unstructured.Unstructured{}, fmt.Errorf("get policy comment blocks: %w", err)
 	}
