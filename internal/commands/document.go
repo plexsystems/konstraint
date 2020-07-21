@@ -38,7 +38,7 @@ func newDocCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringP("output", "o", "policies.md", "output location (including filename) for the policy documentation")
+	cmd.Flags().StringP("output", "o", "policies.md", "Output location (including filename) for the policy documentation")
 
 	return &cmd
 }
@@ -49,7 +49,7 @@ func runDocCommand(path string) error {
 		return fmt.Errorf("get policy documentation: %w", err)
 	}
 
-	err = ioutil.WriteFile(filepath.Join(path, viper.GetString("output")), []byte(policyDocumentation), os.ModePerm)
+	err = ioutil.WriteFile(viper.GetString("output"), []byte(policyDocumentation), os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("writing documentation: %w", err)
 	}
