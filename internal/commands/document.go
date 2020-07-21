@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/open-policy-agent/opa/ast"
+	"github.com/plexsystems/konstraint/internal/rego"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -63,52 +63,57 @@ func getPolicyDocumentation(path string) (string, error) {
 		return "", fmt.Errorf("get rego files: %w", err)
 	}
 
-	var allPolicyCommentBlocks []PolicyCommentBlock
-	for _, regoFilePath := range regoFilePaths {
-		policyBytes, err := ioutil.ReadFile(regoFilePath)
-		if err != nil {
-			return "", fmt.Errorf("reading file: %w", err)
-		}
+	policies, err := rego.LoadPolicies(regoFilePaths)
+	if err != nil {
+		return "", fmt.Errorf("load policies: %w", err)
+	}
 
-		policyCommentBlocks, err := getPolicyCommentBlocks(string(policyBytes))
+	policyDocument := "# Policies\n\n"
+	policyDocument += "|Name|Rule Types|API Groups|Kinds|Description|\n"
+	policyDocument += "|---|---|---|---|---|\n"
+
+	for _, policy := range policies {
+		var policyCommentBlocks []PolicyCommentBlock
+		policyCommentBlocks, err := getPolicyCommentBlocks(policy.Comments)
 		if err != nil {
 			return "", fmt.Errorf("get policy comment blocks: %w", err)
 		}
 
-		allPolicyCommentBlocks = append(allPolicyCommentBlocks, policyCommentBlocks...)
-	}
+		relativePolicyPath, err := getRelativePolicyPath(path, policy.FilePath)
+		if err != nil {
+			return "", fmt.Errorf("get relative policy path: %w", err)
+		}
 
-	policyDocument := "# Policies\n\n"
-	policyDocument += "|API Groups|Kinds|Description|\n"
-	policyDocument += "|---|---|---|\n"
+		ruleTypes := strings.Join(policy.RulesActions, ", ")
 
-	for _, policyCommentBlock := range allPolicyCommentBlocks {
-		apiGroups := strings.Join(policyCommentBlock.APIGroups, ", ")
-		kinds := strings.Join(policyCommentBlock.Kinds, ", ")
+		for _, policyCommentBlock := range policyCommentBlocks {
+			apiGroups := strings.Join(policyCommentBlock.APIGroups, ", ")
+			kinds := strings.Join(policyCommentBlock.Kinds, ", ")
 
-		policyDocument += fmt.Sprintf("|%s|%s|%s|\n", apiGroups, kinds, policyCommentBlock.Description)
+			policyDocument += fmt.Sprintf("|[%s](%s)|%s|%s|%s|%s|\n",
+				getNameFromPath(policy.FilePath),
+				relativePolicyPath,
+				ruleTypes,
+				apiGroups,
+				kinds,
+				policyCommentBlock.Description,
+			)
+		}
 	}
 
 	return policyDocument, nil
 }
 
-func getPolicyCommentBlocks(policy string) ([]PolicyCommentBlock, error) {
-	stringReader := strings.NewReader(policy)
-	_, policyComments, errors := ast.NewParser().WithReader(stringReader).Parse()
-	if len(errors) > 0 {
-		return nil, fmt.Errorf("parsing rego: %w", errors)
-	}
-
+func getPolicyCommentBlocks(comments []string) ([]PolicyCommentBlock, error) {
 	var policyCommentBlocks []PolicyCommentBlock
 	var description string
-	for c := range policyComments {
-		commentText := string(policyComments[c].Text)
-		if !strings.Contains(commentText, "@Kinds") {
-			description = commentText
+	for _, c := range comments {
+		if !strings.Contains(c, "@Kinds") {
+			description = c
 			continue
 		}
 
-		kindGroups := strings.Split(commentText, " ")[2:]
+		kindGroups := strings.Split(c, " ")[2:]
 
 		var apiGroups []string
 		var kinds []string
@@ -142,4 +147,22 @@ func contains(collection []string, item string) bool {
 	}
 
 	return false
+}
+
+func getRelativePolicyPath(baseDir string, policyPath string) (string, error) {
+	fullBaseDir := filepath.Dir(filepath.Join(baseDir, viper.GetString("output")))
+	relPath, err := filepath.Rel(fullBaseDir, policyPath)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Dir(relPath), nil
+}
+
+func getNameFromPath(path string) string {
+	name := filepath.Base(filepath.Dir(path))
+	name = strings.ReplaceAll(name, "-", " ")
+	name = strings.Title(name)
+
+	return name
 }

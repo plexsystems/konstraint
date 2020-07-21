@@ -185,7 +185,7 @@ func getConstraint(policy rego.File) (unstructured.Unstructured, error) {
 		}
 	}
 
-	policyCommentBlocks, err := getPolicyCommentBlocks(policy.Contents)
+	policyCommentBlocks, err := getPolicyCommentBlocks(policy.Comments)
 	if err != nil {
 		return unstructured.Unstructured{}, fmt.Errorf("get policy comment blocks: %w", err)
 	}
@@ -262,10 +262,8 @@ func getRegoFilePaths(path string) ([]string, error) {
 }
 
 func getKindFromPath(path string) string {
-	kind := filepath.Base(filepath.Dir(path))
-	kind = strings.ReplaceAll(kind, "-", " ")
-	kind = strings.Title(kind)
-	kind = strings.ReplaceAll(kind, " ", "")
+	name := getNameFromPath(path)
+	kind := strings.ReplaceAll(name, " ", "")
 
 	return kind
 }
