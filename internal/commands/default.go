@@ -11,9 +11,10 @@ import (
 // NewDefaultCommand creates a new default command
 func NewDefaultCommand() *cobra.Command {
 	cmd := cobra.Command{
-		Use:   path.Base(os.Args[0]),
-		Short: "Konstraint",
-		Long:  "A CLI tool to create and manage Gatekeeper CRDs from Rego",
+		Use:     path.Base(os.Args[0]),
+		Short:   "Konstraint",
+		Long:    "A tool to create and manage Gatekeeper CRDs from Rego",
+		Version: "0.4.2",
 	}
 
 	// ^$ is for match nothing and do not ignore anything
