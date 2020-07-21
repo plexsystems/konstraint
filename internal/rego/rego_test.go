@@ -35,6 +35,7 @@ func TestGetModulesRulesActions(t *testing.T) {
 		{"package test\nviolation[msg] { msg = true }", 1, []string{"violation"}},
 		{"package test\nwarn[msg] { msg = true }", 1, []string{"warn"}},
 		{"package test\nviolation[msg] { msg = true }\nwarn[msg] { msg = true }", 2, []string{"violation", "warn"}},
+		{"package test\nviolation[msg] { msg = true }\nviolation[msg] { msg = true }", 1, []string{"violation"}},
 	}
 
 	for _, test := range rulesActionsTests {
@@ -44,7 +45,7 @@ func TestGetModulesRulesActions(t *testing.T) {
 		}
 
 		if len(regoFile.RulesActions) != test.ruleCount {
-			t.Error("incorrect rule count")
+			t.Error("incorrect rule actions count")
 		}
 
 		if !reflect.DeepEqual(regoFile.RulesActions, test.ruleActions) {
