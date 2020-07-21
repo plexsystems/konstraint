@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"regexp"
+	"strings"
 
 	"github.com/open-policy-agent/opa/ast"
 )
@@ -120,13 +121,18 @@ func loadRegoFiles(files []string) ([]File, error) {
 
 func getModuleRulesActions(module *ast.Module) []string {
 	var rulesActions []string
+	var previouslySeenActions []string
 	re := regexp.MustCompile("^\\s*([a-z]+)\\s*\\[\\s*msg")
 	for _, rule := range module.Rules {
 		match := re.FindStringSubmatch(rule.Head.String())
 		if len(match) == 0 {
 			continue
 		}
+		if contains(previouslySeenActions, match[1]) {
+			continue
+		}
 		rulesActions = append(rulesActions, match[1])
+		previouslySeenActions = append(previouslySeenActions, match[1])
 	}
 	return rulesActions
 }
@@ -151,4 +157,14 @@ func readFilesContents(filePaths []string) (map[string]string, error) {
 	}
 
 	return filesContents, nil
+}
+
+func contains(collection []string, item string) bool {
+	for _, value := range collection {
+		if strings.EqualFold(value, item) {
+			return true
+		}
+	}
+
+	return false
 }
