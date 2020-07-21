@@ -32,6 +32,14 @@ func newCreateCommand() *cobra.Command {
 				return fmt.Errorf("bind lib flag: %w", err)
 			}
 
+			if err := viper.BindPFlag("dryrun", cmd.PersistentFlags().Lookup("dryrun")); err != nil {
+				return fmt.Errorf("bind dryrun flag: %w", err)
+			}
+
+			if err := viper.BindPFlag("output", cmd.PersistentFlags().Lookup("output")); err != nil {
+				return fmt.Errorf("bind ouput flag: %w", err)
+			}
+
 			path := "."
 			if len(args) > 0 {
 				path = args[0]
@@ -42,9 +50,7 @@ func newCreateCommand() *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringP("output", "o", "", "Specify an output directory for the Gatekeeper resources")
-	viper.BindPFlag("output", cmd.PersistentFlags().Lookup("output"))
 	cmd.PersistentFlags().BoolP("dryrun", "d", false, "Sets the enforcement action of the constraints to dryrun")
-	viper.BindPFlag("dryrun", cmd.PersistentFlags().Lookup("dryrun"))
 
 	return &cmd
 }
