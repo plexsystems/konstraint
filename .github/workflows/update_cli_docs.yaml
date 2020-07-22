@@ -3,9 +3,9 @@ on:
   push:
     branches-ignore:
       - main
-    paths:
-    - 'internal/commands/*.go'
-    - '!internal/commands/*_test.go'
+    # paths:
+    # - 'internal/commands/*.go'
+    # - '!internal/commands/*_test.go'
 
 jobs:
   update-docs:
