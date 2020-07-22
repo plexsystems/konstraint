@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// PolicyCommentBlock represent a comment block in a rego file
+// PolicyCommentBlock represents a comment block in a rego file
 type PolicyCommentBlock struct {
 	APIGroups   []string
 	Kinds       []string
@@ -49,20 +49,20 @@ Save the documentation to a specific directory
 }
 
 func runDocCommand(path string) error {
-	policyDocumentation, err := getPolicyDocumentation(path)
+	outputDirectory := filepath.Dir(viper.GetString("output"))
+	policyDocumentation, err := getPolicyDocumentation(path, outputDirectory)
 	if err != nil {
 		return fmt.Errorf("get policy documentation: %w", err)
 	}
 
-	err = ioutil.WriteFile(viper.GetString("output"), []byte(policyDocumentation), os.ModePerm)
-	if err != nil {
+	if err := ioutil.WriteFile(viper.GetString("output"), []byte(policyDocumentation), os.ModePerm); err != nil {
 		return fmt.Errorf("writing documentation: %w", err)
 	}
 
 	return nil
 }
 
-func getPolicyDocumentation(path string) (string, error) {
+func getPolicyDocumentation(path string, outputDirectory string) (string, error) {
 	regoFilePaths, err := getRegoFilePaths(path)
 	if err != nil {
 		return "", fmt.Errorf("get rego files: %w", err)
@@ -78,26 +78,25 @@ func getPolicyDocumentation(path string) (string, error) {
 	policyDocument += "|---|---|---|---|---|\n"
 
 	for _, policy := range policies {
-		var policyCommentBlocks []PolicyCommentBlock
 		policyCommentBlocks, err := getPolicyCommentBlocks(policy.Comments)
 		if err != nil {
 			return "", fmt.Errorf("get policy comment blocks: %w", err)
 		}
 
-		relativePolicyPath, err := getRelativePolicyPath(path, policy.FilePath)
-		if err != nil {
-			return "", fmt.Errorf("get relative policy path: %w", err)
-		}
-
-		ruleTypes := strings.Join(policy.RulesActions, ", ")
-
 		for _, policyCommentBlock := range policyCommentBlocks {
+			relPath, err := filepath.Rel(outputDirectory, policy.FilePath)
+			if err != nil {
+				return "", fmt.Errorf("rel path: %w", err)
+			}
+
+			relDir := filepath.Dir(relPath)
+			ruleTypes := strings.Join(policy.RulesActions, ", ")
 			apiGroups := strings.Join(policyCommentBlock.APIGroups, ", ")
 			kinds := strings.Join(policyCommentBlock.Kinds, ", ")
 
 			policyDocument += fmt.Sprintf("|[%s](%s)|%s|%s|%s|%s|\n",
 				getNameFromPath(policy.FilePath),
-				relativePolicyPath,
+				relDir,
 				ruleTypes,
 				apiGroups,
 				kinds,
@@ -112,13 +111,13 @@ func getPolicyDocumentation(path string) (string, error) {
 func getPolicyCommentBlocks(comments []string) ([]PolicyCommentBlock, error) {
 	var policyCommentBlocks []PolicyCommentBlock
 	var description string
-	for _, c := range comments {
-		if !strings.Contains(c, "@Kinds") {
-			description = c
+	for _, comment := range comments {
+		if !strings.Contains(comment, "@Kinds") {
+			description = comment
 			continue
 		}
 
-		kindGroups := strings.Split(c, " ")[2:]
+		kindGroups := strings.Split(comment, " ")[2:]
 
 		var apiGroups []string
 		var kinds []string
@@ -152,16 +151,6 @@ func contains(collection []string, item string) bool {
 	}
 
 	return false
-}
-
-func getRelativePolicyPath(baseDir string, policyPath string) (string, error) {
-	fullBaseDir := filepath.Dir(filepath.Join(baseDir, viper.GetString("output")))
-	relPath, err := filepath.Rel(fullBaseDir, policyPath)
-	if err != nil {
-		return "", err
-	}
-
-	return filepath.Dir(relPath), nil
 }
 
 func getNameFromPath(path string) string {

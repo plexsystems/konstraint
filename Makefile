@@ -6,6 +6,10 @@ build:
 test:
 	go test -v ./... -count=1
 
+.PHONY: acceptance
+acceptance: build
+	bats acceptance.bats
+
 .PHONY: release
 release:
 	GOOS=darwin GOARCH=amd64 go build -o build/konstraint-darwin-amd64

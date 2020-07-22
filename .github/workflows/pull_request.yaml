@@ -20,10 +20,16 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: unit tests
-        run: go test -v ./...
+        run: make test
 
       - name: build
         run: make build
+
+      - name: install bats
+        run: sudo npm install -g bats
+
+      - name: acceptance tests
+        run: make acceptance
 
   policy-tests:
     name: Policy Tests
