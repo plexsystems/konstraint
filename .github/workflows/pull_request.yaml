@@ -25,6 +25,12 @@ jobs:
       - name: build
         run: go build -o konstraint main.go
 
+      - name: install bats
+        run: sudo npm install -g bats
+
+      - name: acceptance tests
+        run: bats acceptance.bats
+
   policy-tests:
     name: Policy Tests
     runs-on: ubuntu-latest

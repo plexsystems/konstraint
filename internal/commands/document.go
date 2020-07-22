@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// PolicyCommentBlock represent a comment block in a rego file
+// PolicyCommentBlock represents a comment block in a rego file
 type PolicyCommentBlock struct {
 	APIGroups   []string
 	Kinds       []string
@@ -63,7 +63,7 @@ func runDocCommand(path string) error {
 	return nil
 }
 
-func getPolicyDocumentation(path string, outputPath string) (string, error) {
+func getPolicyDocumentation(path string, outputDirectory string) (string, error) {
 	regoFilePaths, err := getRegoFilePaths(path)
 	if err != nil {
 		return "", fmt.Errorf("get rego files: %w", err)
@@ -85,12 +85,12 @@ func getPolicyDocumentation(path string, outputPath string) (string, error) {
 			return "", fmt.Errorf("get policy comment blocks: %w", err)
 		}
 
-		relPath, err := filepath.Rel(outputPath, policy.FilePath)
+		relPath, err := filepath.Rel(outputDirectory, policy.FilePath)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("rel path: %w", err)
 		}
-		relDir := filepath.Dir(relPath)
 
+		relDir := filepath.Dir(relPath)
 		ruleTypes := strings.Join(policy.RulesActions, ", ")
 
 		for _, policyCommentBlock := range policyCommentBlocks {
@@ -114,13 +114,13 @@ func getPolicyDocumentation(path string, outputPath string) (string, error) {
 func getPolicyCommentBlocks(comments []string) ([]PolicyCommentBlock, error) {
 	var policyCommentBlocks []PolicyCommentBlock
 	var description string
-	for _, c := range comments {
-		if !strings.Contains(c, "@Kinds") {
-			description = c
+	for _, comment := range comments {
+		if !strings.Contains(comment, "@Kinds") {
+			description = comment
 			continue
 		}
 
-		kindGroups := strings.Split(c, " ")[2:]
+		kindGroups := strings.Split(comment, " ")[2:]
 
 		var apiGroups []string
 		var kinds []string
