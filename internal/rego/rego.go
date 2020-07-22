@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/open-policy-agent/opa/ast"
@@ -115,6 +116,10 @@ func loadRegoFiles(files []string) ([]File, error) {
 
 		regoFiles = append(regoFiles, regoFile)
 	}
+
+	sort.Slice(regoFiles, func(i, j int) bool {
+		return regoFiles[i].FilePath < regoFiles[j].FilePath
+	})
 
 	return regoFiles, nil
 }
