@@ -48,49 +48,7 @@ GO111MODULE=on go get github.com/plexsystems/konstraint
 
 ## Usage
 
-### Create command
-
-Create `ConstraintTemplates` and Constraints from `Rego` policies:
-
-```shell
-$ konstraint create <dir>
-```
-
-This will generate both _templates_ and _constraints_ for the policies found in the directory (and subdirectories), ignoring test files (`*_test.rego`).
-
-#### Create flags
-
-`--ignore` A parameter that accepts `regex` to ignore files and directories.
-
-_Example: konstraint create --ignore combined-policies/_
-
-`--lib` Set the name of the library folder. Defaults to `lib`.
-
-_Example: konstraint create --lib library_
-
-`--output` / `-o` Specify an output folder for the resources.
-
-_Example: konstraint create -o gatekeeper-resources_
-
-`--dryrun` / `-d` Sets the enforcement action of the constraints to dryrun.
-
-_Example: konstraint create -o gatekeeper-resources --dryrun_
-
-### Doc command
-
-Generate documentation from policies that set `@Kinds` in their comment headers
-
-```shell
-$ konstraint doc <dir>
-```
-
-This will generate a single `policies.md` file that contains a description of all of the policies found as well as the API groups and Kinds that they enforce.
-
-#### Doc flags
-
-`--output` Set the output directory and filename for the policy documentation.
-
-_Example: konstraint doc --output examples/policies.md_
+To create the Gatekeeper resources, use `konstraint create <policy_dir>`. To generate the accompanying documentation, use `konstraint doc <policy_dir>`. Both commands support the `--output` flag to specify where to save the output. For more detailed usage documentation, see the [CLI Documentation](docs/cli/konstraint.md).
 
 ## FAQ
 
