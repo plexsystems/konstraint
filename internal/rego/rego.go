@@ -132,7 +132,7 @@ func loadRegoFiles(files []string) ([]File, error) {
 func getModuleRulesActions(module *ast.Module) ([]string, error) {
 	re, err := regexp.Compile(`^\s*([a-z]+)\s*\[\s*msg`)
 	if err != nil {
-		return nil, fmt.Errorf("parse rule: %w", err)
+		return nil, fmt.Errorf("compile regex: %w", err)
 	}
 
 	var rulesActions []string

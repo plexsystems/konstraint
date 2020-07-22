@@ -7,7 +7,8 @@ test:
 	go test -v ./... -count=1
 
 .PHONY: acceptance
-test:
+acceptance:
+	@go build
 	bats acceptance.bats
 
 .PHONY: release

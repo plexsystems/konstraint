@@ -38,7 +38,7 @@ func newDocCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringP("output", "o", "", "Output location (including filename) for the policy documentation")
+	cmd.Flags().StringP("output", "o", "policies.md", "Output location (including filename) for the policy documentation")
 
 	return &cmd
 }
@@ -50,13 +50,7 @@ func runDocCommand(path string) error {
 		return fmt.Errorf("get policy documentation: %w", err)
 	}
 
-	outputPath := viper.GetString("output")
-	if outputPath == "" {
-		outputPath = "policies.md"
-	}
-
-	err = ioutil.WriteFile(outputPath, []byte(policyDocumentation), os.ModePerm)
-	if err != nil {
+	if err := ioutil.WriteFile(viper.GetString("output"), []byte(policyDocumentation), os.ModePerm); err != nil {
 		return fmt.Errorf("writing documentation: %w", err)
 	}
 
@@ -79,21 +73,19 @@ func getPolicyDocumentation(path string, outputDirectory string) (string, error)
 	policyDocument += "|---|---|---|---|---|\n"
 
 	for _, policy := range policies {
-		var policyCommentBlocks []PolicyCommentBlock
 		policyCommentBlocks, err := getPolicyCommentBlocks(policy.Comments)
 		if err != nil {
 			return "", fmt.Errorf("get policy comment blocks: %w", err)
 		}
 
-		relPath, err := filepath.Rel(outputDirectory, policy.FilePath)
-		if err != nil {
-			return "", fmt.Errorf("rel path: %w", err)
-		}
-
-		relDir := filepath.Dir(relPath)
-		ruleTypes := strings.Join(policy.RulesActions, ", ")
-
 		for _, policyCommentBlock := range policyCommentBlocks {
+			relPath, err := filepath.Rel(outputDirectory, policy.FilePath)
+			if err != nil {
+				return "", fmt.Errorf("rel path: %w", err)
+			}
+
+			relDir := filepath.Dir(relPath)
+			ruleTypes := strings.Join(policy.RulesActions, ", ")
 			apiGroups := strings.Join(policyCommentBlock.APIGroups, ", ")
 			kinds := strings.Join(policyCommentBlock.Kinds, ", ")
 
