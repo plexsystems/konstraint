@@ -1,6 +1,8 @@
 name: Update CLI Docs
 on:
   push:
+    branches-ignore:
+      - main
     paths:
     - 'internal/commands/*.go'
     - '!internal/commands/*_test.go'
