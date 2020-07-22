@@ -48,7 +48,7 @@ GO111MODULE=on go get github.com/plexsystems/konstraint
 
 ## Usage
 
-To create the Gatekeeper resources, use `konstraint create <policy_dir>`. To generate the accompanying documentation, use `konstraint doc <policy_dir>`. Both commands support the `--output` flag to specify where to save the output. For more detailed usage documentation, see the [CLI Documentation](docs/cli/main.md).
+To create the Gatekeeper resources, use `konstraint create <policy_dir>`. To generate the accompanying documentation, use `konstraint doc <policy_dir>`. Both commands support the `--output` flag to specify where to save the output. For more detailed usage documentation, see the [CLI Documentation](docs/cli/konstraint.md).
 
 ## FAQ
 
