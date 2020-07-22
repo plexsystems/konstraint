@@ -23,7 +23,7 @@ jobs:
         run: go test -v ./...
 
       - name: build
-        run: go build -o konstraint main.go
+        run: make build
 
   policy-tests:
     name: Policy Tests
