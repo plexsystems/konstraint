@@ -23,6 +23,11 @@ func newDocCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "doc <dir>",
 		Short: "Generate documentation from Rego policies",
+		Example: `Generate the documentation
+	konstraint doc
+
+Save the documentation to a specific directory
+	konstraint doc --output docs/policies.md`,
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := viper.BindPFlag("output", cmd.Flags().Lookup("output")); err != nil {

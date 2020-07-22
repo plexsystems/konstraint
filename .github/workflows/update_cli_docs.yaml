@@ -1,0 +1,36 @@
+name: Update CLI Docs
+on:
+  push:
+    branches-ignore:
+      - main
+    paths:
+    - 'internal/commands/*.go'
+    - '!internal/commands/*_test.go'
+
+jobs:
+  update-docs:
+    name: Update CLI Docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: setup go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.14.x'
+
+      - name: checkout source
+        uses: actions/checkout@v2
+
+      - name: generate docs
+        run: |
+          go mod download
+          go run .github/gendocs/konstraint.go
+
+      - name: commit changes
+        uses: EndBug/add-and-commit@v4
+        with:
+          author_name: konstraint-bot
+          author_email: konstraint-bot@dev.null
+          message: 'generate updated cli docs'
+          add: 'docs/cli'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
