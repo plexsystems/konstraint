@@ -14,7 +14,7 @@ func NewDefaultCommand() *cobra.Command {
 		Use:     path.Base(os.Args[0]),
 		Short:   "Konstraint",
 		Long:    "A tool to create and manage Gatekeeper CRDs from Rego",
-		Version: "0.4.2",
+		Version: "0.4.3",
 	}
 
 	// ^$ is for match nothing and do not ignore anything
