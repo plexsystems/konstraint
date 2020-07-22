@@ -23,7 +23,7 @@ jobs:
       - name: generate docs
         run: |
           go mod download
-          go run .github/gendocs/main.go
+          go run .github/gendocs/konstraint.go
 
       - name: commit changes
         uses: EndBug/add-and-commit@v4
