@@ -181,23 +181,20 @@ func getConstraint(policy rego.File) (unstructured.Unstructured, error) {
 		}
 	}
 
-	matchers, err := GetMatchersFromComments(policy.Comments)
-	if err != nil {
-		return unstructured.Unstructured{}, fmt.Errorf("get policy comment blocks: %w", err)
-	}
-
-	if len(matchers.APIGroups) == 0 && len(matchers.Kinds) == 0 {
+	matchers := GetMatchersFromComments(policy.Comments)
+	if len(matchers.KindMatchers) == 0 {
 		return constraint, nil
 	}
 
 	var kinds []interface{}
 	var apiGroups []interface{}
-	for _, kind := range matchers.Kinds {
-		kinds = append(kinds, kind)
+	for _, kindMatcher := range matchers.KindMatchers {
+		kinds = append(kinds, kindMatcher.Kind)
 	}
 
-	for _, apiGroup := range matchers.APIGroups {
-		if apiGroup == "core" {
+	for _, kindMatcher := range matchers.KindMatchers {
+		apiGroup := kindMatcher.APIGroup
+		if kindMatcher.APIGroup == "core" {
 			apiGroup = ""
 		}
 

@@ -18,21 +18,13 @@ violation[msg] {
 		t.Fatal("new rego file", err)
 	}
 
-	actual, err := GetMatchersFromComments(regoFile.Comments)
-	if err != nil {
-		t.Fatal("get policy comment blocks:", err)
-	}
-
-	if len(actual.APIGroups) > 0 {
-		t.Error("expected no APIGroups, but APIGroups were returned")
-	}
-
-	if len(actual.APIGroups) > 0 {
-		t.Error("expected no Kinds, but Kinds were returned")
+	actual := GetMatchersFromComments(regoFile.Comments)
+	if len(actual.KindMatchers) > 0 {
+		t.Error("expected no Kind matchers, but matchers were returned")
 	}
 }
 
-func TestGetMatchersFromComments(t *testing.T) {
+func TestGetMatchersFromComments_Kinds(t *testing.T) {
 	policy := `package test
 # First description
 # @Kinds core/Pod apps/Deployment apps/DaemonSet
@@ -45,27 +37,24 @@ violation[msg] {
 		t.Fatal("new rego file", err)
 	}
 
-	actual, err := GetMatchersFromComments(regoFile.Comments)
-	if err != nil {
-		t.Fatal("get matchers:", err)
+	actual := GetMatchersFromComments(regoFile.Comments)
+
+	expectedMatcherCount := 3
+	if len(actual.KindMatchers) != expectedMatcherCount {
+		t.Errorf("expected %v matchers to exist, but %v were found", expectedMatcherCount, len(actual.KindMatchers))
 	}
 
-	expectedAPIGroupCount := 2
-	if len(actual.APIGroups) != expectedAPIGroupCount {
-		t.Errorf("expected %v APIGroups to exist, but %v were found", expectedAPIGroupCount, len(actual.APIGroups))
-	}
-
-	expectedGroups := []string{"core", "apps"}
-	for _, expectedGroup := range expectedGroups {
-		if !contains(actual.APIGroups, expectedGroup) {
-			t.Errorf("expected matcher to contain APIGroup '%v', but was not found.", expectedGroup)
+	expectedGroups := []string{"core", "apps", "apps"}
+	for g, kindMatcher := range actual.KindMatchers {
+		if kindMatcher.APIGroup != expectedGroups[g] {
+			t.Errorf("expected group to be %v, but was %v", expectedGroups[g], kindMatcher.APIGroup)
 		}
 	}
 
-	expectedKinds := []string{"Pod", "DaemonSet", "Deployment"}
-	for _, expectedKind := range expectedKinds {
-		if !contains(actual.Kinds, expectedKind) {
-			t.Errorf("expected matcher to contain Kind '%v', but was not found.", expectedKind)
+	expectedKinds := []string{"Pod", "Deployment", "DaemonSet"}
+	for k, kindMatcher := range actual.KindMatchers {
+		if kindMatcher.Kind != expectedKinds[k] {
+			t.Errorf("expected kind to be %v, but was %v", expectedKinds[k], kindMatcher.Kind)
 		}
 	}
 }

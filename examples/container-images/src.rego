@@ -4,11 +4,8 @@ import data.lib.k8s
 
 # @title Images must not use the latest tag
 #
-# Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
-# Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-#
-# Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
-# Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+# Using the latest tag on images can cause unexpected problems downloading stuff. By specifing a pinned version
+# we can have higher confidence that our applications are immutable and do not change unexpectedly.
 #
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 violation[msg] {

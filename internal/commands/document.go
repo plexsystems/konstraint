@@ -13,12 +13,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Matchers are the matchers that are applied to constraints.
-type Matchers struct {
-	APIGroups []string
-	Kinds     []string
-}
-
 // Header is the header comment block found on a Rego policy.
 type Header struct {
 	Title       string
@@ -69,31 +63,50 @@ func runDocCommand(path string) error {
 		return fmt.Errorf("get policy documentation: %w", err)
 	}
 
-	var documentContents string
+	documentContents := "# Policies"
+	documentContents += "\n\n"
+
+	// Table of contents
 	for _, document := range documentation {
+		documentContents += "* [" + document.Header.Title + "](#" + strings.ReplaceAll(document.Header.Title, " ", "-") + ")"
+		documentContents += "\n"
+	}
+
+	documentContents += "\n"
+
+	for _, document := range documentation {
+
 		// Title
-		documentContents += "# " + document.Header.Title
+		documentContents += "## " + document.Header.Title
 		documentContents += "\n"
 
 		// Description
 		documentContents += document.Header.Description
 		documentContents += "\n"
 
-		// API Groups
+		// Resources
 		documentContents += "Resources: " + document.Header.Resources
-		documentContents += "\n"
+		documentContents += "\n\n"
 
 		// Rego
-		documentContents += "```rego"
-		documentContents += document.Rego
-		documentContents += "```"
+		documentContents += "### Rego"
+		documentContents += "\n\n"
 
+		documentContents += "```rego"
 		documentContents += "\n"
 
-		// Ship it
-		if err := ioutil.WriteFile(viper.GetString("output"), []byte(documentContents), os.ModePerm); err != nil {
-			return fmt.Errorf("writing documentation: %w", err)
-		}
+		documentContents += document.Rego
+		documentContents += "\n"
+
+		documentContents += "```"
+		documentContents += "\n\n"
+	}
+
+	documentContents = strings.TrimSuffix(documentContents, "\n")
+
+	// Ship it
+	if err := ioutil.WriteFile(viper.GetString("output"), []byte(documentContents), os.ModePerm); err != nil {
+		return fmt.Errorf("writing documentation: %w", err)
 	}
 
 	return nil
@@ -109,7 +122,7 @@ func getDocumentation(path string, outputDirectory string) ([]Document, error) {
 	for _, policy := range policies {
 		header, err := getHeader(policy.Comments)
 		if err != nil {
-			return nil, fmt.Errorf("get policy comment blocks: %w", err)
+			return nil, fmt.Errorf("get header: %w", err)
 		}
 
 		relPath, err := filepath.Rel(outputDirectory, policy.FilePath)
@@ -139,13 +152,15 @@ func getHeader(comments []string) (Header, error) {
 	for _, comment := range comments {
 		if strings.Contains(comment, "@title") {
 			title = strings.SplitAfter(comment, "@title")[1]
+			title = strings.TrimPrefix(title, " ")
 			continue
 		}
 
-		if strings.Contains(comment, "@kinds") {
-			resourceList := strings.Split(comment, " ")[2:]
-			resources = strings.Join(resourceList, " ")
-			resources += "\n"
+		if strings.Contains(strings.ToLower(comment), "@kinds") {
+			matchers := GetMatchersFromComments([]string{comment})
+			for _, kindMatcher := range matchers.KindMatchers {
+				resources += kindMatcher.APIGroup + "/" + kindMatcher.Kind + " "
+			}
 			break
 		}
 
@@ -172,9 +187,10 @@ func getRegoWithoutComments(rego string) string {
 			continue
 		}
 
-		regoWithoutComments += "\n" + line
+		regoWithoutComments += line + "\n"
 	}
 
+	regoWithoutComments = strings.TrimSuffix(regoWithoutComments, "\n")
 	return regoWithoutComments
 }
 
