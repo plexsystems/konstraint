@@ -56,7 +56,7 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 }
 
 func runCreateCommand(path string) error {
-	policies, err := rego.GetFilesWithAction(path, "violation")
+	policies, err := rego.GetFilesWithRule(path, "violation")
 	if err != nil {
 		return fmt.Errorf("get policies: %w", err)
 	}

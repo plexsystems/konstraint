@@ -37,15 +37,15 @@ func GetFiles(path string) ([]File, error) {
 	return files, nil
 }
 
-// GetFilesWithAction gets all Rego files in the given path and its subdirectories that contain the specified action.
-func GetFilesWithAction(path string, action string) ([]File, error) {
+// GetFilesWithRule gets all Rego files in the given path and its subdirectories that contain the specified rule.
+func GetFilesWithRule(path string, rule string) ([]File, error) {
 	allFiles, err := GetFiles(path)
 	if err != nil {
 		return nil, fmt.Errorf("load policies: %w", err)
 	}
 
-	filesWithAction := getFilesWithAction(allFiles, action)
-	return filesWithAction, nil
+	filesWithRule := getFilesWithRule(allFiles, rule)
+	return filesWithRule, nil
 }
 
 // NewFile parses the rego and creates a File
@@ -60,7 +60,7 @@ func NewFile(filePath string, contents string) (File, error) {
 		importPackages = append(importPackages, module.Imports[i].Path.String())
 	}
 
-	ruleNames, err := getModuleRuleNames(module)
+	ruleNames, err := getRuleNamesFromModule(module)
 	if err != nil {
 		return File{}, fmt.Errorf("get module rules: %w", err)
 	}
@@ -108,12 +108,12 @@ func getFilePaths(path string) ([]string, error) {
 	return regoFilePaths, nil
 }
 
-func getFilesWithAction(regoFiles []File, action string) []File {
+func getFilesWithRule(regoFiles []File, rule string) []File {
 	var matchingPolicies []File
 	allPolicies := getPolicies(regoFiles)
 	for _, policy := range allPolicies {
-		for _, ruleAction := range policy.RuleNames {
-			if ruleAction == action {
+		for _, ruleName := range policy.RuleNames {
+			if ruleName == rule {
 				matchingPolicies = append(matchingPolicies, policy)
 			}
 		}
@@ -156,25 +156,25 @@ func getFiles(files []string) ([]File, error) {
 	return regoFiles, nil
 }
 
-func getModuleRuleNames(module *ast.Module) ([]string, error) {
+func getRuleNamesFromModule(module *ast.Module) ([]string, error) {
 	re, err := regexp.Compile(`^\s*([a-z]+)\s*\[\s*msg`)
 	if err != nil {
 		return nil, fmt.Errorf("compile regex: %w", err)
 	}
 
-	var rulesActions []string
+	var ruleNames []string
 	for _, rule := range module.Rules {
 		match := re.FindStringSubmatch(rule.Head.String())
 		if len(match) == 0 {
 			continue
 		}
-		if contains(rulesActions, match[1]) {
+		if contains(ruleNames, match[1]) {
 			continue
 		}
-		rulesActions = append(rulesActions, match[1])
+		ruleNames = append(ruleNames, match[1])
 	}
 
-	return rulesActions, nil
+	return ruleNames, nil
 }
 
 func readFilesContents(filePaths []string) (map[string]string, error) {

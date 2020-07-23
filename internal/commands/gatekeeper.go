@@ -28,18 +28,9 @@ func GetMatchersFromComments(comments []string) Matchers {
 	return matchers
 }
 
-// GetNameFromPath returns the name of the resource based on its file path.
-func GetNameFromPath(path string) string {
-	name := filepath.Base(filepath.Dir(path))
-	name = strings.ReplaceAll(name, "-", " ")
-	name = strings.Title(name)
-
-	return name
-}
-
 // GetKindFromPath returns the kind of the resource based on its file path.
 func GetKindFromPath(path string) string {
-	name := GetNameFromPath(path)
+	name := getNameFromPath(path)
 	kind := strings.ReplaceAll(name, " ", "")
 
 	return kind
@@ -61,4 +52,12 @@ func getKindMatchers(comment string) []KindMatcher {
 	}
 
 	return kindMatchers
+}
+
+func getNameFromPath(path string) string {
+	name := filepath.Base(filepath.Dir(path))
+	name = strings.ReplaceAll(name, "-", " ")
+	name = strings.Title(name)
+
+	return name
 }

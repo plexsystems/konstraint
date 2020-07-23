@@ -26,10 +26,10 @@ var (
 )
 
 func TestNewFile_RuleNames(t *testing.T) {
-	var rulesActionsTests = []struct {
-		policy      string
-		ruleCount   int
-		ruleActions []string
+	var rulesNamesTests = []struct {
+		policy    string
+		ruleCount int
+		ruleNames []string
 	}{
 		{"package test\ndefault test = true", 0, nil},
 		{"package test\nviolation[msg] { msg = true }", 1, []string{"violation"}},
@@ -38,18 +38,18 @@ func TestNewFile_RuleNames(t *testing.T) {
 		{"package test\nviolation[msg] { msg = true }\nviolation[msg] { msg = true }", 1, []string{"violation"}},
 	}
 
-	for _, test := range rulesActionsTests {
+	for _, test := range rulesNamesTests {
 		regoFile, err := NewFile("test.rego", test.policy)
 		if err != nil {
 			t.Fatal("newRegoFile")
 		}
 
 		if len(regoFile.RuleNames) != test.ruleCount {
-			t.Error("incorrect rule actions count")
+			t.Errorf("expected rule names count to be %v, but was %v", test.ruleCount, len(regoFile.RuleNames))
 		}
 
-		if !reflect.DeepEqual(regoFile.RuleNames, test.ruleActions) {
-			t.Errorf("incorrect rule actions\nreceived: %v\nexpected: %v", regoFile.RuleNames, test.ruleActions)
+		if !reflect.DeepEqual(regoFile.RuleNames, test.ruleNames) {
+			t.Errorf("expected rule names to be %v, but was %v", test.ruleNames, regoFile.RuleNames)
 		}
 	}
 }
@@ -57,13 +57,13 @@ func TestNewFile_RuleNames(t *testing.T) {
 func TestGetPolicies(t *testing.T) {
 	policies := getPolicies(testRegoFiles)
 	if len(policies) != 2 {
-		t.Error("incorrect number of policies loaded")
+		t.Errorf("expected %v policies, but got %v", 2, len(policies))
 	}
 }
 
-func TestGetPoliciesWithAction(t *testing.T) {
-	matchingPolicies := getFilesWithAction(testRegoFiles, "warn")
+func TestGetPoliciesWithRule(t *testing.T) {
+	matchingPolicies := getFilesWithRule(testRegoFiles, "warn")
 	if len(matchingPolicies) != 1 {
-		t.Error("incorrect number of policies loaded")
+		t.Errorf("expected %v policies, but got %v", 1, len(matchingPolicies))
 	}
 }

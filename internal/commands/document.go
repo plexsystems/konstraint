@@ -115,7 +115,7 @@ func runDocCommand(path string) error {
 }
 
 func getDocumentation(path string, outputDirectory string) ([]Document, error) {
-	policies, err := rego.GetFilesWithAction(path, "violation")
+	policies, err := rego.GetFilesWithRule(path, "violation")
 	if err != nil {
 		return nil, fmt.Errorf("get files: %w", err)
 	}
