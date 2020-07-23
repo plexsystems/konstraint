@@ -13,7 +13,7 @@ func TestGetConstraint_NoKinds_ReturnsEmptyMatcher(t *testing.T) {
 # Description
 rule[msg] { msg = true }`
 
-	parsedPolicy, err := rego.NewRegoFile("test.rego", policy)
+	parsedPolicy, err := rego.NewFile("test.rego", policy)
 	if err != nil {
 		t.Fatal("new rego file:", err)
 	}
@@ -34,7 +34,7 @@ func TestGetConstraint_KindsInComment_ReturnsKinds(t *testing.T) {
 # @Kinds core/Pod apps/Deployment
 rule[msg] { msg = true }`
 
-	rego, err := rego.NewRegoFile("test.rego", policy)
+	rego, err := rego.NewFile("test.rego", policy)
 	if err != nil {
 		t.Fatal("load policy rego file:", err)
 	}
@@ -76,7 +76,7 @@ rule[msg] { msg = true }`
 
 	libraryRegos := []string{`package lib.foo`, `package lib.bar`}
 
-	policyFile, err := rego.NewRegoFile("/foo/test-kind/src.rego", policyImportsFoo)
+	policyFile, err := rego.NewFile("/foo/test-kind/src.rego", policyImportsFoo)
 	if err != nil {
 		t.Fatal("new rego file:", err)
 	}
@@ -85,7 +85,7 @@ rule[msg] { msg = true }`
 	for key, library := range libraryRegos {
 		libraryPath := fmt.Sprintf("/foo/lib/library-%v.rego", key)
 
-		libraryFile, err := rego.NewRegoFile(libraryPath, library)
+		libraryFile, err := rego.NewFile(libraryPath, library)
 		if err != nil {
 			t.Fatal("new rego file:", err)
 		}
@@ -112,7 +112,7 @@ func TestGetKindFromPath(t *testing.T) {
 	path := "/path/to/rego/container-resource-limits/something.rego"
 
 	expected := "ContainerResourceLimits"
-	actual := getKindFromPath(path)
+	actual := GetKindFromPath(path)
 
 	if actual != expected {
 		t.Errorf("expected Kind of %v, but got %v", expected, actual)

@@ -8,21 +8,29 @@ import (
 	"strings"
 
 	"github.com/plexsystems/konstraint/internal/rego"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-// Header represents the top comment in a Rego file
+// Matchers are the matchers that are applied to constraints.
+type Matchers struct {
+	APIGroups []string
+	Kinds     []string
+}
+
+// Header is the header comment block found on a Rego policy.
 type Header struct {
 	Title       string
 	Description string
-	APIGroups   []string
-	Kinds       []string
+	Resources   string
 }
 
+// Document is a single policy document.
 type Document struct {
-	Header    Header
-	RegoLines []string
+	Header Header
+	URL    string
+	Rego   string
 }
 
 func newDocCommand() *cobra.Command {
@@ -64,32 +72,23 @@ func runDocCommand(path string) error {
 	var documentContents string
 	for _, document := range documentation {
 		// Title
-		documentContents += "# " + document.Header.Title + "\n"
+		documentContents += "# " + document.Header.Title
+		documentContents += "\n"
 
 		// Description
-		documentContents += document.Header.Description + "\n"
+		documentContents += document.Header.Description
+		documentContents += "\n"
 
 		// API Groups
-		documentContents += "API Groups: "
-		for _, group := range document.Header.APIGroups {
-			documentContents += group + " "
-		}
-		documentContents += "\n"
-
-		// Kinds
-		documentContents += "Kinds: "
-		for _, kind := range document.Header.Kinds {
-			documentContents += kind + " "
-		}
-		documentContents += "\n"
+		documentContents += "Resources: " + document.Header.Resources
 		documentContents += "\n"
 
 		// Rego
-		documentContents += "```rego" + "\n"
-		for _, regoLine := range document.RegoLines {
-			documentContents += regoLine + "\n"
-		}
+		documentContents += "```rego"
+		documentContents += document.Rego
 		documentContents += "```"
+
+		documentContents += "\n"
 
 		// Ship it
 		if err := ioutil.WriteFile(viper.GetString("output"), []byte(documentContents), os.ModePerm); err != nil {
@@ -101,14 +100,9 @@ func runDocCommand(path string) error {
 }
 
 func getDocumentation(path string, outputDirectory string) ([]Document, error) {
-	regoFilePaths, err := getRegoFilePaths(path)
+	policies, err := rego.GetFilesWithAction(path, "violation")
 	if err != nil {
-		return nil, fmt.Errorf("get rego files: %w", err)
-	}
-
-	policies, err := rego.LoadPolicies(regoFilePaths)
-	if err != nil {
-		return nil, fmt.Errorf("load policies: %w", err)
+		return nil, fmt.Errorf("get files: %w", err)
 	}
 
 	var documents []Document
@@ -118,10 +112,18 @@ func getDocumentation(path string, outputDirectory string) ([]Document, error) {
 			return nil, fmt.Errorf("get policy comment blocks: %w", err)
 		}
 
+		relPath, err := filepath.Rel(outputDirectory, policy.FilePath)
+		if err != nil {
+			return nil, fmt.Errorf("rel path: %w", err)
+		}
+		relDir := filepath.Dir(relPath)
+
 		regoWithoutComments := getRegoWithoutComments(policy.Contents)
+
 		document := Document{
-			Header:    header,
-			RegoLines: regoWithoutComments,
+			Header: header,
+			URL:    relDir,
+			Rego:   regoWithoutComments,
 		}
 
 		documents = append(documents, document)
@@ -133,8 +135,7 @@ func getDocumentation(path string, outputDirectory string) ([]Document, error) {
 func getHeader(comments []string) (Header, error) {
 	var title string
 	var description string
-	var apiGroups []string
-	var kinds []string
+	var resources string
 	for _, comment := range comments {
 		if strings.Contains(comment, "@title") {
 			title = strings.SplitAfter(comment, "@title")[1]
@@ -142,41 +143,36 @@ func getHeader(comments []string) (Header, error) {
 		}
 
 		if strings.Contains(comment, "@kinds") {
-			kindGroups := strings.Split(comment, " ")[2:]
-			for _, kindGroup := range kindGroups {
-				kindTokens := strings.Split(kindGroup, "/")
-				if !contains(apiGroups, kindTokens[0]) {
-					apiGroups = append(apiGroups, kindTokens[0])
-				}
-
-				kinds = append(kinds, kindTokens[1])
-			}
+			resourceList := strings.Split(comment, " ")[2:]
+			resources = strings.Join(resourceList, " ")
+			resources += "\n"
 			break
 		}
 
 		comment = strings.TrimSpace(comment)
-		description = description + comment + "\n"
+		description += comment + "\n"
 	}
+
+	description = strings.TrimSuffix(description, "\n")
 
 	header := Header{
 		Title:       strings.Trim(title, " "),
 		Description: strings.Trim(description, " "),
-		APIGroups:   apiGroups,
-		Kinds:       kinds,
+		Resources:   strings.Trim(resources, " "),
 	}
 
 	return header, nil
 }
 
-func getRegoWithoutComments(rego string) []string {
-	var regoWithoutComments []string
+func getRegoWithoutComments(rego string) string {
+	var regoWithoutComments string
 	lines := strings.Split(rego, "\n")
 	for _, line := range lines {
 		if strings.HasPrefix(line, "#") {
 			continue
 		}
 
-		regoWithoutComments = append(regoWithoutComments, line)
+		regoWithoutComments += "\n" + line
 	}
 
 	return regoWithoutComments
@@ -190,12 +186,4 @@ func contains(collection []string, item string) bool {
 	}
 
 	return false
-}
-
-func getNameFromPath(path string) string {
-	name := filepath.Base(filepath.Dir(path))
-	name = strings.ReplaceAll(name, "-", " ")
-	name = strings.Title(name)
-
-	return name
 }

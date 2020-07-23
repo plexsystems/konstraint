@@ -8,24 +8,24 @@ import (
 var (
 	testRegoFiles = []File{
 		{
-			FilePath:     "missingViolation.rego",
-			Contents:     "package test\ndefault a = true",
-			RulesActions: nil,
+			FilePath:  "missingViolation.rego",
+			Contents:  "package test\ndefault a = true",
+			RuleNames: nil,
 		},
 		{
-			FilePath:     "withViolation.rego",
-			Contents:     "package test\nviolation[msg] { msg = true }",
-			RulesActions: []string{"violation"},
+			FilePath:  "withViolation.rego",
+			Contents:  "package test\nviolation[msg] { msg = true }",
+			RuleNames: []string{"violation"},
 		},
 		{
-			FilePath:     "withWarn.rego",
-			Contents:     "package test\nwarn[msg] { msg = true }",
-			RulesActions: []string{"warn"},
+			FilePath:  "withWarn.rego",
+			Contents:  "package test\nwarn[msg] { msg = true }",
+			RuleNames: []string{"warn"},
 		},
 	}
 )
 
-func TestGetModulesRulesActions(t *testing.T) {
+func TestNewFile_RuleNames(t *testing.T) {
 	var rulesActionsTests = []struct {
 		policy      string
 		ruleCount   int
@@ -39,17 +39,17 @@ func TestGetModulesRulesActions(t *testing.T) {
 	}
 
 	for _, test := range rulesActionsTests {
-		regoFile, err := NewRegoFile("test.rego", test.policy)
+		regoFile, err := NewFile("test.rego", test.policy)
 		if err != nil {
 			t.Fatal("newRegoFile")
 		}
 
-		if len(regoFile.RulesActions) != test.ruleCount {
+		if len(regoFile.RuleNames) != test.ruleCount {
 			t.Error("incorrect rule actions count")
 		}
 
-		if !reflect.DeepEqual(regoFile.RulesActions, test.ruleActions) {
-			t.Errorf("incorrect rule actions\nreceived: %v\nexpected: %v", regoFile.RulesActions, test.ruleActions)
+		if !reflect.DeepEqual(regoFile.RuleNames, test.ruleActions) {
+			t.Errorf("incorrect rule actions\nreceived: %v\nexpected: %v", regoFile.RuleNames, test.ruleActions)
 		}
 	}
 }
@@ -62,7 +62,7 @@ func TestGetPolicies(t *testing.T) {
 }
 
 func TestGetPoliciesWithAction(t *testing.T) {
-	matchingPolicies := getPoliciesWithAction(testRegoFiles, "warn")
+	matchingPolicies := getFilesWithAction(testRegoFiles, "warn")
 	if len(matchingPolicies) != 1 {
 		t.Error("incorrect number of policies loaded")
 	}

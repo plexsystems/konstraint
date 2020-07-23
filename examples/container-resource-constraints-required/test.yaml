@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: containers-resource-constraints-required-test
+spec:
+  containers:
+  - name: containers-resource-constraints-required-test
+    image: plexdev.azurecr.io/pcp/test:1.0
