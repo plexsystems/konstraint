@@ -199,23 +199,19 @@ func getConstraint(policy rego.File) (unstructured.Unstructured, error) {
 		}
 	}
 
-	policyCommentBlocks, err := getPolicyCommentBlocks(policy.Comments)
+	documentation, err := getDocumentation("", "")
 	if err != nil {
 		return unstructured.Unstructured{}, fmt.Errorf("get policy comment blocks: %w", err)
 	}
 
-	if len(policyCommentBlocks) == 0 {
-		return constraint, nil
-	}
-
 	var kinds []interface{}
 	var apiGroups []interface{}
-	for _, policyCommentBlock := range policyCommentBlocks {
-		for _, policyKind := range policyCommentBlock.Kinds {
+	for _, policyCommentBlock := range documentation {
+		for _, policyKind := range policyCommentBlock.Header.APIGroups {
 			kinds = append(kinds, policyKind)
 		}
 
-		for _, policyAPIGroup := range policyCommentBlock.APIGroups {
+		for _, policyAPIGroup := range policyCommentBlock.Header.APIGroups {
 			if policyAPIGroup == "core" {
 				policyAPIGroup = ""
 			}

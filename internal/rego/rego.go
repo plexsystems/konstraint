@@ -18,6 +18,7 @@ type File struct {
 	Contents       string
 	RulesActions   []string
 	Comments       []string
+	Rules          []string
 }
 
 // LoadPoliciesWithAction loads all policies from rego with rules with a given action name

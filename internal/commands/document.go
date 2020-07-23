@@ -12,11 +12,17 @@ import (
 	"github.com/spf13/viper"
 )
 
-// PolicyCommentBlock represents a comment block in a rego file
-type PolicyCommentBlock struct {
+// Header represents the top comment in a Rego file
+type Header struct {
+	Title       string
+	Description string
 	APIGroups   []string
 	Kinds       []string
-	Description string
+}
+
+type Document struct {
+	Header    Header
+	RegoLines []string
 }
 
 func newDocCommand() *cobra.Command {
@@ -50,97 +56,130 @@ Save the documentation to a specific directory
 
 func runDocCommand(path string) error {
 	outputDirectory := filepath.Dir(viper.GetString("output"))
-	policyDocumentation, err := getPolicyDocumentation(path, outputDirectory)
+	documentation, err := getDocumentation(path, outputDirectory)
 	if err != nil {
 		return fmt.Errorf("get policy documentation: %w", err)
 	}
 
-	if err := ioutil.WriteFile(viper.GetString("output"), []byte(policyDocumentation), os.ModePerm); err != nil {
-		return fmt.Errorf("writing documentation: %w", err)
+	var documentContents string
+	for _, document := range documentation {
+		// Title
+		documentContents += "# " + document.Header.Title + "\n"
+
+		// Description
+		documentContents += document.Header.Description + "\n"
+
+		// API Groups
+		documentContents += "API Groups: "
+		for _, group := range document.Header.APIGroups {
+			documentContents += group + " "
+		}
+		documentContents += "\n"
+
+		// Kinds
+		documentContents += "Kinds: "
+		for _, kind := range document.Header.Kinds {
+			documentContents += kind + " "
+		}
+		documentContents += "\n"
+		documentContents += "\n"
+
+		// Rego
+		documentContents += "```rego" + "\n"
+		for _, regoLine := range document.RegoLines {
+			documentContents += regoLine + "\n"
+		}
+		documentContents += "```"
+
+		// Ship it
+		if err := ioutil.WriteFile(viper.GetString("output"), []byte(documentContents), os.ModePerm); err != nil {
+			return fmt.Errorf("writing documentation: %w", err)
+		}
 	}
 
 	return nil
 }
 
-func getPolicyDocumentation(path string, outputDirectory string) (string, error) {
+func getDocumentation(path string, outputDirectory string) ([]Document, error) {
 	regoFilePaths, err := getRegoFilePaths(path)
 	if err != nil {
-		return "", fmt.Errorf("get rego files: %w", err)
+		return nil, fmt.Errorf("get rego files: %w", err)
 	}
 
 	policies, err := rego.LoadPolicies(regoFilePaths)
 	if err != nil {
-		return "", fmt.Errorf("load policies: %w", err)
+		return nil, fmt.Errorf("load policies: %w", err)
 	}
 
-	policyDocument := "# Policies\n\n"
-	policyDocument += "|Name|Rule Types|API Groups|Kinds|Description|\n"
-	policyDocument += "|---|---|---|---|---|\n"
-
+	var documents []Document
 	for _, policy := range policies {
-		policyCommentBlocks, err := getPolicyCommentBlocks(policy.Comments)
+		header, err := getHeader(policy.Comments)
 		if err != nil {
-			return "", fmt.Errorf("get policy comment blocks: %w", err)
+			return nil, fmt.Errorf("get policy comment blocks: %w", err)
 		}
 
-		for _, policyCommentBlock := range policyCommentBlocks {
-			relPath, err := filepath.Rel(outputDirectory, policy.FilePath)
-			if err != nil {
-				return "", fmt.Errorf("rel path: %w", err)
-			}
-
-			relDir := filepath.Dir(relPath)
-			ruleTypes := strings.Join(policy.RulesActions, ", ")
-			apiGroups := strings.Join(policyCommentBlock.APIGroups, ", ")
-			kinds := strings.Join(policyCommentBlock.Kinds, ", ")
-
-			policyDocument += fmt.Sprintf("|[%s](%s)|%s|%s|%s|%s|\n",
-				getNameFromPath(policy.FilePath),
-				relDir,
-				ruleTypes,
-				apiGroups,
-				kinds,
-				policyCommentBlock.Description,
-			)
+		regoWithoutComments := getRegoWithoutComments(policy.Contents)
+		document := Document{
+			Header:    header,
+			RegoLines: regoWithoutComments,
 		}
+
+		documents = append(documents, document)
 	}
 
-	return policyDocument, nil
+	return documents, nil
 }
 
-func getPolicyCommentBlocks(comments []string) ([]PolicyCommentBlock, error) {
-	var policyCommentBlocks []PolicyCommentBlock
+func getHeader(comments []string) (Header, error) {
+	var title string
 	var description string
+	var apiGroups []string
+	var kinds []string
 	for _, comment := range comments {
-		if !strings.Contains(comment, "@Kinds") {
-			description = comment
+		if strings.Contains(comment, "@title") {
+			title = strings.SplitAfter(comment, "@title")[1]
 			continue
 		}
 
-		kindGroups := strings.Split(comment, " ")[2:]
+		if strings.Contains(comment, "@kinds") {
+			kindGroups := strings.Split(comment, " ")[2:]
+			for _, kindGroup := range kindGroups {
+				kindTokens := strings.Split(kindGroup, "/")
+				if !contains(apiGroups, kindTokens[0]) {
+					apiGroups = append(apiGroups, kindTokens[0])
+				}
 
-		var apiGroups []string
-		var kinds []string
-		for _, kindGroup := range kindGroups {
-			kindTokens := strings.Split(kindGroup, "/")
-
-			if !contains(apiGroups, kindTokens[0]) {
-				apiGroups = append(apiGroups, kindTokens[0])
+				kinds = append(kinds, kindTokens[1])
 			}
-
-			kinds = append(kinds, kindTokens[1])
+			break
 		}
 
-		policyCommentBlock := PolicyCommentBlock{
-			APIGroups:   apiGroups,
-			Kinds:       kinds,
-			Description: strings.Trim(description, " "),
-		}
-
-		policyCommentBlocks = append(policyCommentBlocks, policyCommentBlock)
+		comment = strings.TrimSpace(comment)
+		description = description + comment + "\n"
 	}
 
-	return policyCommentBlocks, nil
+	header := Header{
+		Title:       strings.Trim(title, " "),
+		Description: strings.Trim(description, " "),
+		APIGroups:   apiGroups,
+		Kinds:       kinds,
+	}
+
+	return header, nil
+}
+
+func getRegoWithoutComments(rego string) []string {
+	var regoWithoutComments []string
+	lines := strings.Split(rego, "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		regoWithoutComments = append(regoWithoutComments, line)
+	}
+
+	return regoWithoutComments
 }
 
 func contains(collection []string, item string) bool {
