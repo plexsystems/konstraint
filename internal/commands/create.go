@@ -71,6 +71,10 @@ func runCreateCommand(path string) error {
 		return fmt.Errorf("get libraries: %w", err)
 	}
 
+	for l := range libraries {
+		libraries[l].Contents = getRegoWithoutComments(libraries[l].Contents)
+	}
+
 	var templateFileName, constraintFileName, outputDir string
 	outputFlag := viper.GetString("output")
 	if outputFlag == "" {
@@ -159,7 +163,7 @@ func getConstraintTemplate(policy rego.File, libraries []rego.File) v1beta1.Cons
 				{
 					Target: "admission.k8s.gatekeeper.sh",
 					Libs:   libs,
-					Rego:   policy.Contents,
+					Rego:   getRegoWithoutComments(policy.Contents),
 				},
 			},
 		},
@@ -198,7 +202,15 @@ func getConstraint(policy rego.File) (unstructured.Unstructured, error) {
 			apiGroup = ""
 		}
 
-		apiGroups = append(apiGroups, apiGroup)
+		var exists bool
+		for _, addedGroup := range apiGroups {
+			if apiGroup == addedGroup {
+				exists = true
+			}
+		}
+		if !exists {
+			apiGroups = append(apiGroups, apiGroup)
+		}
 	}
 
 	constraintMatcher := map[string]interface{}{

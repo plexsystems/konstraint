@@ -2,12 +2,12 @@ apiVersion: templates.gatekeeper.sh/v1beta1
 kind: ConstraintTemplate
 metadata:
   creationTimestamp: null
-  name: containersresourceconstraintsrequired
+  name: containersresourceconstraints
 spec:
   crd:
     spec:
       names:
-        kind: ContainersResourceConstraintsRequired
+        kind: ContainersResourceConstraints
   targets:
   - libs:
     - |
@@ -139,48 +139,32 @@ spec:
         volume = pod.spec.volumes[_]
       }
 
-      # 10 ** 21
       mem_multiple("E") = 1000000000000000000000 { true }
 
-      # 10 ** 18
       mem_multiple("P") = 1000000000000000000 { true }
 
-      # 10 ** 15
       mem_multiple("T") = 1000000000000000 { true }
 
-      # 10 ** 12
       mem_multiple("G") = 1000000000000 { true }
 
-      # 10 ** 9
       mem_multiple("M") = 1000000000 { true }
 
-      # 10 ** 6
       mem_multiple("k") = 1000000 { true }
 
-      # 10 ** 3
       mem_multiple("") = 1000 { true }
 
-      # Kubernetes accepts millibyte precision when it probably shouldn't.
-      # https://github.com/kubernetes/kubernetes/issues/28741
-      # 10 ** 0
       mem_multiple("m") = 1 { true }
 
-      # 1000 * 2 ** 10
       mem_multiple("Ki") = 1024000 { true }
 
-      # 1000 * 2 ** 20
       mem_multiple("Mi") = 1048576000 { true }
 
-      # 1000 * 2 ** 30
       mem_multiple("Gi") = 1073741824000 { true }
 
-      # 1000 * 2 ** 40
       mem_multiple("Ti") = 1099511627776000 { true }
 
-      # 1000 * 2 ** 50
       mem_multiple("Pi") = 1125899906842624000 { true }
 
-      # 1000 * 2 ** 60
       mem_multiple("Ei") = 1152921504606846976000 { true }
 
       get_suffix(mem) = suffix {
@@ -292,13 +276,11 @@ spec:
         has_field(c, "securityContext")
         has_field(c.securityContext, "allowPrivilegeEscalation")
       }
-    rego: |
+    rego: |-
       package policy
 
       import data.lib.k8s
 
-      # Containers must have resource constraints specified.
-      # @Kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
       violation[msg] {
         containers_resource_constraints_required
 

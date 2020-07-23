@@ -99,12 +99,14 @@ func runDocCommand(path string) error {
 		documentContents += "\n"
 
 		documentContents += "```"
+		documentContents += "\n"
+
+		// Source link
+		documentContents += "_source: [" + document.URL + "](" + document.URL + ")_"
 		documentContents += "\n\n"
 	}
 
 	documentContents = strings.TrimSuffix(documentContents, "\n")
-
-	// Ship it
 	if err := ioutil.WriteFile(viper.GetString("output"), []byte(documentContents), os.ModePerm); err != nil {
 		return fmt.Errorf("writing documentation: %w", err)
 	}

@@ -31,6 +31,7 @@ has_latest_tag {
   contains(k8s.container_images[_], ":") == false
 }
 ```
+_source: [../../examples/containers-latest-tag](../../examples/containers-latest-tag)_
 
 ## Containers must define resource constraints
 
@@ -64,3 +65,4 @@ container_resources_provided {
   k8s.containers[_].resources.limits.memory
 }
 ```
+_source: [../../examples/containers-resource-constraints](../../examples/containers-resource-constraints)_

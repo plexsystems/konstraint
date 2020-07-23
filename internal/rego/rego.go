@@ -60,9 +60,14 @@ func NewFile(filePath string, contents string) (File, error) {
 		importPackages = append(importPackages, module.Imports[i].Path.String())
 	}
 
-	rulesActions, err := getModuleRuleNames(module)
+	ruleNames, err := getModuleRuleNames(module)
 	if err != nil {
 		return File{}, fmt.Errorf("get module rules: %w", err)
+	}
+
+	var comments []string
+	for _, comment := range module.Comments {
+		comments = append(comments, string(comment.Text))
 	}
 
 	file := File{
@@ -70,8 +75,8 @@ func NewFile(filePath string, contents string) (File, error) {
 		PackageName:    module.Package.Path.String(),
 		ImportPackages: importPackages,
 		Contents:       contents,
-		RuleNames:      rulesActions,
-		Comments:       getModuleComments(module),
+		RuleNames:      ruleNames,
+		Comments:       comments,
 	}
 
 	return file, nil
@@ -170,15 +175,6 @@ func getModuleRuleNames(module *ast.Module) ([]string, error) {
 	}
 
 	return rulesActions, nil
-}
-
-func getModuleComments(module *ast.Module) []string {
-	var comments []string
-	for _, comment := range module.Comments {
-		comments = append(comments, string(comment.Text))
-	}
-
-	return comments
 }
 
 func readFilesContents(filePaths []string) (map[string]string, error) {
