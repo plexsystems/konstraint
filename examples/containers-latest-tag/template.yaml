@@ -276,7 +276,7 @@ spec:
         has_field(c, "securityContext")
         has_field(c.securityContext, "allowPrivilegeEscalation")
       }
-    rego: |-
+    rego: |
       package main
 
       import data.lib.k8s

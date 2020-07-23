@@ -30,6 +30,7 @@ has_latest_tag {
 has_latest_tag {
   contains(k8s.container_images[_], ":") == false
 }
+
 ```
 _source: [../../examples/containers-latest-tag](../../examples/containers-latest-tag)_
 
