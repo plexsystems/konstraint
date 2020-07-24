@@ -152,8 +152,8 @@ func getHeader(comments []string) (Header, error) {
 	var description string
 	var resources string
 	for _, comment := range comments {
-		if strings.Contains(comment, "@title") {
-			title = strings.SplitAfter(comment, "@title")[1]
+		if strings.Contains(strings.ToLower(comment), "@title") {
+			title = strings.SplitAfter(strings.ToLower(comment), "@title")[1]
 			title = strings.TrimPrefix(title, " ")
 			continue
 		}
