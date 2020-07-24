@@ -107,16 +107,17 @@ import data.lib.security
 
 violation[msg] {
   workloads.containers[container]
-  container.securityContext.privileged
+  is_privileged(container)
 
   msg = core.format(sprintf("(%s) %s: Containers are not allowed to run as privileged", [core.kind, core.name]))
 }
 
-violation[msg] {
-  workloads.containers[container]
-  security.added_capability(container, "CAP_SYS_ADMIN")
+is_privileged(container) {
+  container.securityContext.privileged
+}
 
-  msg = core.format(sprintf("(%s) %s: Containers are not allowed to run as privileged", [core.kind, core.name]))
+is_privileged(container) {
+  security.added_capability(container, "CAP_SYS_ADMIN")
 }
 
 ```

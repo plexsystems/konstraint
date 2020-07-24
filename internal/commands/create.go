@@ -94,13 +94,9 @@ func runCreateCommand(path string) error {
 			constraintFileName = fmt.Sprintf("constraint_%s.yaml", GetKindFromPath(policy.FilePath))
 		}
 
-		var libs []string
-		for _, importPackage := range policy.ImportPackages {
-			for _, library := range libraries {
-				if importPackage == library.PackageName {
-					libs = append(libs, library.Contents)
-				}
-			}
+		matchingLibraries := getMatchingLibraries(policy, libraries)
+		if len(matchingLibraries) != len(policy.ImportPackages) {
+			return fmt.Errorf("missing imported libraries")
 		}
 
 		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
@@ -110,7 +106,7 @@ func runCreateCommand(path string) error {
 			}
 		}
 
-		constraintTemplate := getConstraintTemplate(policy, libs)
+		constraintTemplate := getConstraintTemplate(policy, matchingLibraries)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
@@ -250,4 +246,17 @@ func getLibraryPath(path string) (string, error) {
 	}
 
 	return libraryPath, nil
+}
+
+func getMatchingLibraries(policy rego.File, libraries []rego.File) []string {
+	var libs []string
+	for _, importPackage := range policy.ImportPackages {
+		for _, library := range libraries {
+			if importPackage == library.PackageName {
+				libs = append(libs, library.Contents)
+			}
+		}
+	}
+
+	return libs
 }

@@ -74,26 +74,25 @@ func TestGetConstraintTemplate_CorrectLibrariesImported(t *testing.T) {
 import data.lib.foo
 rule[msg] { msg = true }`
 
-	libraryRegos := []string{`package lib.foo`, `package lib.bar`}
-
 	policyFile, err := rego.NewFile("/foo/test-kind/src.rego", policyImportsFoo)
 	if err != nil {
 		t.Fatal("new rego file:", err)
 	}
 
+	libraryRegos := []string{`package lib.foo`, `package lib.bar`}
 	var libraries []rego.File
-	for key, library := range libraryRegos {
-		libraryPath := fmt.Sprintf("/foo/lib/library-%v.rego", key)
-
-		libraryFile, err := rego.NewFile(libraryPath, library)
+	for i, libraryRego := range libraryRegos {
+		lib, err := rego.NewFile(fmt.Sprintf("lib.%d.rego", i), libraryRego)
 		if err != nil {
-			t.Fatal("new rego file:", err)
+			t.Fatal("create library from rego")
 		}
 
-		libraries = append(libraries, libraryFile)
+		libraries = append(libraries, lib)
 	}
 
-	actual := getConstraintTemplate(policyFile, libraries)
+	matchingLibraries := getMatchingLibraries(policyFile, libraries)
+
+	actual := getConstraintTemplate(policyFile, matchingLibraries)
 	if err != nil {
 		t.Fatal("get constraint:", err)
 	}
