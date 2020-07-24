@@ -85,7 +85,7 @@ func runDocCommand(path string) error {
 		documentContents += "\n"
 
 		// Resources
-		documentContents += "Resources: " + document.Header.Resources
+		documentContents += "**Resources:** " + document.Header.Resources
 		documentContents += "\n\n"
 
 		// Rego

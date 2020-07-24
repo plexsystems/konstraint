@@ -8,7 +8,7 @@
 Using the latest tag on images can cause unexpected problems downloading stuff. By specifing a pinned version
 we can have higher confidence that our applications are immutable and do not change unexpectedly.
 
-Resources: apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
 ### Rego
 
@@ -39,7 +39,7 @@ _source: [../../examples/containers-latest-tag](../../examples/containers-latest
 Resource constraints on containers ensure that a given workload does not take up more resources than it required
 and potentially starve other applications that need to run.
 
-Resources: apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
 ### Rego
 
