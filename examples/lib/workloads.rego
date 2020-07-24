@@ -75,11 +75,3 @@ split_image(image) = [image, "latest"] {
 split_image(image) = [image_name, tag] {
   [image_name, tag] = split(image, ":")
 }
-
-dropped_capability(container, cap) {
-  container.securityContext.capabilities.drop[_] == cap
-}
-
-added_capability(container, cap) {
-  container.securityContext.capabilities.add[_] == cap
-}
