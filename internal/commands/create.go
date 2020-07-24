@@ -94,6 +94,15 @@ func runCreateCommand(path string) error {
 			constraintFileName = fmt.Sprintf("constraint_%s.yaml", GetKindFromPath(policy.FilePath))
 		}
 
+		var libs []string
+		for _, importPackage := range policy.ImportPackages {
+			for _, library := range libraries {
+				if importPackage == library.PackageName {
+					libs = append(libs, library.Contents)
+				}
+			}
+		}
+
 		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
 			err := os.MkdirAll(outputDir, os.ModePerm)
 			if err != nil {
@@ -101,7 +110,7 @@ func runCreateCommand(path string) error {
 			}
 		}
 
-		constraintTemplate := getConstraintTemplate(policy, libraries)
+		constraintTemplate := getConstraintTemplate(policy, libs)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
@@ -131,16 +140,7 @@ func runCreateCommand(path string) error {
 	return nil
 }
 
-func getConstraintTemplate(policy rego.File, libraries []rego.File) v1beta1.ConstraintTemplate {
-	var libs []string
-	for _, importPackage := range policy.ImportPackages {
-		for _, library := range libraries {
-			if importPackage == library.PackageName {
-				libs = append(libs, library.Contents)
-			}
-		}
-	}
-
+func getConstraintTemplate(policy rego.File, libraries []string) v1beta1.ConstraintTemplate {
 	kind := GetKindFromPath(policy.FilePath)
 
 	constraintTemplate := v1beta1.ConstraintTemplate{
@@ -162,7 +162,7 @@ func getConstraintTemplate(policy rego.File, libraries []rego.File) v1beta1.Cons
 			Targets: []v1beta1.Target{
 				{
 					Target: "admission.k8s.gatekeeper.sh",
-					Libs:   libs,
+					Libs:   libraries,
 					Rego:   getRegoWithoutComments(policy.Contents),
 				},
 			},
