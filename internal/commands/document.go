@@ -168,8 +168,6 @@ func getDocumentation(path string, severity string, outputDirectory string) ([]D
 		return nil, fmt.Errorf("get files: %w", err)
 	}
 
-	fmt.Println(policies)
-
 	var documents []Document
 	for _, policy := range policies {
 		header, err := getHeader(policy.Comments)

@@ -13,7 +13,7 @@ func NewDefaultCommand() *cobra.Command {
 		Use:     path.Base(os.Args[0]),
 		Short:   "Konstraint",
 		Long:    "A tool to create and manage Gatekeeper CRDs from Rego",
-		Version: "0.5.0",
+		Version: "0.5.1",
 	}
 
 	cmd.AddCommand(newCreateCommand())
