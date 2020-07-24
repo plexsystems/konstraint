@@ -34,6 +34,25 @@ test_not_privileged {
   count(violations) == 0
 }
 
+test_added_capability {
+  input := {
+    "kind": "Pod",
+    "metadata": {"name": "test"},
+    "spec": {
+      "containers": [{
+        "securityContext": {
+          "capabilities": {
+            "add": ["CAP_SYS_ADMIN"]
+          }
+        }
+      }]
+    }
+  }
+
+  violations := violation with input as input
+  count(violations) == 1
+}
+
 test_null {
   input := {
     "kind": "Pod",
