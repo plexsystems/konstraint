@@ -27,7 +27,7 @@ violation[msg] {
 func TestGetMatchersFromComments_Kinds(t *testing.T) {
 	policy := `package test
 # First description
-# @Kinds core/Pod apps/Deployment apps/DaemonSet
+# @kinds core/Pod apps/Deployment apps/DaemonSet
 violation[msg] {
 	false
 }`

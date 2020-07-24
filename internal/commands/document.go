@@ -22,9 +22,10 @@ type Header struct {
 
 // Document is a single policy document.
 type Document struct {
-	Header Header
-	URL    string
-	Rego   string
+	Header   Header
+	Severity string
+	URL      string
+	Rego     string
 }
 
 func newDocCommand() *cobra.Command {
@@ -58,37 +59,56 @@ Save the documentation to a specific directory
 
 func runDocCommand(path string) error {
 	outputDirectory := filepath.Dir(viper.GetString("output"))
-	documentation, err := getDocumentation(path, outputDirectory)
+	violationDocs, err := getDocumentation(path, "violation", outputDirectory)
 	if err != nil {
-		return fmt.Errorf("get policy documentation: %w", err)
+		return fmt.Errorf("get violation documentation: %w", err)
+	}
+
+	warningDocs, err := getDocumentation(path, "warn", outputDirectory)
+	if err != nil {
+		return fmt.Errorf("get warn documentation: %w", err)
 	}
 
 	documentContents := "# Policies"
 	documentContents += "\n\n"
 
-	// Table of contents
-	for _, document := range documentation {
-		documentContents += "* [" + document.Header.Title + "](#" + strings.ReplaceAll(document.Header.Title, " ", "-") + ")"
+	// Table of contents (Violations)
+	if len(violationDocs) > 0 {
+		documentContents += "## Violations"
+		documentContents += "\n\n"
+		for _, document := range violationDocs {
+			documentContents += "* [" + document.Header.Title + "](#" + strings.ReplaceAll(document.Header.Title, " ", "-") + ")"
+			documentContents += "\n"
+		}
+
 		documentContents += "\n"
 	}
 
-	documentContents += "\n"
+	// Table of contents (Warnings)
+	if len(warningDocs) > 0 {
+		documentContents += "## Warnings"
+		documentContents += "\n\n"
+		for _, document := range warningDocs {
+			documentContents += "* [" + document.Header.Title + "](#" + strings.ReplaceAll(document.Header.Title, " ", "-") + ")"
+			documentContents += "\n"
+		}
 
-	for _, document := range documentation {
+		documentContents += "\n"
+	}
 
-		// Title
+	for _, document := range violationDocs {
 		documentContents += "## " + document.Header.Title
-		documentContents += "\n"
+		documentContents += "\n\n"
 
-		// Description
-		documentContents += document.Header.Description
-		documentContents += "\n"
+		documentContents += "**Severity:** " + document.Severity
+		documentContents += "\n\n"
 
-		// Resources
 		documentContents += "**Resources:** " + document.Header.Resources
 		documentContents += "\n\n"
 
-		// Rego
+		documentContents += document.Header.Description
+		documentContents += "\n"
+
 		documentContents += "### Rego"
 		documentContents += "\n\n"
 
@@ -101,7 +121,35 @@ func runDocCommand(path string) error {
 		documentContents += "```"
 		documentContents += "\n"
 
-		// Source link
+		documentContents += "_source: [" + document.URL + "](" + document.URL + ")_"
+		documentContents += "\n\n"
+	}
+
+	for _, document := range warningDocs {
+		documentContents += "## " + document.Header.Title
+		documentContents += "\n\n"
+
+		documentContents += "**Severity:** " + document.Severity
+		documentContents += "\n\n"
+
+		documentContents += "**Resources:** " + document.Header.Resources
+		documentContents += "\n\n"
+
+		documentContents += document.Header.Description
+		documentContents += "\n"
+
+		documentContents += "### Rego"
+		documentContents += "\n\n"
+
+		documentContents += "```rego"
+		documentContents += "\n"
+
+		documentContents += document.Rego
+		documentContents += "\n"
+
+		documentContents += "```"
+		documentContents += "\n"
+
 		documentContents += "_source: [" + document.URL + "](" + document.URL + ")_"
 		documentContents += "\n\n"
 	}
@@ -114,11 +162,13 @@ func runDocCommand(path string) error {
 	return nil
 }
 
-func getDocumentation(path string, outputDirectory string) ([]Document, error) {
-	policies, err := rego.GetFilesWithRule(path, "violation")
+func getDocumentation(path string, severity string, outputDirectory string) ([]Document, error) {
+	policies, err := rego.GetFilesWithRule(path, severity)
 	if err != nil {
 		return nil, fmt.Errorf("get files: %w", err)
 	}
+
+	fmt.Println(policies)
 
 	var documents []Document
 	for _, policy := range policies {
@@ -136,9 +186,10 @@ func getDocumentation(path string, outputDirectory string) ([]Document, error) {
 		regoWithoutComments := getRegoWithoutComments(policy.Contents)
 
 		document := Document{
-			Header: header,
-			URL:    relDir,
-			Rego:   regoWithoutComments,
+			Header:   header,
+			Severity: severity,
+			URL:      relDir,
+			Rego:     regoWithoutComments,
 		}
 
 		documents = append(documents, document)

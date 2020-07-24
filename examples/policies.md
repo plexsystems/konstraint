@@ -1,14 +1,23 @@
 # Policies
 
-* [images must not use the latest tag](#images-must-not-use-the-latest-tag)
-* [containers must define resource constraints](#containers-must-define-resource-constraints)
+## Violations
 
-## images must not use the latest tag
+* [Images must not use the latest tag](#Images-must-not-use-the-latest-tag)
+* [Containers must define resource constraints](#Containers-must-define-resource-constraints)
+
+## Warnings
+
+* [Deprecated Deployment and DaemonSet API](#Deprecated-Deployment-and-DaemonSet-API)
+
+## Images must not use the latest tag
+
+**Severity:** violation
+
+**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+
 
 Using the latest tag on images can cause unexpected problems in production. By specifing a pinned version
 we can have higher confidence that our applications are immutable and do not change unexpectedly.
-
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
 ### Rego
 
@@ -34,12 +43,15 @@ has_latest_tag {
 ```
 _source: [containers-latest-tag](containers-latest-tag)_
 
-## containers must define resource constraints
+## Containers must define resource constraints
+
+**Severity:** violation
+
+**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+
 
 Resource constraints on containers ensure that a given workload does not take up more resources than it required
 and potentially starve other applications that need to run.
-
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
 ### Rego
 
@@ -67,3 +79,32 @@ container_resources_provided {
 }
 ```
 _source: [containers-resource-constraints](containers-resource-constraints)_
+
+## Deprecated Deployment and DaemonSet API
+
+**Severity:** warn
+
+**Resources:** apps/DaemonSet apps/Deployment
+
+
+The `extensions/v1beta1 API` has been deprecated in favor of `apps/v1`. Later versions of Kubernetes
+remove this API so to ensure that the Deployment or DaemonSet can be successfully deployed to the cluster,
+the version for both of these resources must be `apps/v1`.
+
+### Rego
+
+```rego
+package main
+
+import data.lib.k8s
+
+warn[msg] {
+  resources := ["DaemonSet", "Deployment"]
+  input.apiVersion == "extensions/v1beta1"
+  input.kind == resources[_]
+
+  msg := k8s.format(sprintf("%s/%s: API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [input.kind, input.metadata.name, input.kind]))
+}
+
+```
+_source: [warnings](warnings)_

@@ -31,7 +31,7 @@ rule[msg] { msg = true }`
 func TestGetConstraint_KindsInComment_ReturnsKinds(t *testing.T) {
 	policy := `package test
 # Description
-# @Kinds core/Pod apps/Deployment
+# @kinds core/Pod apps/Deployment
 rule[msg] { msg = true }`
 
 	rego, err := rego.NewFile("test.rego", policy)
