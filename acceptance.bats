@@ -10,8 +10,17 @@
   git diff --quiet -- test/doc/expected.md
 }
 
-@test "[CREATE] Created constraints and templates matches examples" {
+@test "[CREATE] Creating constraints and templates matches examples" {
   run ./build/konstraint create examples
   git diff --quiet -- examples/container-images/constraint.yaml
   git diff --quiet -- examples/container-images/template.yaml
+}
+
+@test "[CREATE] Creating constraints using --output matches expected output" {
+  run ./build/konstraint create examples --output test/create
+  git diff --quiet -- test/create/constraint_ContainersLatestTag.yaml
+  git diff --quiet -- test/create/template_ContainersLatestTag.yaml
+
+  git diff --quiet -- test/create/constraint_ContainersResourceConstraints.yaml
+  git diff --quiet -- test/create/template_ContainersResourceConstraints.yaml
 }

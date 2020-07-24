@@ -3,6 +3,8 @@ package rego
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -10,50 +12,44 @@ import (
 	"github.com/open-policy-agent/opa/ast"
 )
 
-// File is a parsed Rego file
+// File is a parsed Rego file.
 type File struct {
 	FilePath       string
 	PackageName    string
 	ImportPackages []string
 	Contents       string
-	RulesActions   []string
+	RuleNames      []string
 	Comments       []string
 }
 
-// LoadPoliciesWithAction loads all policies from rego with rules with a given action name
-func LoadPoliciesWithAction(files []string, action string) ([]File, error) {
-	regoFiles, err := loadRegoFiles(files)
+// GetFiles gets all Rego files in the given path and its subdirectories.
+func GetFiles(path string) ([]File, error) {
+	filePaths, err := getFilePaths(path)
 	if err != nil {
-		return nil, fmt.Errorf("load rego files: %w", err)
+		return nil, fmt.Errorf("load files: %w", err)
 	}
 
-	policies := getPoliciesWithAction(regoFiles, action)
-	return policies, nil
-}
-
-// LoadPolicies loads all policies from rego with rules
-func LoadPolicies(files []string) ([]File, error) {
-	regoFiles, err := loadRegoFiles(files)
+	files, err := getFiles(filePaths)
 	if err != nil {
-		return nil, fmt.Errorf("load rego files: %w", err)
+		return nil, fmt.Errorf("load files: %w", err)
 	}
 
-	policies := getPolicies(regoFiles)
-	return policies, nil
+	return files, nil
 }
 
-// LoadLibraries loads all libraries from rego
-func LoadLibraries(files []string) ([]File, error) {
-	regoFiles, err := loadRegoFiles(files)
+// GetFilesWithRule gets all Rego files in the given path and its subdirectories that contain the specified rule.
+func GetFilesWithRule(path string, rule string) ([]File, error) {
+	allFiles, err := GetFiles(path)
 	if err != nil {
-		return nil, fmt.Errorf("load rego files: %w", err)
+		return nil, fmt.Errorf("load policies: %w", err)
 	}
 
-	return regoFiles, nil
+	filesWithRule := getFilesWithRule(allFiles, rule)
+	return filesWithRule, nil
 }
 
-// NewRegoFile parses the rego and creates a File
-func NewRegoFile(filePath string, contents string) (File, error) {
+// NewFile parses the rego and creates a File
+func NewFile(filePath string, contents string) (File, error) {
 	module, err := ast.ParseModule(filePath, contents)
 	if err != nil {
 		return File{}, fmt.Errorf("parse module: %w", err)
@@ -64,9 +60,14 @@ func NewRegoFile(filePath string, contents string) (File, error) {
 		importPackages = append(importPackages, module.Imports[i].Path.String())
 	}
 
-	rulesActions, err := getModuleRulesActions(module)
+	ruleNames, err := getRuleNamesFromModule(module)
 	if err != nil {
 		return File{}, fmt.Errorf("get module rules: %w", err)
+	}
+
+	var comments []string
+	for _, comment := range module.Comments {
+		comments = append(comments, string(comment.Text))
 	}
 
 	file := File{
@@ -74,19 +75,45 @@ func NewRegoFile(filePath string, contents string) (File, error) {
 		PackageName:    module.Package.Path.String(),
 		ImportPackages: importPackages,
 		Contents:       contents,
-		RulesActions:   rulesActions,
-		Comments:       getModuleComments(module),
+		RuleNames:      ruleNames,
+		Comments:       comments,
 	}
 
 	return file, nil
 }
 
-func getPoliciesWithAction(regoFiles []File, action string) []File {
+func getFilePaths(path string) ([]string, error) {
+	var regoFilePaths []string
+	err := filepath.Walk(path, func(currentFilePath string, fileInfo os.FileInfo, err error) error {
+		if err != nil {
+			return fmt.Errorf("walk path: %w", err)
+		}
+
+		if fileInfo.IsDir() && fileInfo.Name() == ".git" {
+			return filepath.SkipDir
+		}
+
+		if filepath.Ext(currentFilePath) != ".rego" || strings.HasSuffix(fileInfo.Name(), "_test.rego") {
+			return nil
+		}
+
+		regoFilePaths = append(regoFilePaths, currentFilePath)
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return regoFilePaths, nil
+}
+
+func getFilesWithRule(regoFiles []File, rule string) []File {
 	var matchingPolicies []File
 	allPolicies := getPolicies(regoFiles)
 	for _, policy := range allPolicies {
-		for _, ruleAction := range policy.RulesActions {
-			if ruleAction == action {
+		for _, ruleName := range policy.RuleNames {
+			if ruleName == rule {
 				matchingPolicies = append(matchingPolicies, policy)
 			}
 		}
@@ -98,7 +125,7 @@ func getPoliciesWithAction(regoFiles []File, action string) []File {
 func getPolicies(regoFiles []File) []File {
 	var policies []File
 	for _, regoFile := range regoFiles {
-		if len(regoFile.RulesActions) > 0 {
+		if len(regoFile.RuleNames) > 0 {
 			policies = append(policies, regoFile)
 		}
 	}
@@ -106,7 +133,7 @@ func getPolicies(regoFiles []File) []File {
 	return policies
 }
 
-func loadRegoFiles(files []string) ([]File, error) {
+func getFiles(files []string) ([]File, error) {
 	filesContents, err := readFilesContents(files)
 	if err != nil {
 		return nil, fmt.Errorf("read files: %w", err)
@@ -114,7 +141,7 @@ func loadRegoFiles(files []string) ([]File, error) {
 
 	var regoFiles []File
 	for path, contents := range filesContents {
-		regoFile, err := NewRegoFile(path, contents)
+		regoFile, err := NewFile(path, contents)
 		if err != nil {
 			return nil, fmt.Errorf("new rego file: %w", err)
 		}
@@ -129,34 +156,25 @@ func loadRegoFiles(files []string) ([]File, error) {
 	return regoFiles, nil
 }
 
-func getModuleRulesActions(module *ast.Module) ([]string, error) {
+func getRuleNamesFromModule(module *ast.Module) ([]string, error) {
 	re, err := regexp.Compile(`^\s*([a-z]+)\s*\[\s*msg`)
 	if err != nil {
 		return nil, fmt.Errorf("compile regex: %w", err)
 	}
 
-	var rulesActions []string
+	var ruleNames []string
 	for _, rule := range module.Rules {
 		match := re.FindStringSubmatch(rule.Head.String())
 		if len(match) == 0 {
 			continue
 		}
-		if contains(rulesActions, match[1]) {
+		if contains(ruleNames, match[1]) {
 			continue
 		}
-		rulesActions = append(rulesActions, match[1])
+		ruleNames = append(ruleNames, match[1])
 	}
 
-	return rulesActions, nil
-}
-
-func getModuleComments(module *ast.Module) []string {
-	var comments []string
-	for _, comment := range module.Comments {
-		comments = append(comments, string(comment.Text))
-	}
-
-	return comments
+	return ruleNames, nil
 }
 
 func readFilesContents(filePaths []string) (map[string]string, error) {

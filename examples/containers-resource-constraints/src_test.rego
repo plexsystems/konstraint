@@ -43,4 +43,3 @@ test_input_as_container_with_all_constraints {
 
   not containers_resource_constraints_required with input as input
 }
-

@@ -5,12 +5,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
+
+	"github.com/plexsystems/konstraint/internal/rego"
 
 	"github.com/ghodss/yaml"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
-	"github.com/plexsystems/konstraint/internal/rego"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,14 +32,6 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 	konstraint create examples --dryrun`,
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := viper.BindPFlag("ignore", cmd.Flags().Lookup("ignore")); err != nil {
-				return fmt.Errorf("bind ignore flag: %w", err)
-			}
-
-			if err := viper.BindPFlag("lib", cmd.Flags().Lookup("lib")); err != nil {
-				return fmt.Errorf("bind lib flag: %w", err)
-			}
-
 			if err := viper.BindPFlag("dryrun", cmd.PersistentFlags().Lookup("dryrun")); err != nil {
 				return fmt.Errorf("bind dryrun flag: %w", err)
 			}
@@ -64,29 +56,23 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 }
 
 func runCreateCommand(path string) error {
-	regoFilePaths, err := getRegoFilePaths(path)
+	policies, err := rego.GetFilesWithRule(path, "violation")
 	if err != nil {
-		return fmt.Errorf("get rego files: %w", err)
+		return fmt.Errorf("get policies: %w", err)
 	}
 
-	var libraryFilePaths []string
-	var policyFilePaths []string
-	for _, regoFilePath := range regoFilePaths {
-		if filepath.Base(filepath.Dir(regoFilePath)) != viper.GetString("lib") {
-			policyFilePaths = append(policyFilePaths, regoFilePath)
-		} else {
-			libraryFilePaths = append(libraryFilePaths, regoFilePath)
-		}
+	libraryPath, err := getLibraryPath(path)
+	if err != nil {
+		return fmt.Errorf("get library path: %w", err)
 	}
 
-	policies, err := rego.LoadPoliciesWithAction(policyFilePaths, "violation")
+	libraries, err := rego.GetFiles(libraryPath)
 	if err != nil {
-		return fmt.Errorf("load policies: %w", err)
+		return fmt.Errorf("get libraries: %w", err)
 	}
 
-	libraries, err := rego.LoadLibraries(libraryFilePaths)
-	if err != nil {
-		return fmt.Errorf("load libraries: %w", err)
+	for l := range libraries {
+		libraries[l].Contents = getRegoWithoutComments(libraries[l].Contents)
 	}
 
 	var templateFileName, constraintFileName, outputDir string
@@ -104,8 +90,8 @@ func runCreateCommand(path string) error {
 		if outputFlag == "" {
 			outputDir = policyDir
 		} else {
-			templateFileName = fmt.Sprintf("template_%s.yaml", getKindFromPath(policy.FilePath))
-			constraintFileName = fmt.Sprintf("constraint_%s.yaml", getKindFromPath(policy.FilePath))
+			templateFileName = fmt.Sprintf("template_%s.yaml", GetKindFromPath(policy.FilePath))
+			constraintFileName = fmt.Sprintf("constraint_%s.yaml", GetKindFromPath(policy.FilePath))
 		}
 
 		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
@@ -155,7 +141,7 @@ func getConstraintTemplate(policy rego.File, libraries []rego.File) v1beta1.Cons
 		}
 	}
 
-	kind := getKindFromPath(policy.FilePath)
+	kind := GetKindFromPath(policy.FilePath)
 
 	constraintTemplate := v1beta1.ConstraintTemplate{
 		TypeMeta: metav1.TypeMeta{
@@ -177,7 +163,7 @@ func getConstraintTemplate(policy rego.File, libraries []rego.File) v1beta1.Cons
 				{
 					Target: "admission.k8s.gatekeeper.sh",
 					Libs:   libs,
-					Rego:   policy.Contents,
+					Rego:   getRegoWithoutComments(policy.Contents),
 				},
 			},
 		},
@@ -187,7 +173,7 @@ func getConstraintTemplate(policy rego.File, libraries []rego.File) v1beta1.Cons
 }
 
 func getConstraint(policy rego.File) (unstructured.Unstructured, error) {
-	kind := getKindFromPath(policy.FilePath)
+	kind := GetKindFromPath(policy.FilePath)
 	constraint := unstructured.Unstructured{}
 	constraint.SetName(strings.ToLower(kind))
 	constraint.SetGroupVersionKind(schema.GroupVersionKind{Group: "constraints.gatekeeper.sh", Version: "v1beta1", Kind: kind})
@@ -199,28 +185,31 @@ func getConstraint(policy rego.File) (unstructured.Unstructured, error) {
 		}
 	}
 
-	policyCommentBlocks, err := getPolicyCommentBlocks(policy.Comments)
-	if err != nil {
-		return unstructured.Unstructured{}, fmt.Errorf("get policy comment blocks: %w", err)
-	}
-
-	if len(policyCommentBlocks) == 0 {
+	matchers := GetMatchersFromComments(policy.Comments)
+	if len(matchers.KindMatchers) == 0 {
 		return constraint, nil
 	}
 
 	var kinds []interface{}
 	var apiGroups []interface{}
-	for _, policyCommentBlock := range policyCommentBlocks {
-		for _, policyKind := range policyCommentBlock.Kinds {
-			kinds = append(kinds, policyKind)
+	for _, kindMatcher := range matchers.KindMatchers {
+		kinds = append(kinds, kindMatcher.Kind)
+	}
+
+	for _, kindMatcher := range matchers.KindMatchers {
+		apiGroup := kindMatcher.APIGroup
+		if kindMatcher.APIGroup == "core" {
+			apiGroup = ""
 		}
 
-		for _, policyAPIGroup := range policyCommentBlock.APIGroups {
-			if policyAPIGroup == "core" {
-				policyAPIGroup = ""
+		var exists bool
+		for _, addedGroup := range apiGroups {
+			if apiGroup == addedGroup {
+				exists = true
 			}
-
-			apiGroups = append(apiGroups, policyAPIGroup)
+		}
+		if !exists {
+			apiGroups = append(apiGroups, apiGroup)
 		}
 	}
 
@@ -236,14 +225,11 @@ func getConstraint(policy rego.File) (unstructured.Unstructured, error) {
 	return constraint, nil
 }
 
-func getRegoFilePaths(path string) ([]string, error) {
-	ignoreRegex, err := regexp.Compile(viper.GetString("ignore"))
-	if err != nil {
-		return nil, fmt.Errorf("compile ignore regex: %w", err)
-	}
+func getLibraryPath(path string) (string, error) {
+	libraryFolderNames := []string{"lib", "libs", "util", "utils"}
 
-	var regoFilePaths []string
-	err = filepath.Walk(path, func(currentFilePath string, fileInfo os.FileInfo, err error) error {
+	var libraryPath string
+	err := filepath.Walk(path, func(currentFilePath string, fileInfo os.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("walk path: %w", err)
 		}
@@ -252,32 +238,16 @@ func getRegoFilePaths(path string) ([]string, error) {
 			return filepath.SkipDir
 		}
 
-		if fileInfo.IsDir() && ignoreRegex.MatchString(currentFilePath) {
-			return filepath.SkipDir
-		}
-
-		if ignoreRegex.MatchString(currentFilePath) {
+		if fileInfo.IsDir() && contains(libraryFolderNames, fileInfo.Name()) {
+			libraryPath = currentFilePath
 			return nil
 		}
-
-		if filepath.Ext(currentFilePath) != ".rego" || strings.HasSuffix(fileInfo.Name(), "_test.rego") {
-			return nil
-		}
-
-		regoFilePaths = append(regoFilePaths, currentFilePath)
 
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return regoFilePaths, nil
-}
-
-func getKindFromPath(path string) string {
-	name := getNameFromPath(path)
-	kind := strings.ReplaceAll(name, " ", "")
-
-	return kind
+	return libraryPath, nil
 }
