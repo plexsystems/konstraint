@@ -20,7 +20,7 @@ type KindMatcher struct {
 func GetMatchersFromComments(comments []string) Matchers {
 	var matchers Matchers
 	for _, comment := range comments {
-		if strings.Contains(strings.ToLower(comment), "@kinds") {
+		if strings.Contains(comment, "@kinds") {
 			matchers.KindMatchers = getKindMatchers(comment)
 		}
 	}

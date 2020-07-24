@@ -1,11 +1,11 @@
 # Policies
 
-* [Images must not use the latest tag](#Images-must-not-use-the-latest-tag)
-* [Containers must define resource constraints](#Containers-must-define-resource-constraints)
+* [images must not use the latest tag](#images-must-not-use-the-latest-tag)
+* [containers must define resource constraints](#containers-must-define-resource-constraints)
 
-## Images must not use the latest tag
+## images must not use the latest tag
 
-Using the latest tag on images can cause unexpected problems downloading stuff. By specifing a pinned version
+Using the latest tag on images can cause unexpected problems in production. By specifing a pinned version
 we can have higher confidence that our applications are immutable and do not change unexpectedly.
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
@@ -34,7 +34,7 @@ has_latest_tag {
 ```
 _source: [containers-latest-tag](containers-latest-tag)_
 
-## Containers must define resource constraints
+## containers must define resource constraints
 
 Resource constraints on containers ensure that a given workload does not take up more resources than it required
 and potentially starve other applications that need to run.
