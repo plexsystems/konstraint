@@ -1,6 +1,7 @@
-package main
+package container_latest_tag
 
-import data.lib.k8s
+import data.lib.core
+import data.lib.workloads
 
 # @title Images must not use the latest tag
 #
@@ -11,13 +12,13 @@ import data.lib.k8s
 violation[msg] {
   has_latest_tag
 
-  msg := k8s.format(sprintf("(%s) %s: Images must not use the latest tag", [k8s.kind, k8s.name]))
+  msg := core.format(sprintf("(%s) %s: Images must not use the latest tag", [core.kind, core.name]))
 }
 
 has_latest_tag {
-  endswith(k8s.container_images[_], ":latest")
+  endswith(workloads.container_images[_], ":latest")
 }
 
 has_latest_tag {
-  contains(k8s.container_images[_], ":") == false
+  contains(workloads.container_images[_], ":") == false
 }
