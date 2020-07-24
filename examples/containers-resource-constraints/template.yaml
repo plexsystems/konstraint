@@ -11,7 +11,7 @@ spec:
   targets:
   - libs:
     - |
-      package lib.k8s
+      package lib.core
 
       default is_gatekeeper = false
 
@@ -52,33 +52,54 @@ spec:
       missing_field(obj, field) = true {
         not has_field(obj, field)
       }
+    - |
+      package lib.workloads
 
-      is_service {
-        lower(kind) == "service"
-      }
+      import data.lib.core
 
       is_statefulset {
-        lower(kind) == "statefulset"
+        lower(core.kind) == "statefulset"
       }
 
       is_daemonset {
-        lower(kind) == "daemonset"
+        lower(core.kind) == "daemonset"
       }
 
       is_deployment {
-        lower(kind) == "deployment"
+        lower(core.kind) == "deployment"
       }
 
       is_pod {
-        lower(kind) == "pod"
-      }
-
-      is_namespace {
-        lower(kind) == "namespace"
+        lower(core.kind) == "pod"
       }
 
       is_workload {
         containers[_]
+      }
+
+      pods[pod] {
+        is_statefulset
+        pod = core.object.spec.template
+      }
+
+      pods[pod] {
+        is_daemonset
+        pod = core.object.spec.template
+      }
+
+      pods[pod] {
+        is_deployment
+        pod = core.object.spec.template
+      }
+
+      pods[pod] {
+        is_pod
+        pod = core.object
+      }
+
+      volumes[volume] {
+        pods[pod]
+        volume = pod.spec.volumes[_]
       }
 
       pod_containers(pod) = all_containers {
@@ -93,17 +114,13 @@ spec:
       }
 
       containers[container] {
-        all_containers = pod_containers(object)
+        all_containers = pod_containers(core.object)
         container = all_containers[_]
       }
 
       container_images[image] {
         containers[container]
         image = container.image
-      }
-
-      container_images[image] {
-        image = object.spec.image
       }
 
       split_image(image) = [image, "latest"] {
@@ -113,190 +130,28 @@ spec:
       split_image(image) = [image_name, tag] {
         [image_name, tag] = split(image, ":")
       }
+    rego: |
+      package container_resource_constraints
 
-      pods[pod] {
-        is_statefulset
-        pod = object.spec.template
-      }
-
-      pods[pod] {
-        is_daemonset
-        pod = object.spec.template
-      }
-
-      pods[pod] {
-        is_deployment
-        pod = object.spec.template
-      }
-
-      pods[pod] {
-        is_pod
-        pod = object
-      }
-
-      volumes[volume] {
-        pods[pod]
-        volume = pod.spec.volumes[_]
-      }
-
-      mem_multiple("E") = 1000000000000000000000 { true }
-
-      mem_multiple("P") = 1000000000000000000 { true }
-
-      mem_multiple("T") = 1000000000000000 { true }
-
-      mem_multiple("G") = 1000000000000 { true }
-
-      mem_multiple("M") = 1000000000 { true }
-
-      mem_multiple("k") = 1000000 { true }
-
-      mem_multiple("") = 1000 { true }
-
-      mem_multiple("m") = 1 { true }
-
-      mem_multiple("Ki") = 1024000 { true }
-
-      mem_multiple("Mi") = 1048576000 { true }
-
-      mem_multiple("Gi") = 1073741824000 { true }
-
-      mem_multiple("Ti") = 1099511627776000 { true }
-
-      mem_multiple("Pi") = 1125899906842624000 { true }
-
-      mem_multiple("Ei") = 1152921504606846976000 { true }
-
-      get_suffix(mem) = suffix {
-        not is_string(mem)
-        suffix := ""
-      }
-
-      get_suffix(mem) = suffix {
-        is_string(mem)
-        count(mem) > 0
-        suffix := substring(mem, count(mem) - 1, -1)
-        mem_multiple(suffix)
-      }
-
-      get_suffix(mem) = suffix {
-        is_string(mem)
-        count(mem) > 1
-        suffix := substring(mem, count(mem) - 2, -1)
-        mem_multiple(suffix)
-      }
-
-      get_suffix(mem) = suffix {
-        is_string(mem)
-        count(mem) > 1
-        not mem_multiple(substring(mem, count(mem) - 1, -1))
-        not mem_multiple(substring(mem, count(mem) - 2, -1))
-        suffix := ""
-      }
-
-      get_suffix(mem) = suffix {
-        is_string(mem)
-        count(mem) == 1
-        not mem_multiple(substring(mem, count(mem) - 1, -1))
-        suffix := ""
-      }
-
-      get_suffix(mem) = suffix {
-        is_string(mem)
-        count(mem) == 0
-        suffix := ""
-      }
-
-      canonify_mem(orig) = new {
-        is_number(orig)
-        new := orig * 1000
-      }
-
-      canonify_mem(orig) = new {
-        not is_number(orig)
-        suffix := get_suffix(orig)
-        raw := replace(orig, suffix, "")
-        re_match("^[0-9]+$", raw)
-        new := to_number(raw) * mem_multiple(suffix)
-      }
-
-      canonify_storage(orig) = new {
-        is_number(orig)
-        new := orig
-      }
-
-      canonify_storage(orig) = new {
-        not is_number(orig)
-        suffix := get_suffix(orig)
-        raw := replace(orig, suffix, "")
-        re_match("^[0-9]+$", raw)
-        new := to_number(raw) * mem_multiple(suffix)
-      }
-
-      canonify_cpu(orig) = new {
-        is_number(orig)
-        new := orig * 1000
-      }
-
-      canonify_cpu(orig) = new {
-        not is_number(orig)
-        endswith(orig, "m")
-        new := to_number(replace(orig, "m", ""))
-      }
-
-      canonify_cpu(orig) = new {
-        not is_number(orig)
-        not endswith(orig, "m")
-        re_match("^[0-9]+$", orig)
-        new := to_number(orig) * 1000
-      }
-
-      dropped_capability(container, cap) {
-        container.securityContext.capabilities.drop[_] == cap
-      }
-
-      added_capability(container, cap) {
-        container.securityContext.capabilities.add[_] == cap
-      }
-
-      no_read_only_filesystem(c) {
-        not has_field(c, "securityContext")
-      }
-
-      no_read_only_filesystem(c) {
-        has_field(c, "securityContext")
-        not has_field(c.securityContext, "readOnlyRootFilesystem")
-      }
-
-      priviledge_escalation_allowed(c) {
-        not has_field(c, "securityContext")
-      }
-
-      priviledge_escalation_allowed(c) {
-        has_field(c, "securityContext")
-        has_field(c.securityContext, "allowPrivilegeEscalation")
-      }
-    rego: |-
-      package policy
-
-      import data.lib.k8s
+      import data.lib.core
+      import data.lib.workloads
 
       violation[msg] {
         containers_resource_constraints_required
 
-        msg := k8s.format(sprintf("(%s) %s: Container resource constraints must be specified", [k8s.kind, k8s.name]))
+        msg := core.format(sprintf("(%s) %s: Container resource constraints must be specified", [core.kind, core.name]))
       }
 
       containers_resource_constraints_required {
-        k8s.is_workload
+        workloads.is_workload
         not container_resources_provided
       }
 
       container_resources_provided {
-        k8s.containers[_].resources.requests.cpu
-        k8s.containers[_].resources.requests.memory
-        k8s.containers[_].resources.limits.cpu
-        k8s.containers[_].resources.limits.memory
+        workloads.containers[_].resources.requests.cpu
+        workloads.containers[_].resources.requests.memory
+        workloads.containers[_].resources.limits.cpu
+        workloads.containers[_].resources.limits.memory
       }
     target: admission.k8s.gatekeeper.sh
 status: {}

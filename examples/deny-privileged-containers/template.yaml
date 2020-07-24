@@ -2,12 +2,12 @@ apiVersion: templates.gatekeeper.sh/v1beta1
 kind: ConstraintTemplate
 metadata:
   creationTimestamp: null
-  name: containerslatesttag
+  name: denyprivilegedcontainers
 spec:
   crd:
     spec:
       names:
-        kind: ContainersLatestTag
+        kind: DenyPrivilegedContainers
   targets:
   - libs:
     - |
@@ -130,24 +130,44 @@ spec:
       split_image(image) = [image_name, tag] {
         [image_name, tag] = split(image, ":")
       }
+    - |
+      package lib.security
+
+      dropped_capability(container, cap) {
+        container.securityContext.capabilities.drop[_] == cap
+      }
+
+      added_capability(container, cap) {
+        container.securityContext.capabilities.add[_] == cap
+      }
+
+      dropped_capability(psp, cap) {
+        psp.spec.capabilities.drop[_] == cap
+      }
+
+      added_capability(psp, cap) {
+        psp.spec.capabilities.add[_] == cap
+      }
     rego: |
-      package container_latest_tag
+      package deny_privileged_containers
 
       import data.lib.core
       import data.lib.workloads
+      import data.lib.security
+
 
       violation[msg] {
-        has_latest_tag
+        workloads.containers[container]
+        container.securityContext.privileged
 
-        msg := core.format(sprintf("(%s) %s: Images must not use the latest tag", [core.kind, core.name]))
+        msg = core.format(sprintf("(%s) %s: Containers are not allowed to run as privileged", [core.kind, core.name]))
       }
 
-      has_latest_tag {
-        endswith(workloads.container_images[_], ":latest")
-      }
+      violation[msg] {
+        workloads.containers[container]
+        security.added_capability(container, "CAP_SYS_ADMIN")
 
-      has_latest_tag {
-        contains(workloads.container_images[_], ":") == false
+        msg = core.format(sprintf("(%s) %s: Containers are not allowed to run as privileged", [core.kind, core.name]))
       }
     target: admission.k8s.gatekeeper.sh
 status: {}
