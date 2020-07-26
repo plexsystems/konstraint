@@ -62,16 +62,3 @@ containers[container] {
   all_containers = pod_containers(core.object)
   container = all_containers[_]
 }
-
-container_images[image] {
-  containers[container]
-  image = container.image
-}
-
-split_image(image) = [image, "latest"] {
-  not contains(image, ":")
-}
-
-split_image(image) = [image_name, tag] {
-  [image_name, tag] = split(image, ":")
-}

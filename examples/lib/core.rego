@@ -28,6 +28,8 @@ name = object.metadata.name
 
 kind = object.kind
 
+api_version = object.apiVersion
+
 has_field(obj, field) {
   obj[field]
 }

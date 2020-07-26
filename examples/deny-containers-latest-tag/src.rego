@@ -10,15 +10,16 @@ import data.lib.workloads
 #
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 violation[msg] {
-  has_latest_tag
+  workloads.containers[container]
+  has_latest_tag(container)
 
   msg := core.format(sprintf("(%s) %s: Images must not use the latest tag", [core.kind, core.name]))
 }
 
-has_latest_tag {
-  endswith(workloads.container_images[_], ":latest")
+has_latest_tag(c) {
+  endswith(c.image, ":latest")
 }
 
-has_latest_tag {
-  contains(workloads.container_images[_], ":") == false
+has_latest_tag(c) {
+  contains(c.image, ":") == false
 }
