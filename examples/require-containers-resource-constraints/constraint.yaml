@@ -1,7 +1,7 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: ContainersResourceConstraints
+kind: RequireContainersResourceConstraints
 metadata:
-  name: containersresourceconstraints
+  name: requirecontainersresourceconstraints
 spec:
   match:
     kinds:

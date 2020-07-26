@@ -3,8 +3,8 @@
 ## Violations
 
 * [Images must not use the latest tag](#Images-must-not-use-the-latest-tag)
-* [Containers must define resource constraints](#Containers-must-define-resource-constraints)
 * [Containers must not run as privileged](#Containers-must-not-run-as-privileged)
+* [Containers must define resource constraints](#Containers-must-define-resource-constraints)
 
 ## Warnings
 
@@ -29,60 +29,22 @@ import data.lib.core
 import data.lib.workloads
 
 violation[msg] {
-  has_latest_tag
+  workloads.containers[container]
+  has_latest_tag(container)
 
   msg := core.format(sprintf("(%s) %s: Images must not use the latest tag", [core.kind, core.name]))
 }
 
-has_latest_tag {
-  endswith(workloads.container_images[_], ":latest")
+has_latest_tag(c) {
+  endswith(c.image, ":latest")
 }
 
-has_latest_tag {
-  contains(workloads.container_images[_], ":") == false
-}
-
-```
-_source: [containers-latest-tag](containers-latest-tag)_
-
-## Containers must define resource constraints
-
-**Severity:** violation
-
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-
-
-Resource constraints on containers ensure that a given workload does not take up more resources than it required
-and potentially starve other applications that need to run.
-
-### Rego
-
-```rego
-package container_resource_constraints
-
-import data.lib.core
-import data.lib.workloads
-
-violation[msg] {
-  containers_resource_constraints_required
-
-  msg := core.format(sprintf("(%s) %s: Container resource constraints must be specified", [core.kind, core.name]))
-}
-
-containers_resource_constraints_required {
-  workloads.is_workload
-  not container_resources_provided
-}
-
-container_resources_provided {
-  workloads.containers[_].resources.requests.cpu
-  workloads.containers[_].resources.requests.memory
-  workloads.containers[_].resources.limits.cpu
-  workloads.containers[_].resources.limits.memory
+has_latest_tag(c) {
+  contains(c.image, ":") == false
 }
 
 ```
-_source: [containers-resource-constraints](containers-resource-constraints)_
+_source: [deny-containers-latest-tag](deny-containers-latest-tag)_
 
 ## Containers must not run as privileged
 
@@ -123,6 +85,45 @@ is_privileged(container) {
 ```
 _source: [deny-privileged-containers](deny-privileged-containers)_
 
+## Containers must define resource constraints
+
+**Severity:** violation
+
+**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+
+
+Resource constraints on containers ensure that a given workload does not take up more resources than it required
+and potentially starve other applications that need to run.
+
+### Rego
+
+```rego
+package container_resource_constraints
+
+import data.lib.core
+import data.lib.workloads
+
+violation[msg] {
+  containers_resource_constraints_required
+
+  msg := core.format(sprintf("(%s) %s: Container resource constraints must be specified", [core.kind, core.name]))
+}
+
+containers_resource_constraints_required {
+  workloads.is_workload
+  not container_resources_provided
+}
+
+container_resources_provided {
+  workloads.containers[_].resources.requests.cpu
+  workloads.containers[_].resources.requests.memory
+  workloads.containers[_].resources.limits.cpu
+  workloads.containers[_].resources.limits.memory
+}
+
+```
+_source: [require-containers-resource-constraints](require-containers-resource-constraints)_
+
 ## Deprecated Deployment and DaemonSet API
 
 **Severity:** warn
@@ -137,17 +138,15 @@ the version for both of these resources must be `apps/v1`.
 ### Rego
 
 ```rego
-package main
-
-import data.lib.core
+package warn_deprecated_api_versions
 
 warn[msg] {
   resources := ["DaemonSet", "Deployment"]
   input.apiVersion == "extensions/v1beta1"
   input.kind == resources[_]
 
-  msg := core.format(sprintf("%s/%s: API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [input.kind, input.metadata.name, input.kind]))
+  msg := sprintf("%s/%s: API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [input.kind, input.metadata.name, input.kind])
 }
 
 ```
-_source: [warnings](warnings)_
+_source: [warn-deprecated-api-versions](warn-deprecated-api-versions)_

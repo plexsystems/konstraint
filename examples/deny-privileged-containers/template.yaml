@@ -41,6 +41,8 @@ spec:
 
       kind = object.kind
 
+      api_version = object.apiVersion
+
       has_field(obj, field) {
         obj[field]
       }
@@ -117,19 +119,6 @@ spec:
         all_containers = pod_containers(core.object)
         container = all_containers[_]
       }
-
-      container_images[image] {
-        containers[container]
-        image = container.image
-      }
-
-      split_image(image) = [image, "latest"] {
-        not contains(image, ":")
-      }
-
-      split_image(image) = [image_name, tag] {
-        [image_name, tag] = split(image, ":")
-      }
     - |
       package lib.security
 
@@ -158,16 +147,17 @@ spec:
 
       violation[msg] {
         workloads.containers[container]
-        container.securityContext.privileged
+        is_privileged(container)
 
         msg = core.format(sprintf("(%s) %s: Containers are not allowed to run as privileged", [core.kind, core.name]))
       }
 
-      violation[msg] {
-        workloads.containers[container]
-        security.added_capability(container, "CAP_SYS_ADMIN")
+      is_privileged(container) {
+        container.securityContext.privileged
+      }
 
-        msg = core.format(sprintf("(%s) %s: Containers are not allowed to run as privileged", [core.kind, core.name]))
+      is_privileged(container) {
+        security.added_capability(container, "CAP_SYS_ADMIN")
       }
     target: admission.k8s.gatekeeper.sh
 status: {}

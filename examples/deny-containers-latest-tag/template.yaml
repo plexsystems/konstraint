@@ -2,12 +2,12 @@ apiVersion: templates.gatekeeper.sh/v1beta1
 kind: ConstraintTemplate
 metadata:
   creationTimestamp: null
-  name: containerslatesttag
+  name: denycontainerslatesttag
 spec:
   crd:
     spec:
       names:
-        kind: ContainersLatestTag
+        kind: DenyContainersLatestTag
   targets:
   - libs:
     - |
@@ -40,6 +40,8 @@ spec:
       name = object.metadata.name
 
       kind = object.kind
+
+      api_version = object.apiVersion
 
       has_field(obj, field) {
         obj[field]
@@ -117,19 +119,6 @@ spec:
         all_containers = pod_containers(core.object)
         container = all_containers[_]
       }
-
-      container_images[image] {
-        containers[container]
-        image = container.image
-      }
-
-      split_image(image) = [image, "latest"] {
-        not contains(image, ":")
-      }
-
-      split_image(image) = [image_name, tag] {
-        [image_name, tag] = split(image, ":")
-      }
     rego: |
       package container_latest_tag
 
@@ -137,17 +126,18 @@ spec:
       import data.lib.workloads
 
       violation[msg] {
-        has_latest_tag
+        workloads.containers[container]
+        has_latest_tag(container)
 
         msg := core.format(sprintf("(%s) %s: Images must not use the latest tag", [core.kind, core.name]))
       }
 
-      has_latest_tag {
-        endswith(workloads.container_images[_], ":latest")
+      has_latest_tag(c) {
+        endswith(c.image, ":latest")
       }
 
-      has_latest_tag {
-        contains(workloads.container_images[_], ":") == false
+      has_latest_tag(c) {
+        contains(c.image, ":") == false
       }
     target: admission.k8s.gatekeeper.sh
 status: {}
