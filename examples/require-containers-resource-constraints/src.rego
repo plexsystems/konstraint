@@ -1,6 +1,7 @@
-package policy
+package container_resource_constraints
 
-import data.lib.k8s
+import data.lib.core
+import data.lib.workloads
 
 # @title Containers must define resource constraints
 #
@@ -11,17 +12,17 @@ import data.lib.k8s
 violation[msg] {
   containers_resource_constraints_required
 
-  msg := k8s.format(sprintf("(%s) %s: Container resource constraints must be specified", [k8s.kind, k8s.name]))
+  msg := core.format(sprintf("(%s) %s: Container resource constraints must be specified", [core.kind, core.name]))
 }
 
 containers_resource_constraints_required {
-  k8s.is_workload
+  workloads.is_workload
   not container_resources_provided
 }
 
 container_resources_provided {
-  k8s.containers[_].resources.requests.cpu
-  k8s.containers[_].resources.requests.memory
-  k8s.containers[_].resources.limits.cpu
-  k8s.containers[_].resources.limits.memory
+  workloads.containers[_].resources.requests.cpu
+  workloads.containers[_].resources.requests.memory
+  workloads.containers[_].resources.limits.cpu
+  workloads.containers[_].resources.limits.memory
 }

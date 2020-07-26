@@ -1,7 +1,7 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: ContainersResourceConstraints
+kind: DenyContainersLatestTag
 metadata:
-  name: containersresourceconstraints
+  name: denycontainerslatesttag
 spec:
   match:
     kinds:

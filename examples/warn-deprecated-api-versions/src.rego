@@ -1,6 +1,4 @@
-package main
-
-import data.lib.k8s
+package warn_deprecated_api_versions
 
 # @title Deprecated Deployment and DaemonSet API
 #
@@ -14,5 +12,5 @@ warn[msg] {
   input.apiVersion == "extensions/v1beta1"
   input.kind == resources[_]
 
-  msg := k8s.format(sprintf("%s/%s: API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [input.kind, input.metadata.name, input.kind]))
+  msg := sprintf("%s/%s: API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [input.kind, input.metadata.name, input.kind])
 }

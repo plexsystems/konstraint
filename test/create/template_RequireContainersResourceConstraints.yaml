@@ -1,0 +1,146 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  creationTimestamp: null
+  name: requirecontainersresourceconstraints
+spec:
+  crd:
+    spec:
+      names:
+        kind: RequireContainersResourceConstraints
+  targets:
+  - libs:
+    - |
+      package lib.core
+
+      default is_gatekeeper = false
+
+      is_gatekeeper {
+        has_field(input, "review")
+        has_field(input.review, "object")
+      }
+
+      object = input {
+        not is_gatekeeper
+      }
+
+      object = input.review.object {
+        is_gatekeeper
+      }
+
+      format(msg) = gatekeeper_format {
+        is_gatekeeper
+        gatekeeper_format = {"msg": msg}
+      }
+
+      format(msg) = msg {
+        not is_gatekeeper
+      }
+
+      name = object.metadata.name
+
+      kind = object.kind
+
+      api_version = object.apiVersion
+
+      has_field(obj, field) {
+        obj[field]
+      }
+
+      missing_field(obj, field) = true {
+        obj[field] == ""
+      }
+
+      missing_field(obj, field) = true {
+        not has_field(obj, field)
+      }
+    - |
+      package lib.workloads
+
+      import data.lib.core
+
+      is_statefulset {
+        lower(core.kind) == "statefulset"
+      }
+
+      is_daemonset {
+        lower(core.kind) == "daemonset"
+      }
+
+      is_deployment {
+        lower(core.kind) == "deployment"
+      }
+
+      is_pod {
+        lower(core.kind) == "pod"
+      }
+
+      is_workload {
+        containers[_]
+      }
+
+      pods[pod] {
+        is_statefulset
+        pod = core.object.spec.template
+      }
+
+      pods[pod] {
+        is_daemonset
+        pod = core.object.spec.template
+      }
+
+      pods[pod] {
+        is_deployment
+        pod = core.object.spec.template
+      }
+
+      pods[pod] {
+        is_pod
+        pod = core.object
+      }
+
+      volumes[volume] {
+        pods[pod]
+        volume = pod.spec.volumes[_]
+      }
+
+      pod_containers(pod) = all_containers {
+        keys = {"containers", "initContainers"}
+        all_containers = [c | keys[k]; c = pod.spec[k][_]]
+      }
+
+      containers[container] {
+        pods[pod]
+        all_containers = pod_containers(pod)
+        container = all_containers[_]
+      }
+
+      containers[container] {
+        all_containers = pod_containers(core.object)
+        container = all_containers[_]
+      }
+    rego: |
+      package container_resource_constraints
+
+      import data.lib.core
+      import data.lib.workloads
+
+      violation[msg] {
+        containers_resource_constraints_required
+
+        msg := core.format(sprintf("(%s) %s: Container resource constraints must be specified", [core.kind, core.name]))
+      }
+
+      containers_resource_constraints_required {
+        workloads.is_workload
+        not container_resources_provided
+      }
+
+      container_resources_provided {
+        workloads.containers[_].resources.requests.cpu
+        workloads.containers[_].resources.requests.memory
+        workloads.containers[_].resources.limits.cpu
+        workloads.containers[_].resources.limits.memory
+      }
+    target: admission.k8s.gatekeeper.sh
+status: {}

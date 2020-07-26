@@ -3,6 +3,7 @@
 ## Violations
 
 * [Images must not use the latest tag](#Images-must-not-use-the-latest-tag)
+* [Containers must not run as privileged](#Containers-must-not-run-as-privileged)
 * [Containers must define resource constraints](#Containers-must-define-resource-constraints)
 
 ## Warnings
@@ -22,26 +23,67 @@ we can have higher confidence that our applications are immutable and do not cha
 ### Rego
 
 ```rego
-package main
+package container_latest_tag
 
-import data.lib.k8s
+import data.lib.core
+import data.lib.workloads
 
 violation[msg] {
-  has_latest_tag
+  workloads.containers[container]
+  has_latest_tag(container)
 
-  msg := k8s.format(sprintf("(%s) %s: Images must not use the latest tag", [k8s.kind, k8s.name]))
+  msg := core.format(sprintf("(%s) %s: Images must not use the latest tag", [core.kind, core.name]))
 }
 
-has_latest_tag {
-  endswith(k8s.container_images[_], ":latest")
+has_latest_tag(c) {
+  endswith(c.image, ":latest")
 }
 
-has_latest_tag {
-  contains(k8s.container_images[_], ":") == false
+has_latest_tag(c) {
+  contains(c.image, ":") == false
 }
 
 ```
-_source: [containers-latest-tag](containers-latest-tag)_
+_source: [deny-containers-latest-tag](deny-containers-latest-tag)_
+
+## Containers must not run as privileged
+
+**Severity:** violation
+
+**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+
+
+Privileged containers can easily escalate to root privileges on the node. As
+such containers running as privileged or with sufficient capabilities granted
+to obtain the same effect are not allowed.
+
+### Rego
+
+```rego
+package deny_privileged_containers
+
+import data.lib.core
+import data.lib.workloads
+import data.lib.security
+
+
+violation[msg] {
+  workloads.containers[container]
+  is_privileged(container)
+
+  msg = core.format(sprintf("(%s) %s: Containers are not allowed to run as privileged", [core.kind, core.name]))
+}
+
+is_privileged(container) {
+  container.securityContext.privileged
+}
+
+is_privileged(container) {
+  security.added_capability(container, "CAP_SYS_ADMIN")
+}
+
+```
+_source: [deny-privileged-containers](deny-privileged-containers)_
 
 ## Containers must define resource constraints
 
@@ -56,29 +98,31 @@ and potentially starve other applications that need to run.
 ### Rego
 
 ```rego
-package policy
+package container_resource_constraints
 
-import data.lib.k8s
+import data.lib.core
+import data.lib.workloads
 
 violation[msg] {
   containers_resource_constraints_required
 
-  msg := k8s.format(sprintf("(%s) %s: Container resource constraints must be specified", [k8s.kind, k8s.name]))
+  msg := core.format(sprintf("(%s) %s: Container resource constraints must be specified", [core.kind, core.name]))
 }
 
 containers_resource_constraints_required {
-  k8s.is_workload
+  workloads.is_workload
   not container_resources_provided
 }
 
 container_resources_provided {
-  k8s.containers[_].resources.requests.cpu
-  k8s.containers[_].resources.requests.memory
-  k8s.containers[_].resources.limits.cpu
-  k8s.containers[_].resources.limits.memory
+  workloads.containers[_].resources.requests.cpu
+  workloads.containers[_].resources.requests.memory
+  workloads.containers[_].resources.limits.cpu
+  workloads.containers[_].resources.limits.memory
 }
+
 ```
-_source: [containers-resource-constraints](containers-resource-constraints)_
+_source: [require-containers-resource-constraints](require-containers-resource-constraints)_
 
 ## Deprecated Deployment and DaemonSet API
 
@@ -94,17 +138,15 @@ the version for both of these resources must be `apps/v1`.
 ### Rego
 
 ```rego
-package main
-
-import data.lib.k8s
+package warn_deprecated_api_versions
 
 warn[msg] {
   resources := ["DaemonSet", "Deployment"]
   input.apiVersion == "extensions/v1beta1"
   input.kind == resources[_]
 
-  msg := k8s.format(sprintf("%s/%s: API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [input.kind, input.metadata.name, input.kind]))
+  msg := sprintf("%s/%s: API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [input.kind, input.metadata.name, input.kind])
 }
 
 ```
-_source: [warnings](warnings)_
+_source: [warn-deprecated-api-versions](warn-deprecated-api-versions)_
