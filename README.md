@@ -28,11 +28,13 @@ This creates a scenario where the policy needs to be written differently dependi
 
 - Auto-generate both `ConstraintTemplates` and the Constraints themselves. The `.rego` files are the source of truth and all development should happen in those files.
 
-- Enable the same policy to be used with Gatekeeper `AdmissionReviews` and Conftest `yaml` files. This is accomplished with the _Kubernetes library_.
+- Auto-generate the documentation for the policies, using the `.rego` files as the source of truth.
 
-### Kubernetes library
+- Enable the same policy to be used with Gatekeeper `AdmissionReviews` and Conftest `yaml` files. This is accomplished with the provided libraries.
 
-In the [examples/lib](examples/lib) directory, there is a `kubernetes.rego` file that enables policies to be written for both Conftest and Gatekeeper.
+### Kubernetes Libraries
+
+In the [examples/lib](examples/lib) directory, there are multiple libraries that enable policies to easily be written for both Conftest and Gatekeeper. You can include as little or as many of these libraries into your policies as desired.
 
 #### Purpose
 
@@ -55,3 +57,7 @@ To create the Gatekeeper resources, use `konstraint create <policy_dir>`. To gen
 **Konstraint ran without error, but I don't see any new files.**
 
 This typically means no policies were found, or the policies did not have any `violation[]` rules so they are not compatible with Gatekeeper. For more information, see [How Constraints are Created](docs/constraint_creation.md).
+
+**I imported `lib.XYZ` but Gatekeeper cannot locate `lib.core`?**
+
+At this time, Konstraint only parses the imports from the policy. As many of the libraries rely on `lib.core`, if this is not imported in your policy it will not be included in the generated `ConstraintTemplate` which means not all of the necessary libraries have been included. This issue is being tracked in [https://github.com/plexsystems/konstraint/issues/30](https://github.com/plexsystems/konstraint/issues/30).
