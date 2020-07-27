@@ -15,6 +15,11 @@ object = input.review.object {
   is_gatekeeper
 }
 
+api_version = object.apiVersion
+kind = object.kind
+metadata = object.metadata
+name = metadata.name
+
 format(msg) = gatekeeper_format {
   is_gatekeeper
   gatekeeper_format = {"msg": msg}
@@ -23,12 +28,6 @@ format(msg) = gatekeeper_format {
 format(msg) = msg {
   not is_gatekeeper
 }
-
-name = object.metadata.name
-
-kind = object.kind
-
-api_version = object.apiVersion
 
 has_field(obj, field) {
   obj[field]
