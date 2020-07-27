@@ -8,7 +8,7 @@ import (
 )
 
 // version is set during the build process.
-var version = ""
+var version string
 
 // NewDefaultCommand creates a new default command
 func NewDefaultCommand() *cobra.Command {
