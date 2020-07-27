@@ -12,9 +12,10 @@ acceptance: build
 
 .PHONY: release
 release:
-	GOOS=darwin GOARCH=amd64 go build -o build/konstraint-darwin-amd64
-	GOOS=windows GOARCH=amd64 go build -o build/konstraint-windows-amd64
-	GOOS=linux GOARCH=amd64 go build -o build/konstraint-linux-amd64
+	@test $(version)
+	GOOS=darwin GOARCH=amd64 go build -o build/konstraint-darwin-amd64 -ldflags="-X 'github.com/plexsystems/konstraint/internal/commands.version=$(version)'"
+	GOOS=windows GOARCH=amd64 go build -o build/konstraint-windows-amd64 -ldflags="-X 'github.com/plexsystems/konstraint/internal/commands.version=$(version)'"
+	GOOS=linux GOARCH=amd64 go build -o build/konstraint-linux-amd64 -ldflags="-X 'github.com/plexsystems/konstraint/internal/commands.version=$(version)'"
 
 .PHONY: update-static
 update-static: build
