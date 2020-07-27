@@ -10,6 +10,10 @@ test:
 acceptance: build
 	bats acceptance.bats
 
+.PHONY: policy
+policy:
+	conftest verify -p examples
+
 .PHONY: update-static
 update-static: build
 	./build/konstraint create examples
