@@ -144,7 +144,7 @@ import data.lib.core
 
 warn[msg] {
   resources := ["DaemonSet", "Deployment"]
-  core.api_version == "extensions/v1beta1"
+  core.apiVersion == "extensions/v1beta1"
   core.kind == resources[_]
 
   msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]))

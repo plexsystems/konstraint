@@ -28,9 +28,10 @@ spec:
         is_gatekeeper
       }
 
-      api_version = object.apiVersion
+      apiVersion = object.apiVersion
       kind = object.kind
       metadata = object.metadata
+      spec = object.spec
       name = metadata.name
 
       format(msg) = gatekeeper_format {

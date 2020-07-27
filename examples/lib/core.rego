@@ -15,10 +15,11 @@ object = input.review.object {
   is_gatekeeper
 }
 
-api_version = object.apiVersion
+apiVersion = object.apiVersion
 kind = object.kind
 metadata = object.metadata
 name = metadata.name
+spec = object.spec
 
 format(msg) = gatekeeper_format {
   is_gatekeeper
