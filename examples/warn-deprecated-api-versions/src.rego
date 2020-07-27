@@ -1,5 +1,7 @@
 package warn_deprecated_api_versions
 
+import data.lib.core
+
 # @title Deprecated Deployment and DaemonSet API
 #
 # The `extensions/v1beta1 API` has been deprecated in favor of `apps/v1`. Later versions of Kubernetes
@@ -9,8 +11,8 @@ package warn_deprecated_api_versions
 # @kinds apps/DaemonSet apps/Deployment
 warn[msg] {
   resources := ["DaemonSet", "Deployment"]
-  input.apiVersion == "extensions/v1beta1"
-  input.kind == resources[_]
+  core.apiVersion == "extensions/v1beta1"
+  core.kind == resources[_]
 
-  msg := sprintf("%s/%s: API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [input.kind, input.metadata.name, input.kind])
+  msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]))
 }

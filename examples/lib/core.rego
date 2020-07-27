@@ -7,13 +7,18 @@ is_gatekeeper {
   has_field(input.review, "object")
 }
 
-object = input {
+resource = input {
   not is_gatekeeper
 }
 
-object = input.review.object {
+resource = input.review.object {
   is_gatekeeper
 }
+
+apiVersion = resource.apiVersion
+kind = resource.kind
+name = resource.metadata.name
+labels = resource.metadata.labels
 
 format(msg) = gatekeeper_format {
   is_gatekeeper
@@ -23,12 +28,6 @@ format(msg) = gatekeeper_format {
 format(msg) = msg {
   not is_gatekeeper
 }
-
-name = object.metadata.name
-
-kind = object.kind
-
-api_version = object.apiVersion
 
 has_field(obj, field) {
   obj[field]

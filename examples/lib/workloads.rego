@@ -24,22 +24,22 @@ is_workload {
 
 pods[pod] {
   is_statefulset
-  pod = core.object.spec.template
+  pod = core.resource.spec.template
 }
 
 pods[pod] {
   is_daemonset
-  pod = core.object.spec.template
+  pod = core.resource.spec.template
 }
 
 pods[pod] {
   is_deployment
-  pod = core.object.spec.template
+  pod = core.resource.spec.template
 }
 
 pods[pod] {
   is_pod
-  pod = core.object
+  pod = core.resource
 }
 
 volumes[volume] {
