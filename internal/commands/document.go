@@ -77,7 +77,7 @@ func runDocCommand(path string) error {
 		documentContents += "## Violations"
 		documentContents += "\n\n"
 		for _, document := range violationDocs {
-			documentContents += "* [" + document.Header.Title + "](#" + strings.ReplaceAll(document.Header.Title, " ", "-") + ")"
+			documentContents += "* [" + document.Header.Title + "](#" + strings.ReplaceAll(strings.ToLower(document.Header.Title), " ", "-") + ")"
 			documentContents += "\n"
 		}
 
@@ -89,7 +89,7 @@ func runDocCommand(path string) error {
 		documentContents += "## Warnings"
 		documentContents += "\n\n"
 		for _, document := range warningDocs {
-			documentContents += "* [" + document.Header.Title + "](#" + strings.ReplaceAll(document.Header.Title, " ", "-") + ")"
+			documentContents += "* [" + document.Header.Title + "](#" + strings.ReplaceAll(strings.ToLower(document.Header.Title), " ", "-") + ")"
 			documentContents += "\n"
 		}
 
