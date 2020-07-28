@@ -2,13 +2,13 @@
 
 ## Violations
 
-* [Images must not use the latest tag](#Images-must-not-use-the-latest-tag)
-* [Containers must not run as privileged](#Containers-must-not-run-as-privileged)
-* [Containers must define resource constraints](#Containers-must-define-resource-constraints)
+* [Images must not use the latest tag](#images-must-not-use-the-latest-tag)
+* [Containers must not run as privileged](#containers-must-not-run-as-privileged)
+* [Containers must define resource constraints](#containers-must-define-resource-constraints)
 
 ## Warnings
 
-* [Deprecated Deployment and DaemonSet API](#Deprecated-Deployment-and-DaemonSet-API)
+* [Deprecated Deployment and DaemonSet API](#deprecated-deployment-and-daemonset-api)
 
 ## Images must not use the latest tag
 
