@@ -13,7 +13,7 @@ violation[msg] {
   workloads.containers[container]
   not container_resources_provided(container)
 
-  msg := core.format(sprintf("(%s) %s: Container resource constraints must be specified", [core.kind, core.name]))
+  msg := core.format(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]))
 }
 
 container_resources_provided(container) {

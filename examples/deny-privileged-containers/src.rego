@@ -16,7 +16,7 @@ violation[msg] {
   workloads.containers[container]
   is_privileged(container)
 
-  msg = core.format(sprintf("(%s) %s: Containers are not allowed to run as privileged", [core.kind, core.name]))
+  msg = core.format(sprintf("%s/%s/%s: Containers are not allowed to run as privileged", [core.kind, core.name, container.name]))
 }
 
 is_privileged(container) {
