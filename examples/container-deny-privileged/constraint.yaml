@@ -1,0 +1,15 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: ContainerDenyPrivileged
+metadata:
+  name: containerdenyprivileged
+spec:
+  match:
+    kinds:
+    - apiGroups:
+      - apps
+      - ""
+      kinds:
+      - DaemonSet
+      - Deployment
+      - StatefulSet
+      - Pod
