@@ -37,3 +37,8 @@ containers[container] {
   all_containers = pod_containers(core.resource)
   container = all_containers[_]
 }
+
+volumes[volume] {
+  pods[pod]
+  volume = pod.spec.volumes[_]
+}
