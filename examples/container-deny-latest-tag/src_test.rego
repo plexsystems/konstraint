@@ -1,4 +1,4 @@
-package container_latest_tag
+package container_deny_latest_tag
 
 test_input_as_image_without_latest_tag {
   input := {

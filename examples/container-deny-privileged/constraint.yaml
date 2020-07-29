@@ -1,7 +1,7 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: ContainerDenyPrivileged
+kind: DenyPrivilegedContainers
 metadata:
-  name: containerdenyprivileged
+  name: denyprivilegedcontainers
 spec:
   match:
     kinds:

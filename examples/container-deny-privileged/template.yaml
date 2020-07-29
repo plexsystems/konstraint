@@ -2,12 +2,12 @@ apiVersion: templates.gatekeeper.sh/v1beta1
 kind: ConstraintTemplate
 metadata:
   creationTimestamp: null
-  name: containerdenyprivileged
+  name: denyprivilegedcontainers
 spec:
   crd:
     spec:
       names:
-        kind: ContainerDenyPrivileged
+        kind: DenyPrivilegedContainers
   targets:
   - libs:
     - |
@@ -20,54 +20,87 @@ spec:
         has_field(input.review, "object")
       }
 
+      resource = input {
+        not is_gatekeeper
+      }
+
       resource = input.review.object {
         is_gatekeeper
       }
 
-      resource = input {
-        not is_gatekeeper
+      apiVersion = resource.apiVersion
+      kind = resource.kind
+      name = resource.metadata.name
+      labels = resource.metadata.labels
+
+      format(msg) = gatekeeper_format {
+        is_gatekeeper
+        gatekeeper_format = {"msg": msg}
       }
 
       format(msg) = msg {
         not is_gatekeeper
       }
 
-      format(msg) = {"msg": msg} {
-        is_gatekeeper
+      has_field(obj, field) {
+        obj[field]
       }
 
-      apiVersion = resource.apiVersion
-      name = resource.metadata.name
-      kind = resource.kind
-      labels = resource.metadata.labels
-      annotations = resource.metadata.annotations
+      missing_field(obj, field) = true {
+        obj[field] == ""
+      }
 
-      has_field(obj, field) {
-        not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
+      missing_field(obj, field) = true {
+        not has_field(obj, field)
       }
     - |
       package lib.workloads
 
       import data.lib.core
 
+      is_statefulset {
+        lower(core.kind) == "statefulset"
+      }
+
+      is_daemonset {
+        lower(core.kind) == "daemonset"
+      }
+
+      is_deployment {
+        lower(core.kind) == "deployment"
+      }
+
+      is_pod {
+        lower(core.kind) == "pod"
+      }
+
+      is_workload {
+        containers[_]
+      }
+
       pods[pod] {
-        core.kind = "StatefulSet"
+        is_statefulset
         pod = core.resource.spec.template
       }
 
       pods[pod] {
-        core.kind = "DaemonSet"
+        is_daemonset
         pod = core.resource.spec.template
       }
 
       pods[pod] {
-        core.kind = "Deployment"
+        is_deployment
         pod = core.resource.spec.template
       }
 
       pods[pod] {
-        core.kind = "Pod"
+        is_pod
         pod = core.resource
+      }
+
+      volumes[volume] {
+        pods[pod]
+        volume = pod.spec.volumes[_]
       }
 
       pod_containers(pod) = all_containers {
@@ -82,7 +115,7 @@ spec:
       }
 
       containers[container] {
-        all_containers = pod_containers(core.resource)
+        all_containers = pod_containers(core.object)
         container = all_containers[_]
       }
     - |
@@ -104,17 +137,18 @@ spec:
         psp.spec.capabilities.add[_] == cap
       }
     rego: |
-      package container_deny_privileged
+      package deny_privileged_containers
 
       import data.lib.core
       import data.lib.workloads
       import data.lib.security
 
-      violation[msg] {
-          workloads.containers[container]
-          is_privileged(container)
 
-          msg = core.format(sprintf("The Container %s in the %s %s is privileged", [container.name, core.kind, core.name]))
+      violation[msg] {
+        workloads.containers[container]
+        is_privileged(container)
+
+        msg = core.format(sprintf("(%s) %s: Containers are not allowed to run as privileged", [core.kind, core.name]))
       }
 
       is_privileged(container) {

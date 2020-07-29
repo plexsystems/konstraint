@@ -1,20 +1,22 @@
-# @title Containers must not run as privileged
-# 
-# Privileged containers can much more easily obtain root on the node.
-# As such, they are not allowed.
-#
-# @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 package container_deny_privileged
 
 import data.lib.core
 import data.lib.workloads
 import data.lib.security
 
-violation[msg] {
-    workloads.containers[container]
-    is_privileged(container)
+# @title Containers must not run as privileged
+#
+# Privileged containers can easily escalate to root privileges on the node. As
+# such containers running as privileged or with sufficient capabilities granted
+# to obtain the same effect are not allowed.
+#
+# @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
-    msg = core.format(sprintf("%s/%s/%s: Is privileged", [core.kind, core.name, container.name]))
+violation[msg] {
+  workloads.containers[container]
+  is_privileged(container)
+
+  msg = core.format(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]))
 }
 
 is_privileged(container) {

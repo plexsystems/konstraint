@@ -1,4 +1,4 @@
-package container_resource_constraints
+package container_deny_without_resource_constraints
 
 test_input_as_container_missing_resources {
   container := {}

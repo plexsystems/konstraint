@@ -1,4 +1,4 @@
-package container_resource_constraints
+package container_deny_without_resource_constraints
 
 import data.lib.core
 import data.lib.workloads

@@ -1,4 +1,4 @@
-package container_latest_tag
+package container_deny_latest_tag
 
 import data.lib.core
 import data.lib.workloads
