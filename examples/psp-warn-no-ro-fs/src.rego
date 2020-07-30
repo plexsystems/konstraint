@@ -16,7 +16,7 @@ warn[msg] {
 }
 
 no_read_only_filesystem(psp) {
-    not core.has_field(psp.spec, "readOnlyRootFilesystem")
+    core.missing_field(psp.spec, "readOnlyRootFilesystem")
 }
 
 no_read_only_filesystem(psp) {

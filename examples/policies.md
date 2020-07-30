@@ -75,8 +75,16 @@ import data.lib.core
 
 violation[msg] {
     workloads.containers[container]
-    container.securityContext.allowPrivilegeEscalation
+    allows_escalation(container)
     msg = core.format(sprintf("%s/%s/%s: Allows priviledge escalation", [core.kind, core.name, container.name]))
+}
+
+allows_escalation(c) {
+    c.securityContext.allowPrivilegeEscalation == true
+}
+
+allows_escalation(c) {
+    core.missing_field(c.securityContext, "allowPrivilegeEscalation")
 }
 
 ```
@@ -386,7 +394,7 @@ allows_escalation(p) {
 }
 
 allows_escalation(p) {
-    not core.has_field(p.spec, "allowPrivilegeEscalation")
+    core.missing_field(p.spec, "allowPrivilegeEscalation")
 }
 
 ```
@@ -588,7 +596,7 @@ no_read_only_filesystem(container) {
 }
 
 no_read_only_filesystem(container) {
-    not core.has_field(container.securityContext, "readOnlyRootFilesystem")
+    core.missing_field(container.securityContext, "readOnlyRootFilesystem")
 }
 
 ```
@@ -619,7 +627,7 @@ warn[msg] {
 }
 
 no_read_only_filesystem(psp) {
-    not core.has_field(psp.spec, "readOnlyRootFilesystem")
+    core.missing_field(psp.spec, "readOnlyRootFilesystem")
 }
 
 no_read_only_filesystem(psp) {

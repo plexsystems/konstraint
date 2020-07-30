@@ -20,5 +20,5 @@ allows_escalation(p) {
 }
 
 allows_escalation(p) {
-    not core.has_field(p.spec, "allowPrivilegeEscalation")
+    core.missing_field(p.spec, "allowPrivilegeEscalation")
 }

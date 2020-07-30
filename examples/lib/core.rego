@@ -32,3 +32,11 @@ annotations = resource.metadata.annotations
 has_field(obj, field) {
   not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
 }
+
+missing_field(obj, field) = true {
+  obj[field] == ""
+}
+
+missing_field(obj, field) = true {
+  not has_field(obj, field)
+}

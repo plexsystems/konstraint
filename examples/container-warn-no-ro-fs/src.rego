@@ -21,5 +21,5 @@ no_read_only_filesystem(container) {
 }
 
 no_read_only_filesystem(container) {
-    not core.has_field(container.securityContext, "readOnlyRootFilesystem")
+    core.missing_field(container.securityContext, "readOnlyRootFilesystem")
 }

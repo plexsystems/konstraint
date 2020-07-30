@@ -99,6 +99,14 @@ spec:
       has_field(obj, field) {
         not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
       }
+
+      missing_field(obj, field) = true {
+        obj[field] == ""
+      }
+
+      missing_field(obj, field) = true {
+        not has_field(obj, field)
+      }
     rego: |
       package container_deny_escalation
 
@@ -107,8 +115,16 @@ spec:
 
       violation[msg] {
           workloads.containers[container]
-          container.securityContext.allowPrivilegeEscalation
+          allows_escalation(container)
           msg = core.format(sprintf("%s/%s/%s: Allows priviledge escalation", [core.kind, core.name, container.name]))
+      }
+
+      allows_escalation(c) {
+          c.securityContext.allowPrivilegeEscalation == true
+      }
+
+      allows_escalation(c) {
+          core.missing_field(c.securityContext, "allowPrivilegeEscalation")
       }
     target: admission.k8s.gatekeeper.sh
 status: {}

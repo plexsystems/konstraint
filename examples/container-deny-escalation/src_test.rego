@@ -10,7 +10,7 @@ test_pos {
             "containers": [{
                 "name": "test-container",
                 "securityContext": {
-                    "allowPrivilegeEscalation": false,
+                    "allowPrivilegeEscalation": false
                 }
             }]
         }
@@ -29,7 +29,7 @@ test_neg {
             "containers": [{
                 "name": "test-container",
                 "securityContext": {
-                    "allowPrivilegeEscalation": true,
+                    "allowPrivilegeEscalation": true
                 }
             }]
         }

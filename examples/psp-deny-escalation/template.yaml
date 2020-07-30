@@ -45,6 +45,14 @@ spec:
       has_field(obj, field) {
         not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
       }
+
+      missing_field(obj, field) = true {
+        obj[field] == ""
+      }
+
+      missing_field(obj, field) = true {
+        not has_field(obj, field)
+      }
     - |
       package lib.psps
 
@@ -85,7 +93,7 @@ spec:
       }
 
       allows_escalation(p) {
-          not core.has_field(p.spec, "allowPrivilegeEscalation")
+          core.missing_field(p.spec, "allowPrivilegeEscalation")
       }
     target: admission.k8s.gatekeeper.sh
 status: {}

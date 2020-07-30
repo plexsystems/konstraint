@@ -11,6 +11,14 @@ import data.lib.core
 
 violation[msg] {
     workloads.containers[container]
-    container.securityContext.allowPrivilegeEscalation
+    allows_escalation(container)
     msg = core.format(sprintf("%s/%s/%s: Allows priviledge escalation", [core.kind, core.name, container.name]))
+}
+
+allows_escalation(c) {
+    c.securityContext.allowPrivilegeEscalation == true
+}
+
+allows_escalation(c) {
+    core.missing_field(c.securityContext, "allowPrivilegeEscalation")
 }

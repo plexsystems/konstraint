@@ -7,7 +7,7 @@ test_pos {
             "name": "test-psp"
         },
         "spec": {
-            "allowPrivilegeEscalation": false,
+            "allowPrivilegeEscalation": false
         }
     }
     violations := violation with input as input
@@ -35,7 +35,7 @@ test_neg {
             "name": "test-psp"
         },
         "spec": {
-            "allowPrivilegeEscalation": true,
+            "allowPrivilegeEscalation": true
         }
     }
     violations := violation with input as input
