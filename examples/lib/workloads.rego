@@ -14,6 +14,10 @@ is_deployment {
   lower(core.kind) == "deployment"
 }
 
+is_job {
+  lower(core.kind) == "job"
+}
+
 is_pod {
   lower(core.kind) == "pod"
 }
@@ -34,6 +38,11 @@ pods[pod] {
 
 pods[pod] {
   is_deployment
+  pod = core.resource.spec.template
+}
+
+pods[pod] {
+  is_job
   pod = core.resource.spec.template
 }
 
