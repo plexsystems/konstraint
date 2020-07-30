@@ -47,3 +47,7 @@ volumes[volume] {
   pods[pod]
   volume = pod.spec.volumes[_]
 }
+
+is_workload {
+  containers[_]
+}

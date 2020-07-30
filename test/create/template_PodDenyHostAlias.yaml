@@ -95,6 +95,10 @@ spec:
         pods[pod]
         volume = pod.spec.volumes[_]
       }
+
+      is_workload {
+        containers[_]
+      }
     rego: |
       package pod_deny_host_alias
 

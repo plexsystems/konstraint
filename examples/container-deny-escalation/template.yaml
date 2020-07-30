@@ -60,6 +60,10 @@ spec:
         pods[pod]
         volume = pod.spec.volumes[_]
       }
+
+      is_workload {
+        containers[_]
+      }
     - |
       package lib.core
 
