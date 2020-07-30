@@ -1,7 +1,7 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: ContainerDenyWithoutResourceConstraints
+kind: PodDenyWithoutRunasnonroot
 metadata:
-  name: containerdenywithoutresourceconstraints
+  name: poddenywithoutrunasnonroot
 spec:
   match:
     kinds:
