@@ -25,25 +25,13 @@ test_added_capabilities_container_nomatch {
 }
 
 test_added_capabilities_psp_match {
-  input := {
-    "spec": {
-      "capabilities": {
-        "add": ["CAP_SYS_ADMIN"]
-      }
-    }
-  }
+  input := {"spec": {"allowedCapabilities": ["CAP_SYS_ADMIN"]}}
 
   added_capability(input, "CAP_SYS_ADMIN")
 }
 
 test_added_capabilities_psp_nomatch {
-  input := {
-    "spec": {
-      "capabilities": {
-        "add": ["CAP_SYS_ADMIN"]
-      }
-    }
-  }
+  input := {"spec": {"allowedCapabilities": ["CAP_SYS_ADMIN"]}}
 
   not added_capability(input, "test")
 }
@@ -73,25 +61,13 @@ test_dropped_capabilities_container_nomatch {
 }
 
 test_dropped_capabilities_psp_match {
-  input := {
-    "spec": {
-      "capabilities": {
-        "drop": ["CAP_SYS_ADMIN"]
-      }
-    }
-  }
+  input := {"spec": {"requiredDropCapabilities": ["CAP_SYS_ADMIN"]}}
 
   dropped_capability(input, "CAP_SYS_ADMIN")
 }
 
 test_dropped_capabilities_psp_nomatch {
-  input := {
-    "spec": {
-      "capabilities": {
-        "drop": ["CAP_SYS_ADMIN"]
-      }
-    }
-  }
+  input := {"spec": {"requiredDropCapabilities": ["CAP_SYS_ADMIN"]}}
 
   not dropped_capability(input, "test")
 }
