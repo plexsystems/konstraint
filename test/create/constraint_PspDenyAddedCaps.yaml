@@ -1,0 +1,11 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: PspDenyAddedCaps
+metadata:
+  name: pspdenyaddedcaps
+spec:
+  match:
+    kinds:
+    - apiGroups:
+      - policy
+      kinds:
+      - PodSecurityPolicy

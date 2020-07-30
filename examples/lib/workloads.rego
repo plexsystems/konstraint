@@ -2,58 +2,29 @@ package lib.workloads
 
 import data.lib.core
 
-is_statefulset {
-  lower(core.kind) == "statefulset"
-}
-
-is_daemonset {
-  lower(core.kind) == "daemonset"
-}
-
-is_deployment {
-  lower(core.kind) == "deployment"
-}
-
-is_job {
-  lower(core.kind) == "job"
-}
-
-is_pod {
-  lower(core.kind) == "pod"
-}
-
-is_workload {
-  containers[_]
-}
-
 pods[pod] {
-  is_statefulset
+  lower(core.kind) = "statefulset"
   pod = core.resource.spec.template
 }
 
 pods[pod] {
-  is_daemonset
+  lower(core.kind) = "daemonset"
   pod = core.resource.spec.template
 }
 
 pods[pod] {
-  is_deployment
+  lower(core.kind) = "deployment"
   pod = core.resource.spec.template
 }
 
 pods[pod] {
-  is_job
-  pod = core.resource.spec.template
-}
-
-pods[pod] {
-  is_pod
+  lower(core.kind) = "pod"
   pod = core.resource
 }
 
-volumes[volume] {
-  pods[pod]
-  volume = pod.spec.volumes[_]
+pods[pod] {
+  lower(core.kind) = "job"
+  pod = core.resource.spec.template
 }
 
 pod_containers(pod) = all_containers {
@@ -68,6 +39,15 @@ containers[container] {
 }
 
 containers[container] {
-  all_containers = pod_containers(core.object)
+  all_containers = pod_containers(core.resource)
   container = all_containers[_]
+}
+
+volumes[volume] {
+  pods[pod]
+  volume = pod.spec.volumes[_]
+}
+
+is_workload {
+  containers[_]
 }

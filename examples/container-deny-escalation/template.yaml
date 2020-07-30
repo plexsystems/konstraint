@@ -1,0 +1,130 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  creationTimestamp: null
+  name: containerdenyescalation
+spec:
+  crd:
+    spec:
+      names:
+        kind: ContainerDenyEscalation
+  targets:
+  - libs:
+    - |
+      package lib.workloads
+
+      import data.lib.core
+
+      pods[pod] {
+        lower(core.kind) = "statefulset"
+        pod = core.resource.spec.template
+      }
+
+      pods[pod] {
+        lower(core.kind) = "daemonset"
+        pod = core.resource.spec.template
+      }
+
+      pods[pod] {
+        lower(core.kind) = "deployment"
+        pod = core.resource.spec.template
+      }
+
+      pods[pod] {
+        lower(core.kind) = "pod"
+        pod = core.resource
+      }
+
+      pods[pod] {
+        lower(core.kind) = "job"
+        pod = core.resource.spec.template
+      }
+
+      pod_containers(pod) = all_containers {
+        keys = {"containers", "initContainers"}
+        all_containers = [c | keys[k]; c = pod.spec[k][_]]
+      }
+
+      containers[container] {
+        pods[pod]
+        all_containers = pod_containers(pod)
+        container = all_containers[_]
+      }
+
+      containers[container] {
+        all_containers = pod_containers(core.resource)
+        container = all_containers[_]
+      }
+
+      volumes[volume] {
+        pods[pod]
+        volume = pod.spec.volumes[_]
+      }
+
+      is_workload {
+        containers[_]
+      }
+    - |
+      package lib.core
+
+      default is_gatekeeper = false
+
+      is_gatekeeper {
+        has_field(input, "review")
+        has_field(input.review, "object")
+      }
+
+      resource = input.review.object {
+        is_gatekeeper
+      }
+
+      resource = input {
+        not is_gatekeeper
+      }
+
+      format(msg) = msg {
+        not is_gatekeeper
+      }
+
+      format(msg) = {"msg": msg} {
+        is_gatekeeper
+      }
+
+      apiVersion = resource.apiVersion
+      name = resource.metadata.name
+      kind = resource.kind
+      labels = resource.metadata.labels
+      annotations = resource.metadata.annotations
+
+      has_field(obj, field) {
+        not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
+      }
+
+      missing_field(obj, field) = true {
+        obj[field] == ""
+      }
+
+      missing_field(obj, field) = true {
+        not has_field(obj, field)
+      }
+    rego: |
+      package container_deny_escalation
+
+      import data.lib.workloads
+      import data.lib.core
+
+      violation[msg] {
+          workloads.containers[container]
+          allows_escalation(container)
+          msg = core.format(sprintf("%s/%s/%s: Allows priviledge escalation", [core.kind, core.name, container.name]))
+      }
+
+      allows_escalation(c) {
+          c.securityContext.allowPrivilegeEscalation == true
+      }
+
+      allows_escalation(c) {
+          core.missing_field(c.securityContext, "allowPrivilegeEscalation")
+      }
+    target: admission.k8s.gatekeeper.sh
+status: {}

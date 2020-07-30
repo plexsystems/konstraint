@@ -1,0 +1,99 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  creationTimestamp: null
+  name: pspdenyescalation
+spec:
+  crd:
+    spec:
+      names:
+        kind: PspDenyEscalation
+  targets:
+  - libs:
+    - |
+      package lib.core
+
+      default is_gatekeeper = false
+
+      is_gatekeeper {
+        has_field(input, "review")
+        has_field(input.review, "object")
+      }
+
+      resource = input.review.object {
+        is_gatekeeper
+      }
+
+      resource = input {
+        not is_gatekeeper
+      }
+
+      format(msg) = msg {
+        not is_gatekeeper
+      }
+
+      format(msg) = {"msg": msg} {
+        is_gatekeeper
+      }
+
+      apiVersion = resource.apiVersion
+      name = resource.metadata.name
+      kind = resource.kind
+      labels = resource.metadata.labels
+      annotations = resource.metadata.annotations
+
+      has_field(obj, field) {
+        not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
+      }
+
+      missing_field(obj, field) = true {
+        obj[field] == ""
+      }
+
+      missing_field(obj, field) = true {
+        not has_field(obj, field)
+      }
+    - |
+      package lib.psps
+
+      import data.lib.core
+
+      is_exception {
+        exceptions := {
+          "gce.privileged",               # GKE
+          "gce.persistent-volume-binder", # GKE
+          "gce.event-exporter",           # GKE
+          "gce.gke-metrics-agent",        # GKE
+          "gce.unprivileged-addon",       # GKE
+          "gce.fluentd-gke",              # GKE
+          "gce.fluentd-gcp"               # GKE
+        }
+        core.name = exceptions[_]
+      }
+
+      psps[psp] {
+        lower(core.kind) = "podsecuritypolicy"
+        not is_exception
+        psp = core.resource
+      }
+    rego: |
+      package psp_deny_escalation
+
+      import data.lib.core
+      import data.lib.psps
+
+      violation[msg] {
+          psps.psps[psp]
+          allows_escalation(psp)
+          msg = core.format(sprintf("%s/%s: Allows priviledge escalation", [core.kind, core.name]))
+      }
+
+      allows_escalation(p) {
+          p.spec.allowPrivilegeEscalation == true
+      }
+
+      allows_escalation(p) {
+          core.missing_field(p.spec, "allowPrivilegeEscalation")
+      }
+    target: admission.k8s.gatekeeper.sh
+status: {}

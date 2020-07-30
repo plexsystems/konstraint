@@ -7,30 +7,30 @@ is_gatekeeper {
   has_field(input.review, "object")
 }
 
-resource = input {
-  not is_gatekeeper
-}
-
 resource = input.review.object {
   is_gatekeeper
 }
 
-apiVersion = resource.apiVersion
-kind = resource.kind
-name = resource.metadata.name
-labels = resource.metadata.labels
-
-format(msg) = gatekeeper_format {
-  is_gatekeeper
-  gatekeeper_format = {"msg": msg}
+resource = input {
+  not is_gatekeeper
 }
 
 format(msg) = msg {
   not is_gatekeeper
 }
 
+format(msg) = {"msg": msg} {
+  is_gatekeeper
+}
+
+apiVersion = resource.apiVersion
+name = resource.metadata.name
+kind = resource.kind
+labels = resource.metadata.labels
+annotations = resource.metadata.annotations
+
 has_field(obj, field) {
-  obj[field]
+  not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
 }
 
 missing_field(obj, field) = true {
