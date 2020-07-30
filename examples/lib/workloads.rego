@@ -22,6 +22,11 @@ pods[pod] {
   pod = core.resource
 }
 
+pods[pod] {
+  core.kind = "Job"
+  pod = core.resource.spec.template
+}
+
 pod_containers(pod) = all_containers {
   keys = {"containers", "initContainers"}
   all_containers = [c | keys[k]; c = pod.spec[k][_]]
