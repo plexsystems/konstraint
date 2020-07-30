@@ -3,27 +3,27 @@ package lib.workloads
 import data.lib.core
 
 pods[pod] {
-  core.kind = "StatefulSet"
+  lower(core.kind) = "statefulset"
   pod = core.resource.spec.template
 }
 
 pods[pod] {
-  core.kind = "DaemonSet"
+  lower(core.kind) = "daemonset"
   pod = core.resource.spec.template
 }
 
 pods[pod] {
-  core.kind = "Deployment"
+  lower(core.kind) = "deployment"
   pod = core.resource.spec.template
 }
 
 pods[pod] {
-  core.kind = "Pod"
+  lower(core.kind) = "pod"
   pod = core.resource
 }
 
 pods[pod] {
-  core.kind = "Job"
+  lower(core.kind) = "job"
   pod = core.resource.spec.template
 }
 

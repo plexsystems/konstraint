@@ -19,7 +19,7 @@ is_exception {
 }
 
 psps[psp] {
-  core.kind == "PodSecurityPolicy"
+  lower(core.kind) = "podsecuritypolicy"
   not is_exception
   psp = core.resource
 }
