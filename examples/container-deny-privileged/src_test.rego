@@ -6,6 +6,7 @@ test_privileged {
     "metadata": {"name": "test"},
     "spec": {
       "containers": [{
+        "name": "test",
         "securityContext": {
           "privileged": true
         }
@@ -23,6 +24,7 @@ test_not_privileged {
     "metadata": {"name": "test"},
     "spec": {
       "containers": [{
+        "name": "test",
         "securityContext": {
           "privileged": false
         }
@@ -40,6 +42,7 @@ test_added_capability {
     "metadata": {"name": "test"},
     "spec": {
       "containers": [{
+        "name": "test",
         "securityContext": {
           "capabilities": {
             "add": ["CAP_SYS_ADMIN"]
