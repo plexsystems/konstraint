@@ -10,9 +10,9 @@ import data.lib.core
 # 
 # @kinds apps/DaemonSet apps/Deployment
 warn[msg] {
-  resources := ["DaemonSet", "Deployment"]
-  core.apiVersion == "extensions/v1beta1"
-  core.kind == resources[_]
-
-  msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]))
+    resources := ["DaemonSet", "Deployment"]
+    core.apiVersion == "extensions/v1beta1"
+    core.kind == resources[_]
+    
+    msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]))
 }

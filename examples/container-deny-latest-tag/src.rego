@@ -10,16 +10,16 @@ import data.lib.containers
 #
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 violation[msg] {
-  containers.containers[container]
-  has_latest_tag(container)
+    containers.containers[container]
+    has_latest_tag(container)
 
-  msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]))
+    msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]))
 }
 
 has_latest_tag(c) {
-  endswith(c.image, ":latest")
+    endswith(c.image, ":latest")
 }
 
 has_latest_tag(c) {
-  contains(c.image, ":") == false
+    contains(c.image, ":") == false
 }

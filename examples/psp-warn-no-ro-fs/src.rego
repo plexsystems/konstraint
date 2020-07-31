@@ -12,7 +12,8 @@ import data.lib.psps
 warn[msg] {
     psps.psps[psp]
     no_read_only_filesystem(psp)
-    msg = core.format(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]))
+
+    msg := core.format(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]))
 }
 
 no_read_only_filesystem(psp) {

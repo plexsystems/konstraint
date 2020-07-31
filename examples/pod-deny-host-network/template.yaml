@@ -16,24 +16,24 @@ spec:
       default is_gatekeeper = false
 
       is_gatekeeper {
-        has_field(input, "review")
-        has_field(input.review, "object")
+          has_field(input, "review")
+          has_field(input.review, "object")
       }
 
       resource = input.review.object {
-        is_gatekeeper
+          is_gatekeeper
       }
 
       resource = input {
-        not is_gatekeeper
+          not is_gatekeeper
       }
 
       format(msg) = msg {
-        not is_gatekeeper
+          not is_gatekeeper
       }
 
       format(msg) = {"msg": msg} {
-        is_gatekeeper
+          is_gatekeeper
       }
 
       apiVersion = resource.apiVersion
@@ -43,15 +43,15 @@ spec:
       annotations = resource.metadata.annotations
 
       has_field(obj, field) {
-        not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
+          not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
       }
 
       missing_field(obj, field) = true {
-        obj[field] == ""
+          obj[field] == ""
       }
 
       missing_field(obj, field) = true {
-        not has_field(obj, field)
+          not has_field(obj, field)
       }
     - |
       package lib.pods
@@ -59,33 +59,33 @@ spec:
       import data.lib.core
 
       pods[pod] {
-        lower(core.kind) = "statefulset"
-        pod = core.resource.spec.template
+          lower(core.kind) == "statefulset"
+          pod = core.resource.spec.template
       }
 
       pods[pod] {
-        lower(core.kind) = "daemonset"
-        pod = core.resource.spec.template
+          lower(core.kind) == "daemonset"
+          pod = core.resource.spec.template
       }
 
       pods[pod] {
-        lower(core.kind) = "deployment"
-        pod = core.resource.spec.template
+          lower(core.kind) == "deployment"
+          pod = core.resource.spec.template
       }
 
       pods[pod] {
-        lower(core.kind) = "pod"
-        pod = core.resource
+          lower(core.kind) == "pod"
+          pod = core.resource
       }
 
       pods[pod] {
-        lower(core.kind) = "job"
-        pod = core.resource.spec.template
+          lower(core.kind) == "job"
+          pod = core.resource.spec.template
       }
 
       volumes[volume] {
-        pods[pod]
-        volume = pod.spec.volumes[_]
+          pods[pod]
+          volume = pod.spec.volumes[_]
       }
     rego: |
       package pod_deny_host_network
@@ -96,7 +96,8 @@ spec:
       violation[msg] {
           pods.pods[pod]
           pod.spec.hostNetwork
-          msg = core.format(sprintf("%s/%s/%s: Pod allows for accessing the host network", [core.kind, core.name, pod.metadata.name]))
+
+          msg := core.format(sprintf("%s/%s/%s: Pod allows for accessing the host network", [core.kind, core.name, pod.metadata.name]))
       }
     target: admission.k8s.gatekeeper.sh
 status: {}

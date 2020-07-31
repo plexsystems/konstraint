@@ -10,6 +10,7 @@ test_pos {
             "allowPrivilegeEscalation": false
         }
     }
+
     violations := violation with input as input
     count(violations) == 0
 }
@@ -24,6 +25,7 @@ test_null {
             "a": "b"
         }
     }
+
     violations := violation with input as input
     count(violations) == 1
 }
@@ -38,6 +40,7 @@ test_neg {
             "allowPrivilegeEscalation": true
         }
     }
+
     violations := violation with input as input
     count(violations) == 1
 }

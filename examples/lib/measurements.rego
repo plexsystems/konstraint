@@ -45,85 +45,85 @@ mem_multiple("Pi") = 1125899906842624000 { true }
 mem_multiple("Ei") = 1152921504606846976000 { true }
 
 get_suffix(mem) = suffix {
-  not is_string(mem)
-  suffix := ""
+    not is_string(mem)
+    suffix := ""
 }
 
 get_suffix(mem) = suffix {
-  is_string(mem)
-  count(mem) > 0
-  suffix := substring(mem, count(mem) - 1, -1)
-  mem_multiple(suffix)
+    is_string(mem)
+    count(mem) > 0
+    suffix := substring(mem, count(mem) - 1, -1)
+    mem_multiple(suffix)
 }
 
 get_suffix(mem) = suffix {
-  is_string(mem)
-  count(mem) > 1
-  suffix := substring(mem, count(mem) - 2, -1)
-  mem_multiple(suffix)
+    is_string(mem)
+    count(mem) > 1
+    suffix := substring(mem, count(mem) - 2, -1)
+    mem_multiple(suffix)
 }
 
 get_suffix(mem) = suffix {
-  is_string(mem)
-  count(mem) > 1
-  not mem_multiple(substring(mem, count(mem) - 1, -1))
-  not mem_multiple(substring(mem, count(mem) - 2, -1))
-  suffix := ""
+    is_string(mem)
+    count(mem) > 1
+    not mem_multiple(substring(mem, count(mem) - 1, -1))
+    not mem_multiple(substring(mem, count(mem) - 2, -1))
+    suffix := ""
 }
 
 get_suffix(mem) = suffix {
-  is_string(mem)
-  count(mem) == 1
-  not mem_multiple(substring(mem, count(mem) - 1, -1))
-  suffix := ""
+    is_string(mem)
+    count(mem) == 1
+    not mem_multiple(substring(mem, count(mem) - 1, -1))
+    suffix := ""
 }
 
 get_suffix(mem) = suffix {
-  is_string(mem)
-  count(mem) == 0
-  suffix := ""
+    is_string(mem)
+    count(mem) == 0
+    suffix := ""
 }
 
 canonify_mem(orig) = new {
-  is_number(orig)
-  new := orig * 1000
+    is_number(orig)
+    new := orig * 1000
 }
 
 canonify_mem(orig) = new {
-  not is_number(orig)
-  suffix := get_suffix(orig)
-  raw := replace(orig, suffix, "")
-  re_match("^[0-9]+$", raw)
-  new := to_number(raw) * mem_multiple(suffix)
+    not is_number(orig)
+    suffix := get_suffix(orig)
+    raw := replace(orig, suffix, "")
+    re_match("^[0-9]+$", raw)
+    new := to_number(raw) * mem_multiple(suffix)
 }
 
 canonify_storage(orig) = new {
-  is_number(orig)
-  new := orig
+    is_number(orig)
+    new := orig
 }
 
 canonify_storage(orig) = new {
-  not is_number(orig)
-  suffix := get_suffix(orig)
-  raw := replace(orig, suffix, "")
-  re_match("^[0-9]+$", raw)
-  new := to_number(raw) * mem_multiple(suffix)
+    not is_number(orig)
+    suffix := get_suffix(orig)
+    raw := replace(orig, suffix, "")
+    re_match("^[0-9]+$", raw)
+    new := to_number(raw) * mem_multiple(suffix)
 }
 
 canonify_cpu(orig) = new {
-  is_number(orig)
-  new := orig * 1000
+    is_number(orig)
+    new := orig * 1000
 }
 
 canonify_cpu(orig) = new {
-  not is_number(orig)
-  endswith(orig, "m")
-  new := to_number(replace(orig, "m", ""))
+    not is_number(orig)
+    endswith(orig, "m")
+    new := to_number(replace(orig, "m", ""))
 }
 
 canonify_cpu(orig) = new {
-  not is_number(orig)
-  not endswith(orig, "m")
-  re_match("^[0-9]+$", orig)
-  new := to_number(orig) * 1000
+    not is_number(orig)
+    not endswith(orig, "m")
+    re_match("^[0-9]+$", orig)
+    new := to_number(orig) * 1000
 }

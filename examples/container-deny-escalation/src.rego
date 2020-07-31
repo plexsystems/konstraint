@@ -12,7 +12,8 @@ import data.lib.containers
 violation[msg] {
     containers.containers[container]
     allows_escalation(container)
-    msg = core.format(sprintf("%s/%s/%s: Allows priviledge escalation", [core.kind, core.name, container.name]))
+
+    msg := core.format(sprintf("%s/%s/%s: Allows priviledge escalation", [core.kind, core.name, container.name]))
 }
 
 allows_escalation(c) {
