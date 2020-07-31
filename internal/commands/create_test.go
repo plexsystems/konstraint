@@ -111,6 +111,38 @@ rule[msg] { msg = true }`
 	}
 }
 
+func TestRecursiveLibraryImport(t *testing.T) {
+	policyImportsLibA := `package test
+import data.lib.a`
+
+	libFiles := []struct {
+		path     string
+		contents string
+	}{
+		{path: "lib_a.rego", contents: "package lib.a\nimport data.lib.b"},
+		{path: "lib_b.rego", contents: "package lib.b"},
+	}
+
+	policy, err := rego.NewFile("test.rego", policyImportsLibA)
+	if err != nil {
+		t.Fatal("new policy file", err)
+	}
+
+	var libs []rego.File
+	for _, libFile := range libFiles {
+		lib, err := rego.NewFile(libFile.path, libFile.contents)
+		if err != nil {
+			t.Fatal("new library file", err)
+		}
+		libs = append(libs, lib)
+	}
+
+	importedLibraries := getImportedLibraries(policy, libs)
+	if len(importedLibraries) != 2 {
+		t.Error("recursive library import failed")
+	}
+}
+
 func TestGetKindFromPath(t *testing.T) {
 	path := "/path/to/rego/container-resource-limits/something.rego"
 
