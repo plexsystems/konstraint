@@ -249,22 +249,22 @@ func getLibraryPath(path string) (string, error) {
 	return libraryPath, nil
 }
 
-func getImportedLibraries(file rego.File, libraries []rego.File) []rego.File {
-	var libs []rego.File
-	for _, i := range file.ImportPackages {
-		for _, l := range libraries {
-			if l.PackageName == i {
-				libs = append(libs, l)
+func getImportedLibraries(file rego.File, allLibraries []rego.File) []rego.File {
+	var importedLibraries []rego.File
+	for _, importedPackage := range file.ImportPackages {
+		for _, library := range allLibraries {
+			if library.PackageName == importedPackage {
+				importedLibraries = append(importedLibraries, library)
 			}
 		}
 	}
 
-	for _, l := range libs {
-		libs = append(libs, getImportedLibraries(l, libraries)...)
+	for _, library := range importedLibraries {
+		importedLibraries = append(importedLibraries, getImportedLibraries(library, allLibraries)...)
 	}
 
-	libs = getUniqueRegoFiles(libs)
-	return libs
+	importedLibraries = getUniqueRegoFiles(importedLibraries)
+	return importedLibraries
 }
 
 func getUniqueRegoFiles(files []rego.File) []rego.File {
