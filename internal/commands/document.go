@@ -136,7 +136,7 @@ func runDocCommand(path string) error {
 		documentContents += "\n\n"
 
 		documentContents += document.Header.Description
-		documentContents += "\n"
+		documentContents += "\n\n"
 
 		documentContents += "### Rego"
 		documentContents += "\n\n"
@@ -189,9 +189,9 @@ func getDocumentation(path string, severity string, outputDirectory string) ([]D
 
 		document := Document{
 			Header:   header,
-			Severity: severity,
-			URL:      relDir,
-			Rego:     regoWithoutComments,
+			Severity: trimContent(severity),
+			URL:      trimContent(relDir),
+			Rego:     trimContent(regoWithoutComments),
 		}
 
 		documents = append(documents, document)
@@ -223,15 +223,19 @@ func getHeader(comments []string) (Header, error) {
 		description += comment + "\n"
 	}
 
-	description = strings.TrimSuffix(description, "\n")
-
 	header := Header{
-		Title:       strings.Trim(title, " "),
-		Description: strings.Trim(description, " "),
-		Resources:   strings.Trim(resources, " "),
+		Title:       trimContent(title),
+		Description: trimContent(description),
+		Resources:   trimContent(resources),
 	}
 
 	return header, nil
+}
+
+func trimContent(content string) string {
+	content = strings.Trim(content, " ")
+	content = strings.Trim(content, "\n")
+	return content
 }
 
 func getRegoWithoutComments(rego string) string {
