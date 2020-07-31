@@ -35,6 +35,7 @@
 Granting containers privileged capabilities on the node makes it easier
 for containers to escalate their privileges. As such, this is not allowed
 outside of Kubernetes controller namespaces.
+
 ### Rego
 
 ```rego
@@ -51,6 +52,7 @@ violation[msg] {
     msg := core.format(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]))
 }
 ```
+
 _source: [../../examples/container-deny-added-caps](../../examples/container-deny-added-caps)_
 
 ## Containers must not allow for privilege escalation
@@ -61,6 +63,7 @@ _source: [../../examples/container-deny-added-caps](../../examples/container-den
 
 Privileged containers can much more easily obtain root on the node.
 As such, they are not allowed.
+
 ### Rego
 
 ```rego
@@ -84,6 +87,7 @@ allows_escalation(c) {
     core.missing_field(c.securityContext, "allowPrivilegeEscalation")
 }
 ```
+
 _source: [../../examples/container-deny-escalation](../../examples/container-deny-escalation)_
 
 ## Images must not use the latest tag
@@ -94,6 +98,7 @@ _source: [../../examples/container-deny-escalation](../../examples/container-den
 
 Using the latest tag on images can cause unexpected problems in production. By specifing a pinned version
 we can have higher confidence that our applications are immutable and do not change unexpectedly.
+
 ### Rego
 
 ```rego
@@ -117,6 +122,7 @@ has_latest_tag(c) {
     contains(c.image, ":") == false
 }
 ```
+
 _source: [../../examples/container-deny-latest-tag](../../examples/container-deny-latest-tag)_
 
 ## Containers must not run as privileged
@@ -128,6 +134,7 @@ _source: [../../examples/container-deny-latest-tag](../../examples/container-den
 Privileged containers can easily escalate to root privileges on the node. As
 such containers running as privileged or with sufficient capabilities granted
 to obtain the same effect are not allowed.
+
 ### Rego
 
 ```rego
@@ -153,6 +160,7 @@ is_privileged(container) {
   security.added_capability(container, "CAP_SYS_ADMIN")
 }
 ```
+
 _source: [../../examples/container-deny-privileged](../../examples/container-deny-privileged)_
 
 ## Containers must define resource constraints
@@ -163,6 +171,7 @@ _source: [../../examples/container-deny-privileged](../../examples/container-den
 
 Resource constraints on containers ensure that a given workload does not take up more resources than it required
 and potentially starve other applications that need to run.
+
 ### Rego
 
 ```rego
@@ -185,6 +194,7 @@ container_resources_provided(container) {
     container.resources.limits.memory
 }
 ```
+
 _source: [../../examples/container-deny-without-resource-constraints](../../examples/container-deny-without-resource-constraints)_
 
 ## Pods must not have access to the host aliases
@@ -195,6 +205,7 @@ _source: [../../examples/container-deny-without-resource-constraints](../../exam
 
 Pods that can change aliases in the host's /etc/hosts file can
 redirect traffic to malicious servers.
+
 ### Rego
 
 ```rego
@@ -210,6 +221,7 @@ violation[msg] {
     msg := core.format(sprintf("%s/%s/%s: Pod allows for managing host aliases", [core.kind, core.name, pod.metadata.name]))
 }
 ```
+
 _source: [../../examples/pod-deny-host-alias](../../examples/pod-deny-host-alias)_
 
 ## Pods must not run with access to the host IPC
@@ -220,6 +232,7 @@ _source: [../../examples/pod-deny-host-alias](../../examples/pod-deny-host-alias
 
 Pods that are allowed to access the host IPC can read memory of
 the other containers, breaking that security boundary.
+
 ### Rego
 
 ```rego
@@ -235,6 +248,7 @@ violation[msg] {
     msg := core.format(sprintf("%s/%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name, pod.metadata.name]))
 }
 ```
+
 _source: [../../examples/pod-deny-host-ipc](../../examples/pod-deny-host-ipc)_
 
 ## Pods must not run with access to the host networking
@@ -245,6 +259,7 @@ _source: [../../examples/pod-deny-host-ipc](../../examples/pod-deny-host-ipc)_
 
 Pods that can access the host's network interfaces can potentially
 access and tamper with traffic the pod should not have access to.
+
 ### Rego
 
 ```rego
@@ -260,6 +275,7 @@ violation[msg] {
     msg := core.format(sprintf("%s/%s/%s: Pod allows for accessing the host network", [core.kind, core.name, pod.metadata.name]))
 }
 ```
+
 _source: [../../examples/pod-deny-host-network](../../examples/pod-deny-host-network)_
 
 ## Pods must not run with access to the host PID namespace
@@ -271,6 +287,7 @@ _source: [../../examples/pod-deny-host-network](../../examples/pod-deny-host-net
 Pods that can acess the host's process tree can view and attempt to
 modify processes outside of their namespace, breaking that security
 boundary.
+
 ### Rego
 
 ```rego
@@ -286,6 +303,7 @@ violation[msg] {
     msg := core.format(sprintf("%s/%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name, pod.metadata.name]))
 }
 ```
+
 _source: [../../examples/pod-deny-host-pid](../../examples/pod-deny-host-pid)_
 
 ## Pods must run as non-root
@@ -296,6 +314,7 @@ _source: [../../examples/pod-deny-host-pid](../../examples/pod-deny-host-pid)_
 
 Pods running as root (uid of 0) can much more easily escalate privileges
 to root on the node. As such, they are not allowed.
+
 ### Rego
 
 ```rego
@@ -311,6 +330,7 @@ violation[msg] {
     msg := core.format(sprintf("%s/%s/%s: Pod allows running as root", [core.kind, core.name, pod.metadata.name]))
 }
 ```
+
 _source: [../../examples/pod-deny-without-runasnonroot](../../examples/pod-deny-without-runasnonroot)_
 
 ## PodSecurityPolicies must require all capabilities are dropped
@@ -322,6 +342,7 @@ _source: [../../examples/pod-deny-without-runasnonroot](../../examples/pod-deny-
 Allowing containers privileged capabilities on the node makes it easier
 for containers to escalate their privileges. As such, this is not allowed
 outside of Kubernetes controller namespaces.
+
 ### Rego
 
 ```rego
@@ -338,6 +359,7 @@ violation[msg] {
     msg := core.format(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]))
 }
 ```
+
 _source: [../../examples/psp-deny-added-caps](../../examples/psp-deny-added-caps)_
 
 ## PodSecurityPolicies must not allow privileged escalation
@@ -348,6 +370,7 @@ _source: [../../examples/psp-deny-added-caps](../../examples/psp-deny-added-caps
 
 Allowing privileged containers can much more easily obtain root on the node.
 As such, they are not allowed.
+
 ### Rego
 
 ```rego
@@ -371,6 +394,7 @@ allows_escalation(p) {
     core.missing_field(p.spec, "allowPrivilegeEscalation")
 }
 ```
+
 _source: [../../examples/psp-deny-escalation](../../examples/psp-deny-escalation)_
 
 ## PodSecurityPolicies must not allow access to the host aliases
@@ -381,6 +405,7 @@ _source: [../../examples/psp-deny-escalation](../../examples/psp-deny-escalation
 
 Allowing pods to can change aliases in the host's /etc/hosts file can
 redirect traffic to malicious servers.
+
 ### Rego
 
 ```rego
@@ -396,6 +421,7 @@ violation[msg] {
     msg := core.format(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]))
 }
 ```
+
 _source: [../../examples/psp-deny-host-alias](../../examples/psp-deny-host-alias)_
 
 ## PodSecurityPolicies must not allow access to the host IPC
@@ -406,6 +432,7 @@ _source: [../../examples/psp-deny-host-alias](../../examples/psp-deny-host-alias
 
 Allowing pods to to access the host IPC can read memory of
 the other containers, breaking that security boundary.
+
 ### Rego
 
 ```rego
@@ -421,6 +448,7 @@ violation[msg] {
     msg := core.format(sprintf("%s/%s: Allows for sharing the host IPC namespace", [core.kind, core.name]))
 }
 ```
+
 _source: [../../examples/psp-deny-host-ipc](../../examples/psp-deny-host-ipc)_
 
 ## PodSecurityPolicies must not allow access to the host network
@@ -432,6 +460,7 @@ _source: [../../examples/psp-deny-host-ipc](../../examples/psp-deny-host-ipc)_
 Allowing pods to acess the host's process tree can view and attempt to
 modify processes outside of their namespace, breaking that security
 boundary.
+
 ### Rego
 
 ```rego
@@ -447,6 +476,7 @@ violation[msg] {
     msg := core.format(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]))
 }
 ```
+
 _source: [../../examples/psp-deny-host-network](../../examples/psp-deny-host-network)_
 
 ## PodSecurityPolicies must not allow access to the host PID namespace
@@ -458,6 +488,7 @@ _source: [../../examples/psp-deny-host-network](../../examples/psp-deny-host-net
 Allowing pods to acess the host's process tree can view and attempt to
 modify processes outside of their namespace, breaking that security
 boundary.
+
 ### Rego
 
 ```rego
@@ -472,6 +503,7 @@ violation[msg] {
     msg = core.format(sprintf("%s/%s: Allows for sharing the host PID namespace", [core.kind, core.name]))
 }
 ```
+
 _source: [../../examples/psp-deny-host-pid](../../examples/psp-deny-host-pid)_
 
 ## PodSecurityPolicies must require containers to not run as privileged
@@ -482,6 +514,7 @@ _source: [../../examples/psp-deny-host-pid](../../examples/psp-deny-host-pid)_
 
 Allowing privileged containers can much more easily obtain root on the node.
 As such, they are not allowed.
+
 ### Rego
 
 ```rego
@@ -497,6 +530,7 @@ violation[msg] {
     msg := core.format(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]))
 }
 ```
+
 _source: [../../examples/psp-deny-privileged](../../examples/psp-deny-privileged)_
 
 ## Deprecated Deployment and DaemonSet API

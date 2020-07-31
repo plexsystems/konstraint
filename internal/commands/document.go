@@ -107,7 +107,7 @@ func runDocCommand(path string) error {
 		documentContents += "\n\n"
 
 		documentContents += document.Header.Description
-		documentContents += "\n"
+		documentContents += "\n\n"
 
 		documentContents += "### Rego"
 		documentContents += "\n\n"
@@ -119,7 +119,7 @@ func runDocCommand(path string) error {
 		documentContents += "\n"
 
 		documentContents += "```"
-		documentContents += "\n"
+		documentContents += "\n\n"
 
 		documentContents += "_source: [" + document.URL + "](" + document.URL + ")_"
 		documentContents += "\n\n"
