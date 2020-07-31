@@ -32,7 +32,6 @@
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
-
 Granting containers privileged capabilities on the node makes it easier
 for containers to escalate their privileges. As such, this is not allowed
 outside of Kubernetes controller namespaces.
@@ -52,8 +51,8 @@ violation[msg] {
 
     msg := core.format(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]))
 }
-
 ```
+
 _source: [container-deny-added-caps](container-deny-added-caps)_
 
 ## Containers must not allow for privilege escalation
@@ -61,7 +60,6 @@ _source: [container-deny-added-caps](container-deny-added-caps)_
 **Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-
 
 Privileged containers can much more easily obtain root on the node.
 As such, they are not allowed.
@@ -88,8 +86,8 @@ allows_escalation(c) {
 allows_escalation(c) {
     core.missing_field(c.securityContext, "allowPrivilegeEscalation")
 }
-
 ```
+
 _source: [container-deny-escalation](container-deny-escalation)_
 
 ## Images must not use the latest tag
@@ -97,7 +95,6 @@ _source: [container-deny-escalation](container-deny-escalation)_
 **Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-
 
 Using the latest tag on images can cause unexpected problems in production. By specifing a pinned version
 we can have higher confidence that our applications are immutable and do not change unexpectedly.
@@ -124,8 +121,8 @@ has_latest_tag(c) {
 has_latest_tag(c) {
     contains(c.image, ":") == false
 }
-
 ```
+
 _source: [container-deny-latest-tag](container-deny-latest-tag)_
 
 ## Containers must not run as privileged
@@ -133,7 +130,6 @@ _source: [container-deny-latest-tag](container-deny-latest-tag)_
 **Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-
 
 Privileged containers can easily escalate to root privileges on the node. As
 such containers running as privileged or with sufficient capabilities granted
@@ -163,8 +159,8 @@ is_privileged(container) {
 is_privileged(container) {
   security.added_capability(container, "CAP_SYS_ADMIN")
 }
-
 ```
+
 _source: [container-deny-privileged](container-deny-privileged)_
 
 ## Containers must define resource constraints
@@ -172,7 +168,6 @@ _source: [container-deny-privileged](container-deny-privileged)_
 **Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-
 
 Resource constraints on containers ensure that a given workload does not take up more resources than it required
 and potentially starve other applications that need to run.
@@ -198,8 +193,8 @@ container_resources_provided(container) {
     container.resources.limits.cpu
     container.resources.limits.memory
 }
-
 ```
+
 _source: [container-deny-without-resource-constraints](container-deny-without-resource-constraints)_
 
 ## Pods must not have access to the host aliases
@@ -207,7 +202,6 @@ _source: [container-deny-without-resource-constraints](container-deny-without-re
 **Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-
 
 Pods that can change aliases in the host's /etc/hosts file can
 redirect traffic to malicious servers.
@@ -226,8 +220,8 @@ violation[msg] {
 
     msg := core.format(sprintf("%s/%s/%s: Pod allows for managing host aliases", [core.kind, core.name, pod.metadata.name]))
 }
-
 ```
+
 _source: [pod-deny-host-alias](pod-deny-host-alias)_
 
 ## Pods must not run with access to the host IPC
@@ -235,7 +229,6 @@ _source: [pod-deny-host-alias](pod-deny-host-alias)_
 **Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-
 
 Pods that are allowed to access the host IPC can read memory of
 the other containers, breaking that security boundary.
@@ -254,8 +247,8 @@ violation[msg] {
 
     msg := core.format(sprintf("%s/%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name, pod.metadata.name]))
 }
-
 ```
+
 _source: [pod-deny-host-ipc](pod-deny-host-ipc)_
 
 ## Pods must not run with access to the host networking
@@ -263,7 +256,6 @@ _source: [pod-deny-host-ipc](pod-deny-host-ipc)_
 **Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-
 
 Pods that can access the host's network interfaces can potentially
 access and tamper with traffic the pod should not have access to.
@@ -282,8 +274,8 @@ violation[msg] {
 
     msg := core.format(sprintf("%s/%s/%s: Pod allows for accessing the host network", [core.kind, core.name, pod.metadata.name]))
 }
-
 ```
+
 _source: [pod-deny-host-network](pod-deny-host-network)_
 
 ## Pods must not run with access to the host PID namespace
@@ -291,7 +283,6 @@ _source: [pod-deny-host-network](pod-deny-host-network)_
 **Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-
 
 Pods that can acess the host's process tree can view and attempt to
 modify processes outside of their namespace, breaking that security
@@ -311,8 +302,8 @@ violation[msg] {
 
     msg := core.format(sprintf("%s/%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name, pod.metadata.name]))
 }
-
 ```
+
 _source: [pod-deny-host-pid](pod-deny-host-pid)_
 
 ## Pods must run as non-root
@@ -320,7 +311,6 @@ _source: [pod-deny-host-pid](pod-deny-host-pid)_
 **Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-
 
 Pods running as root (uid of 0) can much more easily escalate privileges
 to root on the node. As such, they are not allowed.
@@ -339,8 +329,8 @@ violation[msg] {
 
     msg := core.format(sprintf("%s/%s/%s: Pod allows running as root", [core.kind, core.name, pod.metadata.name]))
 }
-
 ```
+
 _source: [pod-deny-without-runasnonroot](pod-deny-without-runasnonroot)_
 
 ## PodSecurityPolicies must require all capabilities are dropped
@@ -348,7 +338,6 @@ _source: [pod-deny-without-runasnonroot](pod-deny-without-runasnonroot)_
 **Severity:** violation
 
 **Resources:** policy/PodSecurityPolicy
-
 
 Allowing containers privileged capabilities on the node makes it easier
 for containers to escalate their privileges. As such, this is not allowed
@@ -369,8 +358,8 @@ violation[msg] {
 
     msg := core.format(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]))
 }
-
 ```
+
 _source: [psp-deny-added-caps](psp-deny-added-caps)_
 
 ## PodSecurityPolicies must not allow privileged escalation
@@ -378,7 +367,6 @@ _source: [psp-deny-added-caps](psp-deny-added-caps)_
 **Severity:** violation
 
 **Resources:** policy/PodSecurityPolicy
-
 
 Allowing privileged containers can much more easily obtain root on the node.
 As such, they are not allowed.
@@ -405,8 +393,8 @@ allows_escalation(p) {
 allows_escalation(p) {
     core.missing_field(p.spec, "allowPrivilegeEscalation")
 }
-
 ```
+
 _source: [psp-deny-escalation](psp-deny-escalation)_
 
 ## PodSecurityPolicies must not allow access to the host aliases
@@ -414,7 +402,6 @@ _source: [psp-deny-escalation](psp-deny-escalation)_
 **Severity:** violation
 
 **Resources:** policy/PodSecurityPolicy
-
 
 Allowing pods to can change aliases in the host's /etc/hosts file can
 redirect traffic to malicious servers.
@@ -433,8 +420,8 @@ violation[msg] {
 
     msg := core.format(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]))
 }
-
 ```
+
 _source: [psp-deny-host-alias](psp-deny-host-alias)_
 
 ## PodSecurityPolicies must not allow access to the host IPC
@@ -442,7 +429,6 @@ _source: [psp-deny-host-alias](psp-deny-host-alias)_
 **Severity:** violation
 
 **Resources:** policy/PodSecurityPolicy
-
 
 Allowing pods to to access the host IPC can read memory of
 the other containers, breaking that security boundary.
@@ -461,8 +447,8 @@ violation[msg] {
 
     msg := core.format(sprintf("%s/%s: Allows for sharing the host IPC namespace", [core.kind, core.name]))
 }
-
 ```
+
 _source: [psp-deny-host-ipc](psp-deny-host-ipc)_
 
 ## PodSecurityPolicies must not allow access to the host network
@@ -470,7 +456,6 @@ _source: [psp-deny-host-ipc](psp-deny-host-ipc)_
 **Severity:** violation
 
 **Resources:** policy/PodSecurityPolicy
-
 
 Allowing pods to acess the host's process tree can view and attempt to
 modify processes outside of their namespace, breaking that security
@@ -490,8 +475,8 @@ violation[msg] {
 
     msg := core.format(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]))
 }
-
 ```
+
 _source: [psp-deny-host-network](psp-deny-host-network)_
 
 ## PodSecurityPolicies must not allow access to the host PID namespace
@@ -499,7 +484,6 @@ _source: [psp-deny-host-network](psp-deny-host-network)_
 **Severity:** violation
 
 **Resources:** policy/PodSecurityPolicy
-
 
 Allowing pods to acess the host's process tree can view and attempt to
 modify processes outside of their namespace, breaking that security
@@ -518,8 +502,8 @@ violation[msg] {
     psp.spec.hostPID
     msg = core.format(sprintf("%s/%s: Allows for sharing the host PID namespace", [core.kind, core.name]))
 }
-
 ```
+
 _source: [psp-deny-host-pid](psp-deny-host-pid)_
 
 ## PodSecurityPolicies must require containers to not run as privileged
@@ -527,7 +511,6 @@ _source: [psp-deny-host-pid](psp-deny-host-pid)_
 **Severity:** violation
 
 **Resources:** policy/PodSecurityPolicy
-
 
 Allowing privileged containers can much more easily obtain root on the node.
 As such, they are not allowed.
@@ -546,8 +529,8 @@ violation[msg] {
 
     msg := core.format(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]))
 }
-
 ```
+
 _source: [psp-deny-privileged](psp-deny-privileged)_
 
 ## Deprecated Deployment and DaemonSet API
@@ -555,7 +538,6 @@ _source: [psp-deny-privileged](psp-deny-privileged)_
 **Severity:** warn
 
 **Resources:** apps/DaemonSet apps/Deployment
-
 
 The `extensions/v1beta1 API` has been deprecated in favor of `apps/v1`. Later versions of Kubernetes
 remove this API so to ensure that the Deployment or DaemonSet can be successfully deployed to the cluster,
@@ -575,7 +557,6 @@ warn[msg] {
     
     msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]))
 }
-
 ```
 _source: [any-warn-deprecated-api-versions](any-warn-deprecated-api-versions)_
 
@@ -584,7 +565,6 @@ _source: [any-warn-deprecated-api-versions](any-warn-deprecated-api-versions)_
 **Severity:** warn
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-
 
 In order to prevent persistence in the case of a compromise, it is
 important to make the root filesystem read-only.
@@ -612,7 +592,6 @@ no_read_only_filesystem(container) {
 no_read_only_filesystem(container) {
     core.missing_field(container.securityContext, "readOnlyRootFilesystem")
 }
-
 ```
 _source: [container-warn-no-ro-fs](container-warn-no-ro-fs)_
 
@@ -621,7 +600,6 @@ _source: [container-warn-no-ro-fs](container-warn-no-ro-fs)_
 **Severity:** warn
 
 **Resources:** policy/PodSecurityPolicy
-
 
 Allowping pods to access the host's network interfaces can potentially
 access and tamper with traffic the pod should not have access to.
@@ -648,6 +626,5 @@ no_read_only_filesystem(psp) {
 no_read_only_filesystem(psp) {
     not psp.spec.readOnlyRootFilesystem
 }
-
 ```
 _source: [psp-warn-no-ro-fs](psp-warn-no-ro-fs)_
