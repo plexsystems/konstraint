@@ -90,9 +90,13 @@ rule[msg] { msg = true }`
 		libraries = append(libraries, lib)
 	}
 
-	matchingLibraries := getMatchingLibraries(policyFile, libraries)
+	var librariesContents []string
+	importedLibraries := getImportedLibraries(policyFile, libraries)
+	for _, library := range importedLibraries {
+		librariesContents = append(librariesContents, getRegoWithoutComments(library.Contents))
+	}
 
-	actual := getConstraintTemplate(policyFile, matchingLibraries)
+	actual := getConstraintTemplate(policyFile, librariesContents)
 	if err != nil {
 		t.Fatal("get constraint:", err)
 	}
@@ -104,6 +108,38 @@ rule[msg] { msg = true }`
 	actualLibraryCount := len(actual.Spec.Targets[0].Libs)
 	if actualLibraryCount != 1 {
 		t.Errorf("expected 1 library to be added, but found %v", actualLibraryCount)
+	}
+}
+
+func TestRecursiveLibraryImport(t *testing.T) {
+	policyImportsLibA := `package test
+import data.lib.a`
+
+	libFiles := []struct {
+		path     string
+		contents string
+	}{
+		{path: "lib_a.rego", contents: "package lib.a\nimport data.lib.b"},
+		{path: "lib_b.rego", contents: "package lib.b"},
+	}
+
+	policy, err := rego.NewFile("test.rego", policyImportsLibA)
+	if err != nil {
+		t.Fatal("new policy file", err)
+	}
+
+	var libs []rego.File
+	for _, libFile := range libFiles {
+		lib, err := rego.NewFile(libFile.path, libFile.contents)
+		if err != nil {
+			t.Fatal("new library file", err)
+		}
+		libs = append(libs, lib)
+	}
+
+	importedLibraries := getImportedLibraries(policy, libs)
+	if len(importedLibraries) != 2 {
+		t.Error("recursive library import failed")
 	}
 }
 

@@ -57,7 +57,3 @@ To create the Gatekeeper resources, use `konstraint create <policy_dir>`. To gen
 **Konstraint ran without error, but I don't see any new files.**
 
 This typically means no policies were found, or the policies did not have any `violation[]` rules so they are not compatible with Gatekeeper. For more information, see [How Constraints are Created](docs/constraint_creation.md).
-
-**I imported `lib.XYZ` but Gatekeeper cannot locate `lib.core`?**
-
-At this time, Konstraint only parses the imports from the policy. As many of the libraries rely on `lib.core`, if this is not imported in your policy it will not be included in the generated `ConstraintTemplate` which means not all of the necessary libraries have been included. This issue is being tracked in [https://github.com/plexsystems/konstraint/issues/30](https://github.com/plexsystems/konstraint/issues/30).
