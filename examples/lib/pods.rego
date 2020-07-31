@@ -1,4 +1,4 @@
-package lib.workloads
+package lib.pods
 
 import data.lib.core
 
@@ -27,27 +27,7 @@ pods[pod] {
   pod = core.resource.spec.template
 }
 
-pod_containers(pod) = all_containers {
-  keys = {"containers", "initContainers"}
-  all_containers = [c | keys[k]; c = pod.spec[k][_]]
-}
-
-containers[container] {
-  pods[pod]
-  all_containers = pod_containers(pod)
-  container = all_containers[_]
-}
-
-containers[container] {
-  all_containers = pod_containers(core.resource)
-  container = all_containers[_]
-}
-
 volumes[volume] {
   pods[pod]
   volume = pod.spec.volumes[_]
-}
-
-is_workload {
-  containers[_]
 }

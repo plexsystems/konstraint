@@ -1,7 +1,7 @@
 package container_deny_privileged
 
 import data.lib.core
-import data.lib.workloads
+import data.lib.containers
 import data.lib.security
 
 # @title Containers must not run as privileged
@@ -13,7 +13,7 @@ import data.lib.security
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
 violation[msg] {
-  workloads.containers[container]
+  containers.containers[container]
   is_privileged(container)
 
   msg = core.format(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]))

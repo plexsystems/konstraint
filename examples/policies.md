@@ -43,11 +43,11 @@ outside of Kubernetes controller namespaces.
 package container_deny_added_caps
 
 import data.lib.core
-import data.lib.workloads
+import data.lib.containers
 import data.lib.security
 
 violation[msg] {
-    workloads.containers[container]
+    containers.containers[container]
     not security.dropped_capability(container, "all")
     msg = core.format(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]))
 }
@@ -70,11 +70,11 @@ As such, they are not allowed.
 ```rego
 package container_deny_escalation
 
-import data.lib.workloads
 import data.lib.core
+import data.lib.containers
 
 violation[msg] {
-    workloads.containers[container]
+    containers.containers[container]
     allows_escalation(container)
     msg = core.format(sprintf("%s/%s/%s: Allows priviledge escalation", [core.kind, core.name, container.name]))
 }
@@ -106,10 +106,10 @@ we can have higher confidence that our applications are immutable and do not cha
 package container_deny_latest_tag
 
 import data.lib.core
-import data.lib.workloads
+import data.lib.containers
 
 violation[msg] {
-  workloads.containers[container]
+  containers.containers[container]
   has_latest_tag(container)
 
   msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]))
@@ -143,12 +143,12 @@ to obtain the same effect are not allowed.
 package container_deny_privileged
 
 import data.lib.core
-import data.lib.workloads
+import data.lib.containers
 import data.lib.security
 
 
 violation[msg] {
-  workloads.containers[container]
+  containers.containers[container]
   is_privileged(container)
 
   msg = core.format(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]))
@@ -181,10 +181,10 @@ and potentially starve other applications that need to run.
 package container_deny_without_resource_constraints
 
 import data.lib.core
-import data.lib.workloads
+import data.lib.containers
 
 violation[msg] {
-  workloads.containers[container]
+  containers.containers[container]
   not container_resources_provided(container)
 
   msg := core.format(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]))
@@ -216,10 +216,10 @@ redirect traffic to malicious servers.
 package pod_deny_host_alias
 
 import data.lib.core
-import data.lib.workloads
+import data.lib.pods
 
 violation[msg] {
-    workloads.pods[pod]
+    pods.pods[pod]
     pod.spec.hostAliases
     msg = core.format(sprintf("%s/%s/%s: Pod allows for managing host aliases", [core.kind, core.name, pod.metadata.name]))
 }
@@ -243,10 +243,10 @@ the other containers, breaking that security boundary.
 package pod_deny_host_ipc
 
 import data.lib.core
-import data.lib.workloads
+import data.lib.pods
 
 violation[msg] {
-    workloads.pods[pod]
+    pods.pods[pod]
     pod.spec.hostIPC
     msg = core.format(sprintf("%s/%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name, pod.metadata.name]))
 }
@@ -270,10 +270,10 @@ access and tamper with traffic the pod should not have access to.
 package pod_deny_host_network
 
 import data.lib.core
-import data.lib.workloads
+import data.lib.pods
 
 violation[msg] {
-    workloads.pods[pod]
+    pods.pods[pod]
     pod.spec.hostNetwork
     msg = core.format(sprintf("%s/%s/%s: Pod allows for accessing the host network", [core.kind, core.name, pod.metadata.name]))
 }
@@ -298,10 +298,10 @@ boundary.
 package pod_deny_host_pid
 
 import data.lib.core
-import data.lib.workloads
+import data.lib.pods
 
 violation[msg] {
-    workloads.pods[pod]
+    pods.pods[pod]
     pod.spec.hostPID
     msg = core.format(sprintf("%s/%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name, pod.metadata.name]))
 }
@@ -324,11 +324,11 @@ to root on the node. As such, they are not allowed.
 ```rego
 package pod_deny_without_runasnonroot
 
-import data.lib.workloads
+import data.lib.pods
 import data.lib.core
 
 violation[msg] {
-    workloads.pods[pod]
+    pods.pods[pod]
     not pod.spec.securityContext.runAsNonRoot
     msg = core.format(sprintf("%s/%s/%s: Pod allows running as root", [core.kind, core.name, pod.metadata.name]))
 }
@@ -581,11 +581,11 @@ important to make the root filesystem read-only.
 ```rego
 package container_warn_no_ro_fs
 
-import data.lib.workloads
+import data.lib.containers
 import data.lib.core
 
 warn[msg] {
-    workloads.containers[container]
+    containers.containers[container]
     no_read_only_filesystem(container)
     msg = core.format(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]))
 }

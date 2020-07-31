@@ -54,7 +54,54 @@ spec:
         not has_field(obj, field)
       }
     - |
-      package lib.workloads
+      package lib.containers
+
+      import data.lib.core
+      import data.lib.pods
+
+      pod_containers(pod) = all_containers {
+        keys = {"containers", "initContainers"}
+        all_containers = [c | keys[k]; c = pod.spec[k][_]]
+      }
+
+      containers[container] {
+        pods.pods[pod]
+        all_containers = pod_containers(pod)
+        container = all_containers[_]
+      }
+
+      containers[container] {
+        all_containers = pod_containers(core.resource)
+        container = all_containers[_]
+      }
+
+      is_workload {
+        containers[_]
+      }
+    - |
+      package lib.security
+
+      dropped_capability(container, cap) {
+        lower(container.securityContext.capabilities.drop[_]) == lower(cap)
+      }
+
+      added_capability(container, cap) {
+        lower(container.securityContext.capabilities.add[_]) == lower(cap)
+      }
+
+      dropped_capability(psp, cap) {
+        lower(psp.spec.requiredDropCapabilities[_]) == lower(cap)
+      }
+
+      added_capability(psp, cap) {
+        lower(psp.spec.allowedCapabilities[_]) == lower(cap)
+      }
+
+      added_capability(psp, cap) {
+        lower(psp.spec.defaultAddCapabilities[_]) == lower(cap)
+      }
+    - |
+      package lib.pods
 
       import data.lib.core
 
@@ -83,62 +130,20 @@ spec:
         pod = core.resource.spec.template
       }
 
-      pod_containers(pod) = all_containers {
-        keys = {"containers", "initContainers"}
-        all_containers = [c | keys[k]; c = pod.spec[k][_]]
-      }
-
-      containers[container] {
-        pods[pod]
-        all_containers = pod_containers(pod)
-        container = all_containers[_]
-      }
-
-      containers[container] {
-        all_containers = pod_containers(core.resource)
-        container = all_containers[_]
-      }
-
       volumes[volume] {
         pods[pod]
         volume = pod.spec.volumes[_]
-      }
-
-      is_workload {
-        containers[_]
-      }
-    - |
-      package lib.security
-
-      dropped_capability(container, cap) {
-        lower(container.securityContext.capabilities.drop[_]) == lower(cap)
-      }
-
-      added_capability(container, cap) {
-        lower(container.securityContext.capabilities.add[_]) == lower(cap)
-      }
-
-      dropped_capability(psp, cap) {
-        lower(psp.spec.requiredDropCapabilities[_]) == lower(cap)
-      }
-
-      added_capability(psp, cap) {
-        lower(psp.spec.allowedCapabilities[_]) == lower(cap)
-      }
-
-      added_capability(psp, cap) {
-        lower(psp.spec.defaultAddCapabilities[_]) == lower(cap)
       }
     rego: |
       package container_deny_privileged
 
       import data.lib.core
-      import data.lib.workloads
+      import data.lib.containers
       import data.lib.security
 
 
       violation[msg] {
-        workloads.containers[container]
+        containers.containers[container]
         is_privileged(container)
 
         msg = core.format(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]))

@@ -1,7 +1,7 @@
 package container_deny_latest_tag
 
 import data.lib.core
-import data.lib.workloads
+import data.lib.containers
 
 # @title Images must not use the latest tag
 #
@@ -10,7 +10,7 @@ import data.lib.workloads
 #
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 violation[msg] {
-  workloads.containers[container]
+  containers.containers[container]
   has_latest_tag(container)
 
   msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]))

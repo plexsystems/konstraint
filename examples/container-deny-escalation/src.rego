@@ -6,11 +6,11 @@
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 package container_deny_escalation
 
-import data.lib.workloads
 import data.lib.core
+import data.lib.containers
 
 violation[msg] {
-    workloads.containers[container]
+    containers.containers[container]
     allows_escalation(container)
     msg = core.format(sprintf("%s/%s/%s: Allows priviledge escalation", [core.kind, core.name, container.name]))
 }

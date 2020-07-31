@@ -8,10 +8,10 @@
 package pod_deny_host_pid
 
 import data.lib.core
-import data.lib.workloads
+import data.lib.pods
 
 violation[msg] {
-    workloads.pods[pod]
+    pods.pods[pod]
     pod.spec.hostPID
     msg = core.format(sprintf("%s/%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name, pod.metadata.name]))
 }
