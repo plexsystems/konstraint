@@ -61,7 +61,7 @@ test_neg {
             ],
         }
     }
-    
+
     violations := violation with input as input
     count(violations) == 1
 }

@@ -16,24 +16,24 @@ spec:
       default is_gatekeeper = false
 
       is_gatekeeper {
-        has_field(input, "review")
-        has_field(input.review, "object")
+          has_field(input, "review")
+          has_field(input.review, "object")
       }
 
       resource = input.review.object {
-        is_gatekeeper
+          is_gatekeeper
       }
 
       resource = input {
-        not is_gatekeeper
+          not is_gatekeeper
       }
 
       format(msg) = msg {
-        not is_gatekeeper
+          not is_gatekeeper
       }
 
       format(msg) = {"msg": msg} {
-        is_gatekeeper
+          is_gatekeeper
       }
 
       apiVersion = resource.apiVersion
@@ -43,15 +43,15 @@ spec:
       annotations = resource.metadata.annotations
 
       has_field(obj, field) {
-        not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
+          not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
       }
 
       missing_field(obj, field) = true {
-        obj[field] == ""
+          obj[field] == ""
       }
 
       missing_field(obj, field) = true {
-        not has_field(obj, field)
+          not has_field(obj, field)
       }
     - |
       package lib.containers
@@ -60,23 +60,23 @@ spec:
       import data.lib.pods
 
       pod_containers(pod) = all_containers {
-        keys = {"containers", "initContainers"}
-        all_containers = [c | keys[k]; c = pod.spec[k][_]]
+          keys = {"containers", "initContainers"}
+          all_containers = [c | keys[k]; c = pod.spec[k][_]]
       }
 
       containers[container] {
-        pods.pods[pod]
-        all_containers = pod_containers(pod)
-        container = all_containers[_]
+          pods.pods[pod]
+          all_containers = pod_containers(pod)
+          container = all_containers[_]
       }
 
       containers[container] {
-        all_containers = pod_containers(core.resource)
-        container = all_containers[_]
+          all_containers = pod_containers(core.resource)
+          container = all_containers[_]
       }
 
       is_workload {
-        containers[_]
+          containers[_]
       }
     - |
       package lib.pods
@@ -84,33 +84,33 @@ spec:
       import data.lib.core
 
       pods[pod] {
-        lower(core.kind) = "statefulset"
-        pod = core.resource.spec.template
+          lower(core.kind) == "statefulset"
+          pod = core.resource.spec.template
       }
 
       pods[pod] {
-        lower(core.kind) = "daemonset"
-        pod = core.resource.spec.template
+          lower(core.kind) == "daemonset"
+          pod = core.resource.spec.template
       }
 
       pods[pod] {
-        lower(core.kind) = "deployment"
-        pod = core.resource.spec.template
+          lower(core.kind) == "deployment"
+          pod = core.resource.spec.template
       }
 
       pods[pod] {
-        lower(core.kind) = "pod"
-        pod = core.resource
+          lower(core.kind) == "pod"
+          pod = core.resource
       }
 
       pods[pod] {
-        lower(core.kind) = "job"
-        pod = core.resource.spec.template
+          lower(core.kind) == "job"
+          pod = core.resource.spec.template
       }
 
       volumes[volume] {
-        pods[pod]
-        volume = pod.spec.volumes[_]
+          pods[pod]
+          volume = pod.spec.volumes[_]
       }
     rego: |
       package container_deny_latest_tag
@@ -119,18 +119,18 @@ spec:
       import data.lib.containers
 
       violation[msg] {
-        containers.containers[container]
-        has_latest_tag(container)
+          containers.containers[container]
+          has_latest_tag(container)
 
-        msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]))
+          msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]))
       }
 
       has_latest_tag(c) {
-        endswith(c.image, ":latest")
+          endswith(c.image, ":latest")
       }
 
       has_latest_tag(c) {
-        contains(c.image, ":") == false
+          contains(c.image, ":") == false
       }
     target: admission.k8s.gatekeeper.sh
 status: {}

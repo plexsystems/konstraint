@@ -40,7 +40,7 @@ test_neg {
             "allowPrivilegeEscalation": true
         }
     }
-    
+
     violations := violation with input as input
     count(violations) == 1
 }

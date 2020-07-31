@@ -25,7 +25,7 @@ test_neg {
             "hostNetwork": true,
         }
     }
-    
+
     violations := violation with input as input
     count(violations) == 1
 }

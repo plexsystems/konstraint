@@ -10,7 +10,7 @@ test_pos {
             "hostAliases": false,
         }
     }
-    
+
     violations := violation with input as input
     count(violations) == 0
 }

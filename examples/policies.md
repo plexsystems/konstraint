@@ -49,7 +49,8 @@ import data.lib.security
 violation[msg] {
     containers.containers[container]
     not security.dropped_capability(container, "all")
-    msg = core.format(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]))
+
+    msg := core.format(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]))
 }
 
 ```
@@ -76,7 +77,8 @@ import data.lib.containers
 violation[msg] {
     containers.containers[container]
     allows_escalation(container)
-    msg = core.format(sprintf("%s/%s/%s: Allows priviledge escalation", [core.kind, core.name, container.name]))
+
+    msg := core.format(sprintf("%s/%s/%s: Allows priviledge escalation", [core.kind, core.name, container.name]))
 }
 
 allows_escalation(c) {
@@ -109,18 +111,18 @@ import data.lib.core
 import data.lib.containers
 
 violation[msg] {
-  containers.containers[container]
-  has_latest_tag(container)
+    containers.containers[container]
+    has_latest_tag(container)
 
-  msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]))
+    msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]))
 }
 
 has_latest_tag(c) {
-  endswith(c.image, ":latest")
+    endswith(c.image, ":latest")
 }
 
 has_latest_tag(c) {
-  contains(c.image, ":") == false
+    contains(c.image, ":") == false
 }
 
 ```
@@ -184,17 +186,17 @@ import data.lib.core
 import data.lib.containers
 
 violation[msg] {
-  containers.containers[container]
-  not container_resources_provided(container)
+    containers.containers[container]
+    not container_resources_provided(container)
 
-  msg := core.format(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]))
+    msg := core.format(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]))
 }
 
 container_resources_provided(container) {
-  container.resources.requests.cpu
-  container.resources.requests.memory
-  container.resources.limits.cpu
-  container.resources.limits.memory
+    container.resources.requests.cpu
+    container.resources.requests.memory
+    container.resources.limits.cpu
+    container.resources.limits.memory
 }
 
 ```
@@ -221,7 +223,8 @@ import data.lib.pods
 violation[msg] {
     pods.pods[pod]
     pod.spec.hostAliases
-    msg = core.format(sprintf("%s/%s/%s: Pod allows for managing host aliases", [core.kind, core.name, pod.metadata.name]))
+
+    msg := core.format(sprintf("%s/%s/%s: Pod allows for managing host aliases", [core.kind, core.name, pod.metadata.name]))
 }
 
 ```
@@ -248,7 +251,8 @@ import data.lib.pods
 violation[msg] {
     pods.pods[pod]
     pod.spec.hostIPC
-    msg = core.format(sprintf("%s/%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name, pod.metadata.name]))
+
+    msg := core.format(sprintf("%s/%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name, pod.metadata.name]))
 }
 
 ```
@@ -275,7 +279,8 @@ import data.lib.pods
 violation[msg] {
     pods.pods[pod]
     pod.spec.hostNetwork
-    msg = core.format(sprintf("%s/%s/%s: Pod allows for accessing the host network", [core.kind, core.name, pod.metadata.name]))
+
+    msg := core.format(sprintf("%s/%s/%s: Pod allows for accessing the host network", [core.kind, core.name, pod.metadata.name]))
 }
 
 ```
@@ -303,7 +308,8 @@ import data.lib.pods
 violation[msg] {
     pods.pods[pod]
     pod.spec.hostPID
-    msg = core.format(sprintf("%s/%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name, pod.metadata.name]))
+
+    msg := core.format(sprintf("%s/%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name, pod.metadata.name]))
 }
 
 ```
@@ -330,7 +336,8 @@ import data.lib.core
 violation[msg] {
     pods.pods[pod]
     not pod.spec.securityContext.runAsNonRoot
-    msg = core.format(sprintf("%s/%s/%s: Pod allows running as root", [core.kind, core.name, pod.metadata.name]))
+
+    msg := core.format(sprintf("%s/%s/%s: Pod allows running as root", [core.kind, core.name, pod.metadata.name]))
 }
 
 ```
@@ -359,7 +366,8 @@ import data.lib.security
 violation[msg] {
     psps.psps[psp]
     not security.dropped_capability(psp, "all")
-    msg = core.format(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]))
+
+    msg := core.format(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]))
 }
 
 ```
@@ -386,7 +394,8 @@ import data.lib.psps
 violation[msg] {
     psps.psps[psp]
     allows_escalation(psp)
-    msg = core.format(sprintf("%s/%s: Allows priviledge escalation", [core.kind, core.name]))
+
+    msg := core.format(sprintf("%s/%s: Allows priviledge escalation", [core.kind, core.name]))
 }
 
 allows_escalation(p) {
@@ -421,7 +430,8 @@ import data.lib.psps
 violation[msg] {
     psps.psps[psp]
     psp.spec.hostAliases
-    msg = core.format(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]))
+
+    msg := core.format(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]))
 }
 
 ```
@@ -448,7 +458,8 @@ import data.lib.psps
 violation[msg] {
     psps.psps[psp]
     psp.spec.hostIPC
-    msg = core.format(sprintf("%s/%s: Allows for sharing the host IPC namespace", [core.kind, core.name]))
+
+    msg := core.format(sprintf("%s/%s: Allows for sharing the host IPC namespace", [core.kind, core.name]))
 }
 
 ```
@@ -476,7 +487,8 @@ import data.lib.psps
 violation[msg] {
     psps.psps[psp]
     psp.spec.hostNetwork
-    msg = core.format(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]))
+
+    msg := core.format(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]))
 }
 
 ```
@@ -531,7 +543,8 @@ import data.lib.psps
 violation[msg] {
     psps.psps[psp]
     psp.spec.privileged
-    msg = core.format(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]))
+
+    msg := core.format(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]))
 }
 
 ```
@@ -556,11 +569,11 @@ package any_warn_deprecated_api_versions
 import data.lib.core
 
 warn[msg] {
-  resources := ["DaemonSet", "Deployment"]
-  core.apiVersion == "extensions/v1beta1"
-  core.kind == resources[_]
-
-  msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]))
+    resources := ["DaemonSet", "Deployment"]
+    core.apiVersion == "extensions/v1beta1"
+    core.kind == resources[_]
+    
+    msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]))
 }
 
 ```
@@ -587,7 +600,8 @@ import data.lib.core
 warn[msg] {
     containers.containers[container]
     no_read_only_filesystem(container)
-    msg = core.format(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]))
+
+    msg := core.format(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]))
 }
 
 no_read_only_filesystem(container) {
@@ -623,7 +637,8 @@ import data.lib.psps
 warn[msg] {
     psps.psps[psp]
     no_read_only_filesystem(psp)
-    msg = core.format(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]))
+
+    msg := core.format(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]))
 }
 
 no_read_only_filesystem(psp) {
