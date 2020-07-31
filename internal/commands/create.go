@@ -94,7 +94,7 @@ func runCreateCommand(path string) error {
 			constraintFileName = fmt.Sprintf("constraint_%s.yaml", GetKindFromPath(policy.FilePath))
 		}
 
-		importedLibraries := getUniqueRegoFiles(getImportedLibraries(policy, libraries))
+		importedLibraries := getImportedLibraries(policy, libraries)
 		var librariesContents []string
 		for _, library := range importedLibraries {
 			librariesContents = append(librariesContents, getRegoWithoutComments(library.Contents))
@@ -263,6 +263,7 @@ func getImportedLibraries(file rego.File, libraries []rego.File) []rego.File {
 		libs = append(libs, getImportedLibraries(l, libraries)...)
 	}
 
+	libs = getUniqueRegoFiles(libs)
 	return libs
 }
 
