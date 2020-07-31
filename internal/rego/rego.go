@@ -185,6 +185,9 @@ func readFilesContents(filePaths []string) (map[string]string, error) {
 			return nil, fmt.Errorf("read file: %w", err)
 		}
 
+		// Many YAML parsers do not like rendering out CRLF when writing the YAML to disk.
+		// This causes ConstraintTemplates to be rendered with the line breaks as text,
+		// rather than the actual line break.
 		filesContents[filePath] = strings.ReplaceAll(string(data), "\r", "")
 	}
 

@@ -181,6 +181,10 @@ func getDocumentation(path string, severity string, outputDirectory string) ([]D
 		}
 		relDir := filepath.Dir(relPath)
 
+		// Markdown specification notes that all pathing should be represented
+		// with a forward slash.
+		relDir = strings.ReplaceAll(relDir, string(os.PathSeparator), "/")
+
 		regoWithoutComments := getRegoWithoutComments(policy.Contents)
 
 		document := Document{
