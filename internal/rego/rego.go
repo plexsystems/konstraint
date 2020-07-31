@@ -185,7 +185,7 @@ func readFilesContents(filePaths []string) (map[string]string, error) {
 			return nil, fmt.Errorf("read file: %w", err)
 		}
 
-		filesContents[filePath] = string(data)
+		filesContents[filePath] = strings.ReplaceAll(string(data), "\r", "")
 	}
 
 	return filesContents, nil
