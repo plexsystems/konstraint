@@ -90,9 +90,13 @@ rule[msg] { msg = true }`
 		libraries = append(libraries, lib)
 	}
 
-	matchingLibraries := getMatchingLibraries(policyFile, libraries)
+	var librariesContents []string
+	importedLibraries := getImportedLibraries(policyFile, libraries)
+	for _, library := range importedLibraries {
+		librariesContents = append(librariesContents, getRegoWithoutComments(library.Contents))
+	}
 
-	actual := getConstraintTemplate(policyFile, matchingLibraries)
+	actual := getConstraintTemplate(policyFile, librariesContents)
 	if err != nil {
 		t.Fatal("get constraint:", err)
 	}

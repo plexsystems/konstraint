@@ -94,9 +94,10 @@ func runCreateCommand(path string) error {
 			constraintFileName = fmt.Sprintf("constraint_%s.yaml", GetKindFromPath(policy.FilePath))
 		}
 
-		matchingLibraries := getMatchingLibraries(policy, libraries)
-		if len(matchingLibraries) != len(policy.ImportPackages) {
-			return fmt.Errorf("missing imported libraries")
+		importedLibraries := getUniqueRegoFiles(getImportedLibraries(policy, libraries))
+		var librariesContents []string
+		for _, library := range importedLibraries {
+			librariesContents = append(librariesContents, getRegoWithoutComments(library.Contents))
 		}
 
 		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
@@ -106,7 +107,7 @@ func runCreateCommand(path string) error {
 			}
 		}
 
-		constraintTemplate := getConstraintTemplate(policy, matchingLibraries)
+		constraintTemplate := getConstraintTemplate(policy, librariesContents)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
@@ -248,15 +249,38 @@ func getLibraryPath(path string) (string, error) {
 	return libraryPath, nil
 }
 
-func getMatchingLibraries(policy rego.File, libraries []rego.File) []string {
-	var libs []string
-	for _, importPackage := range policy.ImportPackages {
-		for _, library := range libraries {
-			if importPackage == library.PackageName {
-				libs = append(libs, library.Contents)
+func getImportedLibraries(file rego.File, libraries []rego.File) []rego.File {
+	var libs []rego.File
+	for _, i := range file.ImportPackages {
+		for _, l := range libraries {
+			if l.PackageName == i {
+				libs = append(libs, l)
 			}
 		}
 	}
 
+	for _, l := range libs {
+		libs = append(libs, getImportedLibraries(l, libraries)...)
+	}
+
 	return libs
+}
+
+func getUniqueRegoFiles(files []rego.File) []rego.File {
+	var uniqueFiles []rego.File
+	for _, file := range files {
+		var seen bool
+		for _, uniqueFile := range uniqueFiles {
+			if file.PackageName == uniqueFile.PackageName {
+				seen = true
+				break
+			}
+		}
+
+		if !seen {
+			uniqueFiles = append(uniqueFiles, file)
+		}
+	}
+
+	return uniqueFiles
 }
