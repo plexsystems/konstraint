@@ -12,7 +12,8 @@ import data.lib.core
 warn[msg] {
     containers.containers[container]
     no_read_only_filesystem(container)
-    msg = core.format(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]))
+
+    msg := core.format(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]))
 }
 
 no_read_only_filesystem(container) {

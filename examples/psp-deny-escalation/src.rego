@@ -12,7 +12,8 @@ import data.lib.psps
 violation[msg] {
     psps.psps[psp]
     allows_escalation(psp)
-    msg = core.format(sprintf("%s/%s: Allows priviledge escalation", [core.kind, core.name]))
+
+    msg := core.format(sprintf("%s/%s: Allows priviledge escalation", [core.kind, core.name]))
 }
 
 allows_escalation(p) {

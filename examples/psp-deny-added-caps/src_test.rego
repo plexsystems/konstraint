@@ -12,6 +12,7 @@ test_pos {
             ],
         }
     }
+
     violations := violation with input as input
     count(violations) == 0
 }
@@ -28,6 +29,7 @@ test_case_insensitivty {
             ],
         }
     }
+
     violations := violation with input as input
     count(violations) == 0
 }
@@ -42,6 +44,7 @@ test_null {
             "a": "b"
         }
     }
+
     violations := violation with input as input
     count(violations) == 1
 }
@@ -58,6 +61,7 @@ test_neg {
             ],
         }
     }
+    
     violations := violation with input as input
     count(violations) == 1
 }

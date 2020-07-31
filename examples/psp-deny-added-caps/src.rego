@@ -14,5 +14,6 @@ import data.lib.security
 violation[msg] {
     psps.psps[psp]
     not security.dropped_capability(psp, "all")
-    msg = core.format(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]))
+
+    msg := core.format(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]))
 }

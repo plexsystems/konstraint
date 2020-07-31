@@ -12,6 +12,7 @@ test_pos {
             }
         }
     }
+
     violations := violation with input as input
     count(violations) == 0
 }
@@ -26,6 +27,7 @@ test_null {
             "securityContext": {}
         }
     }
+
     violations := violation with input as input
     count(violations) == 1
 }
@@ -42,6 +44,7 @@ test_neg {
             }
         }
     }
+    
     violations := violation with input as input
     count(violations) == 1
 }

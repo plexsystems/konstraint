@@ -10,15 +10,15 @@ import data.lib.containers
 #
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 violation[msg] {
-  containers.containers[container]
-  not container_resources_provided(container)
+    containers.containers[container]
+    not container_resources_provided(container)
 
-  msg := core.format(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]))
+    msg := core.format(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]))
 }
 
 container_resources_provided(container) {
-  container.resources.requests.cpu
-  container.resources.requests.memory
-  container.resources.limits.cpu
-  container.resources.limits.memory
+    container.resources.requests.cpu
+    container.resources.requests.memory
+    container.resources.limits.cpu
+    container.resources.limits.memory
 }

@@ -10,6 +10,7 @@ test_pos {
             "privileged": false,
         }
     }
+
     violations := violation with input as input
     count(violations) == 0
 }
@@ -24,6 +25,7 @@ test_neg {
             "privileged": true,
         }
     }
+    
     violations := violation with input as input
     count(violations) == 1
 }

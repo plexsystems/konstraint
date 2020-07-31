@@ -12,5 +12,6 @@ import data.lib.psps
 violation[msg] {
     psps.psps[psp]
     psp.spec.hostIPC
-    msg = core.format(sprintf("%s/%s: Allows for sharing the host IPC namespace", [core.kind, core.name]))
+
+    msg := core.format(sprintf("%s/%s: Allows for sharing the host IPC namespace", [core.kind, core.name]))
 }
