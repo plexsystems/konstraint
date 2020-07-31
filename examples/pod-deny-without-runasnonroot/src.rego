@@ -6,11 +6,11 @@
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 package pod_deny_without_runasnonroot
 
-import data.lib.workloads
+import data.lib.pods
 import data.lib.core
 
 violation[msg] {
-    workloads.pods[pod]
+    pods.pods[pod]
     not pod.spec.securityContext.runAsNonRoot
     msg = core.format(sprintf("%s/%s/%s: Pod allows running as root", [core.kind, core.name, pod.metadata.name]))
 }

@@ -7,10 +7,10 @@
 package pod_deny_host_network
 
 import data.lib.core
-import data.lib.workloads
+import data.lib.pods
 
 violation[msg] {
-    workloads.pods[pod]
+    pods.pods[pod]
     pod.spec.hostNetwork
     msg = core.format(sprintf("%s/%s/%s: Pod allows for accessing the host network", [core.kind, core.name, pod.metadata.name]))
 }

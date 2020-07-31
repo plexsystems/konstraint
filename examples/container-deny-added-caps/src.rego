@@ -8,11 +8,11 @@
 package container_deny_added_caps
 
 import data.lib.core
-import data.lib.workloads
+import data.lib.containers
 import data.lib.security
 
 violation[msg] {
-    workloads.containers[container]
+    containers.containers[container]
     not security.dropped_capability(container, "all")
     msg = core.format(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]))
 }

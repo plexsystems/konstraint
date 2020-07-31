@@ -6,11 +6,11 @@
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 package container_warn_no_ro_fs
 
-import data.lib.workloads
+import data.lib.containers
 import data.lib.core
 
 warn[msg] {
-    workloads.containers[container]
+    containers.containers[container]
     no_read_only_filesystem(container)
     msg = core.format(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]))
 }

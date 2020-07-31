@@ -7,10 +7,10 @@
 package pod_deny_host_ipc
 
 import data.lib.core
-import data.lib.workloads
+import data.lib.pods
 
 violation[msg] {
-    workloads.pods[pod]
+    pods.pods[pod]
     pod.spec.hostIPC
     msg = core.format(sprintf("%s/%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name, pod.metadata.name]))
 }
