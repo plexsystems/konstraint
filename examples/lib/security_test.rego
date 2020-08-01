@@ -3,9 +3,9 @@ package lib.security
 test_added_capabilities_container_match {
     input := {
         "securityContext": {
-        "capabilities": {
-            "add": ["CAP_SYS_ADMIN"]
-        }
+            "capabilities": {
+                "add": ["CAP_SYS_ADMIN"]
+            }
         }
     }
 
@@ -15,9 +15,9 @@ test_added_capabilities_container_match {
 test_added_capabilities_container_nomatch {
     input := {
         "securityContext": {
-        "capabilities": {
-            "add": ["CAP_SYS_ADMIN"]
-        }
+            "capabilities": {
+                "add": ["CAP_SYS_ADMIN"]
+            }
         }
     }
 
@@ -39,9 +39,9 @@ test_added_capabilities_psp_nomatch {
 test_dropped_capabilities_container_match {
     input := {
         "securityContext": {
-        "capabilities": {
-            "drop": ["CAP_SYS_ADMIN"]
-        }
+            "capabilities": {
+                "drop": ["CAP_SYS_ADMIN"]
+            }
         }
     }
 
@@ -51,9 +51,9 @@ test_dropped_capabilities_container_match {
 test_dropped_capabilities_container_nomatch {
     input := {
         "securityContext": {
-        "capabilities": {
-            "drop": ["CAP_SYS_ADMIN"]
-        }
+            "capabilities": {
+                "drop": ["CAP_SYS_ADMIN"]
+            }
         }
     }
 

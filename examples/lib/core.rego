@@ -40,3 +40,4 @@ missing_field(obj, field) = true {
 missing_field(obj, field) = true {
     not has_field(obj, field)
 }
+
