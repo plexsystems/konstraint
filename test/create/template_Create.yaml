@@ -1,0 +1,28 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  creationTimestamp: null
+  name: create
+spec:
+  crd:
+    spec:
+      names:
+        kind: Create
+  targets:
+  - libs:
+    - |
+      package lib.core
+
+      format(msg) = {"msg": msg} {
+          true
+      }
+    rego: |
+      package create
+
+      import data.lib.core
+
+      violation[msg] {
+          msg := core.format(sprintf("%s/%s: Images must not use the latest tag", [core.kind, core.name]))
+      }
+    target: admission.k8s.gatekeeper.sh
+status: {}
