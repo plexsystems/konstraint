@@ -15,7 +15,7 @@ is_exception {
         "gce.fluentd-gke",              # GKE
         "gce.fluentd-gcp"               # GKE
     }
-    core.name = exceptions[_]
+    core.name == exceptions[_]
 }
 
 psps[psp] {

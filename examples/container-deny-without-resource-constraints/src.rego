@@ -1,7 +1,7 @@
 package container_deny_without_resource_constraints
 
 import data.lib.core
-import data.lib.containers
+import data.lib.pods
 
 # @title Containers must define resource constraints
 #
@@ -10,7 +10,7 @@ import data.lib.containers
 #
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 violation[msg] {
-    containers.containers[container]
+    pods.containers[container]
     not container_resources_provided(container)
 
     msg := core.format(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]))
