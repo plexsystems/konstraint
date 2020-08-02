@@ -1,7 +1,7 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: PodDenyWithoutRunasnonroot
+kind: Create
 metadata:
-  name: poddenywithoutrunasnonroot
+  name: create
 spec:
   match:
     kinds:
