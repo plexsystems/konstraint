@@ -54,72 +54,40 @@ spec:
           not has_field(obj, field)
       }
     - |
-      package lib.containers
-
-      import data.lib.core
-      import data.lib.pods
-
-      pod_containers(pod) = all_containers {
-          keys = {"containers", "initContainers"}
-          all_containers = [c | keys[k]; c = pod.spec[k][_]]
-      }
-
-      containers[container] {
-          pods.pods[pod]
-          all_containers = pod_containers(pod)
-          container = all_containers[_]
-      }
-
-      containers[container] {
-          all_containers = pod_containers(core.resource)
-          container = all_containers[_]
-      }
-
-      is_workload {
-          containers[_]
-      }
-    - |
       package lib.pods
 
       import data.lib.core
 
-      pods[pod] {
-          lower(core.kind) == "statefulset"
-          pod = core.resource.spec.template
+      pod = core.resource.spec.template {
+          pod_templates := ["daemonset","deployment","job","replicaset","replicationcontroller","statefulset"]
+          lower(core.kind) == pod_templates[_]
       }
 
-      pods[pod] {
-          lower(core.kind) == "daemonset"
-          pod = core.resource.spec.template
-      }
-
-      pods[pod] {
-          lower(core.kind) == "deployment"
-          pod = core.resource.spec.template
-      }
-
-      pods[pod] {
+      pod = core.resource {
           lower(core.kind) == "pod"
-          pod = core.resource
       }
 
-      pods[pod] {
-          lower(core.kind) == "job"
-          pod = core.resource.spec.template
+      pod = core.resource.spec.jobTemplate.spec.template {
+          lower(core.kind) == "cronjob"
+      }
+
+      containers[container] {
+          keys = {"containers", "initContainers"}
+          all_containers = [c | keys[k]; c = pod.spec[k][_]]
+          container = all_containers[_]
       }
 
       volumes[volume] {
-          pods[pod]
           volume = pod.spec.volumes[_]
       }
     rego: |
       package container_deny_latest_tag
 
       import data.lib.core
-      import data.lib.containers
+      import data.lib.pods
 
       violation[msg] {
-          containers.containers[container]
+          pods.containers[container]
           has_latest_tag(container)
 
           msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]))

@@ -1,5 +1,5 @@
 # @title Pods must not run with access to the host PID namespace
-# 
+#
 # Pods that can acess the host's process tree can view and attempt to
 # modify processes outside of their namespace, breaking that security
 # boundary.
@@ -11,8 +11,7 @@ import data.lib.core
 import data.lib.pods
 
 violation[msg] {
-    pods.pods[pod]
-    pod.spec.hostPID
+    pods.pod.spec.hostPID
 
-    msg := core.format(sprintf("%s/%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name, pod.metadata.name]))
+    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name]))
 }

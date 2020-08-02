@@ -3,12 +3,16 @@ package lib.pods
 import data.lib.core
 
 pod = core.resource.spec.template {
-    pod_templates := ["daemonset","deployment","job","statefulset"]
+    pod_templates := ["daemonset","deployment","job","replicaset","replicationcontroller","statefulset"]
     lower(core.kind) == pod_templates[_]
 }
 
 pod = core.resource {
     lower(core.kind) == "pod"
+}
+
+pod = core.resource.spec.jobTemplate.spec.template {
+    lower(core.kind) == "cronjob"
 }
 
 containers[container] {
