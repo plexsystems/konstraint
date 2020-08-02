@@ -42,11 +42,11 @@ outside of Kubernetes controller namespaces.
 package container_deny_added_caps
 
 import data.lib.core
-import data.lib.containers
+import data.lib.pods
 import data.lib.security
 
 violation[msg] {
-    containers.containers[container]
+    pods.containers[container]
     not security.dropped_capability(container, "all")
 
     msg := core.format(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]))
@@ -70,21 +70,21 @@ As such, they are not allowed.
 package container_deny_escalation
 
 import data.lib.core
-import data.lib.containers
+import data.lib.pods
 
 violation[msg] {
-    containers.containers[container]
-    allows_escalation(container)
+    container_allows_escalation
 
-    msg := core.format(sprintf("%s/%s/%s: Allows priviledge escalation", [core.kind, core.name, container.name]))
+    msg := core.format(sprintf("%s/%s: Allows priviledge escalation", [core.kind, core.name]))
 }
 
-allows_escalation(c) {
-    c.securityContext.allowPrivilegeEscalation == true
+
+container_allows_escalation {
+    pods.containers[_].securityContext.allowPrivilegeEscalation == true
 }
 
-allows_escalation(c) {
-    core.missing_field(c.securityContext, "allowPrivilegeEscalation")
+container_allows_escalation {
+    core.missing_field(pods.containers[_].securityContext, "allowPrivilegeEscalation")
 }
 ```
 
@@ -105,10 +105,10 @@ we can have higher confidence that our applications are immutable and do not cha
 package container_deny_latest_tag
 
 import data.lib.core
-import data.lib.containers
+import data.lib.pods
 
 violation[msg] {
-    containers.containers[container]
+    pods.containers[container]
     has_latest_tag(container)
 
     msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]))
@@ -141,12 +141,12 @@ to obtain the same effect are not allowed.
 package container_deny_privileged
 
 import data.lib.core
-import data.lib.containers
+import data.lib.pods
 import data.lib.security
 
 
 violation[msg] {
-  containers.containers[container]
+  pods.containers[container]
   is_privileged(container)
 
   msg = core.format(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]))
@@ -178,10 +178,10 @@ and potentially starve other applications that need to run.
 package container_deny_without_resource_constraints
 
 import data.lib.core
-import data.lib.containers
+import data.lib.pods
 
 violation[msg] {
-    containers.containers[container]
+    pods.containers[container]
     not container_resources_provided(container)
 
     msg := core.format(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]))
@@ -215,10 +215,9 @@ import data.lib.core
 import data.lib.pods
 
 violation[msg] {
-    pods.pods[pod]
-    pod.spec.hostAliases
+    pods.pod.spec.hostAliases
 
-    msg := core.format(sprintf("%s/%s/%s: Pod allows for managing host aliases", [core.kind, core.name, pod.metadata.name]))
+    msg := core.format(sprintf("%s/%s: Pod allows for managing host aliases", [core.kind, core.name]))
 }
 ```
 
@@ -242,10 +241,9 @@ import data.lib.core
 import data.lib.pods
 
 violation[msg] {
-    pods.pods[pod]
-    pod.spec.hostIPC
+    pods.pod.spec.hostIPC
 
-    msg := core.format(sprintf("%s/%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name, pod.metadata.name]))
+    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name]))
 }
 ```
 
@@ -269,10 +267,9 @@ import data.lib.core
 import data.lib.pods
 
 violation[msg] {
-    pods.pods[pod]
-    pod.spec.hostNetwork
+    pods.pod.spec.hostNetwork
 
-    msg := core.format(sprintf("%s/%s/%s: Pod allows for accessing the host network", [core.kind, core.name, pod.metadata.name]))
+    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host network", [core.kind, core.name]))
 }
 ```
 
@@ -297,10 +294,9 @@ import data.lib.core
 import data.lib.pods
 
 violation[msg] {
-    pods.pods[pod]
-    pod.spec.hostPID
+    pods.pod.spec.hostPID
 
-    msg := core.format(sprintf("%s/%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name, pod.metadata.name]))
+    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name]))
 }
 ```
 
@@ -324,10 +320,9 @@ import data.lib.pods
 import data.lib.core
 
 violation[msg] {
-    pods.pods[pod]
-    not pod.spec.securityContext.runAsNonRoot
+    not pods.pod.spec.securityContext.runAsNonRoot
 
-    msg := core.format(sprintf("%s/%s/%s: Pod allows running as root", [core.kind, core.name, pod.metadata.name]))
+    msg := core.format(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]))
 }
 ```
 
@@ -574,11 +569,11 @@ important to make the root filesystem read-only.
 ```rego
 package container_warn_no_ro_fs
 
-import data.lib.containers
 import data.lib.core
+import data.lib.pods
 
 warn[msg] {
-    containers.containers[container]
+    pods.containers[container]
     no_read_only_filesystem(container)
 
     msg := core.format(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]))

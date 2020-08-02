@@ -2,32 +2,25 @@ package lib.pods
 
 import data.lib.core
 
-pods[pod] {
-    lower(core.kind) == "statefulset"
-    pod = core.resource.spec.template
+pod = core.resource.spec.template {
+    pod_templates := ["daemonset","deployment","job","replicaset","replicationcontroller","statefulset"]
+    lower(core.kind) == pod_templates[_]
 }
 
-pods[pod] {
-    lower(core.kind) == "daemonset"
-    pod = core.resource.spec.template
-}
-
-pods[pod] {
-    lower(core.kind) == "deployment"
-    pod = core.resource.spec.template
-}
-
-pods[pod] {
+pod = core.resource {
     lower(core.kind) == "pod"
-    pod = core.resource
 }
 
-pods[pod] {
-    lower(core.kind) == "job"
-    pod = core.resource.spec.template
+pod = core.resource.spec.jobTemplate.spec.template {
+    lower(core.kind) == "cronjob"
+}
+
+containers[container] {
+    keys = {"containers", "initContainers"}
+    all_containers = [c | keys[k]; c = pod.spec[k][_]]
+    container = all_containers[_]
 }
 
 volumes[volume] {
-    pods[pod]
     volume = pod.spec.volumes[_]
 }
