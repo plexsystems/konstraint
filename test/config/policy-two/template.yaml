@@ -2,12 +2,12 @@ apiVersion: templates.gatekeeper.sh/v1beta1
 kind: ConstraintTemplate
 metadata:
   creationTimestamp: null
-  name: config
+  name: policytwo
 spec:
   crd:
     spec:
       names:
-        kind: Config
+        kind: PolicyTwo
   targets:
   - libs:
     - |
@@ -29,7 +29,7 @@ spec:
       }
 
       service_selector_exists {
-          services := data.inventory.namespace[core.resource.metadata.namespace]["v1"]["Service"][_]
+          services := data.inventory.namespace[core.resource.metadata.namespace]["v1"]["Deployment"][_]
 
           core.resource.spec.template.metadata.labels == services.spec.selector
       }

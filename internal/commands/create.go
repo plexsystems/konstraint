@@ -153,7 +153,7 @@ func runCreateCommand(path string) error {
 		return fmt.Errorf("marshal constraint: %w", err)
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(outputDir, "config.yaml"), configBytes, os.ModePerm); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(path, "config.yaml"), configBytes, os.ModePerm); err != nil {
 		return fmt.Errorf("writing config: %w", err)
 	}
 

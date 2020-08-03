@@ -1,4 +1,4 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: Config
+kind: PolicyOne
 metadata:
-  name: config
+  name: policyone

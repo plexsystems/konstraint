@@ -10,5 +10,7 @@ spec:
     syncOnly:
     - kind: Service
       version: v1
+    - kind: Deployment
+      version: v1
   validation: {}
 status: {}
