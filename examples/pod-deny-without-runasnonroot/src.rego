@@ -10,6 +10,7 @@ import data.lib.pods
 import data.lib.core
 
 violation[msg] {
+    pods.pod
     not pods.pod.spec.securityContext.runAsNonRoot
 
     msg := core.format(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]))
