@@ -1,0 +1,14 @@
+apiVersion: config.gatekeeper.sh/v1alpha1
+kind: Config
+metadata:
+  creationTimestamp: null
+  name: config
+  namespace: gatekeeper-system
+spec:
+  readiness: {}
+  sync:
+    syncOnly:
+    - kind: Service
+      version: v1
+  validation: {}
+status: {}

@@ -5,12 +5,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/plexsystems/konstraint/internal/rego"
 
 	"github.com/ghodss/yaml"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	"github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,6 +55,12 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 	cmd.PersistentFlags().BoolP("dryrun", "d", false, "Sets the enforcement action of the constraints to dryrun")
 
 	return &cmd
+}
+
+type SyncResource struct {
+	Group   string
+	Version string
+	Kind    string
 }
 
 func runCreateCommand(path string) error {
@@ -134,7 +142,89 @@ func runCreateCommand(path string) error {
 		}
 	}
 
+	syncResources, err := getSyncResources(policies)
+	if err != nil {
+		return fmt.Errorf("get sync resources: %w", err)
+	}
+
+	config := getConfig(syncResources)
+	configBytes, err := yaml.Marshal(&config)
+	if err != nil {
+		return fmt.Errorf("marshal constraint: %w", err)
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(outputDir, "config.yaml"), configBytes, os.ModePerm); err != nil {
+		return fmt.Errorf("writing config: %w", err)
+	}
+
 	return nil
+}
+
+func getConfig(syncResources []SyncResource) v1alpha1.Config {
+	var syncOnlyEntries []v1alpha1.SyncOnlyEntry
+	for _, syncResource := range syncResources {
+		syncOnlyEntry := v1alpha1.SyncOnlyEntry{
+			Version: syncResource.Version,
+			Kind:    syncResource.Kind,
+		}
+
+		syncOnlyEntries = append(syncOnlyEntries, syncOnlyEntry)
+	}
+
+	configSpec := v1alpha1.ConfigSpec{
+		Sync: v1alpha1.Sync{
+			SyncOnly: syncOnlyEntries,
+		},
+	}
+
+	config := v1alpha1.Config{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "config.gatekeeper.sh/v1alpha1",
+			Kind:       "Config",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "config",
+			Namespace: "gatekeeper-system",
+		},
+		Spec: configSpec,
+	}
+
+	return config
+}
+
+func getSyncResources(files []rego.File) ([]SyncResource, error) {
+	var syncResources []SyncResource
+	for _, file := range files {
+		tokens := strings.Split(file.Contents, " ")
+		for _, token := range tokens {
+			if strings.HasPrefix(token, "data.inventory.namespace") {
+				re, err := regexp.Compile(`\[(.*?)\]`)
+				if err != nil {
+					return nil, fmt.Errorf("compile inventory regex: %w", err)
+				}
+
+				inventorySegments := re.FindAllString(token, -1)
+				version := inventorySegments[1]
+				version = strings.ReplaceAll(version, "[", "")
+				version = strings.ReplaceAll(version, "]", "")
+				version = strings.ReplaceAll(version, "\"", "")
+
+				kind := inventorySegments[2]
+				kind = strings.ReplaceAll(kind, "[", "")
+				kind = strings.ReplaceAll(kind, "]", "")
+				kind = strings.ReplaceAll(kind, "\"", "")
+
+				syncResource := SyncResource{
+					Version: version,
+					Kind:    kind,
+				}
+
+				syncResources = append(syncResources, syncResource)
+			}
+		}
+	}
+
+	return syncResources, nil
 }
 
 func getConstraintTemplate(policy rego.File, libraries []string) v1beta1.ConstraintTemplate {
