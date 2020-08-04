@@ -1,31 +1,23 @@
 package pod_deny_host_alias
 
-test_pos {
+test_input_with_alias_missing {
     input := {
         "kind": "Pod",
-        "metadata": {
-            "name": "test-pod"
-        },
-        "spec": {
-            "hostAliases": false,
-        }
+        "spec": {}
     }
 
-    violations := violation with input as input
-    count(violations) == 0
+    not pod_host_alias with input as input
 }
 
-test_neg {
+test_input_with_alias {
     input := {
         "kind": "Pod",
-        "metadata": {
-            "name": "test-pod"
-        },
         "spec": {
-            "hostAliases": true,
+            "hostAliases": [
+                {"ip": "127.0.0.1", "hostnames": ["foo.local"]}
+            ]
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 1
+    pod_host_alias with input as input
 }
