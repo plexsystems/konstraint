@@ -75,7 +75,7 @@ import data.lib.pods
 violation[msg] {
     container_allows_escalation
 
-    msg := core.format(sprintf("%s/%s: Allows priviledge escalation", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]))
 }
 
 
@@ -324,6 +324,7 @@ import data.lib.pods
 import data.lib.core
 
 violation[msg] {
+    pods.pod
     not pods.pod.spec.securityContext.runAsNonRoot
 
     msg := core.format(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]))
@@ -382,7 +383,7 @@ violation[msg] {
     psps.psps[psp]
     allows_escalation(psp)
 
-    msg := core.format(sprintf("%s/%s: Allows priviledge escalation", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]))
 }
 
 allows_escalation(p) {
