@@ -12,7 +12,7 @@ import data.lib.pods
 violation[msg] {
     container_allows_escalation
 
-    msg := core.format(sprintf("%s/%s: Allows priviledge escalation", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]))
 }
 
 
