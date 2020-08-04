@@ -2,6 +2,8 @@ package lib.pods
 
 import data.lib.core
 
+default pod = false
+
 pod = core.resource.spec.template {
     pod_templates := ["daemonset","deployment","job","replicaset","replicationcontroller","statefulset"]
     lower(core.kind) == pod_templates[_]
