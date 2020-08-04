@@ -215,9 +215,13 @@ import data.lib.core
 import data.lib.pods
 
 violation[msg] {
-    pods.pod.spec.hostAliases
+    pod_host_alias
 
-    msg := core.format(sprintf("%s/%s: Pod allows for managing host aliases", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Pod has hostAliases defined", [core.kind, core.name]))
+}
+
+pod_host_alias {
+    pods.pod.spec.hostAliases
 }
 ```
 
