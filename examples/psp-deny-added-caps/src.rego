@@ -12,8 +12,12 @@ import data.lib.psps
 import data.lib.security
 
 violation[msg] {
-    psps.psps[psp]
-    not security.dropped_capability(psp, "all")
+    not psp_dropped_all_capabilities
 
     msg := core.format(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]))
+}
+
+psp_dropped_all_capabilities {
+    psps.psps[psp]
+    security.dropped_capability(psp, "all")
 }

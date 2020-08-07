@@ -1,6 +1,6 @@
 package pod_deny_host_ipc
 
-test_pos {
+test_hostipc_false {
     input := {
         "kind": "Pod",
         "metadata": {
@@ -11,11 +11,10 @@ test_pos {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 0
+    not pod_has_hostipc with input as input
 }
 
-test_neg {
+test_hostipc_true {
     input := {
         "kind": "Pod",
         "metadata": {
@@ -26,6 +25,5 @@ test_neg {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 1
+    pod_has_hostipc with input as input
 }

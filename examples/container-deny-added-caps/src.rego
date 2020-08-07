@@ -13,7 +13,11 @@ import data.lib.security
 
 violation[msg] {
     pods.containers[container]
-    not security.dropped_capability(container, "all")
+    not container_dropped_all_capabilities(container)
 
     msg := core.format(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]))
+}
+
+container_dropped_all_capabilities(container) {
+    security.dropped_capability(container, "all")
 }

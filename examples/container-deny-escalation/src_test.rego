@@ -1,41 +1,13 @@
 package container_deny_escalation
 
-test_pos {
-    input := {
-        "kind": "Pod",
-        "metadata": {
-            "name": "test-pod"
-        },
-        "spec": {
-            "containers": [{
-                "name": "test-container",
-                "securityContext": {
-                    "allowPrivilegeEscalation": false
-                }
-            }]
-        }
-    }
+test_allowescalation_false {
+    input := {"securityContext": {"allowPrivilegeEscalation": false}}
 
-    violations := violation with input as input
-    count(violations) == 0
+    not container_allows_escalation(input)
 }
 
-test_neg {
-    input := {
-        "kind": "Pod",
-        "metadata": {
-            "name": "test-pod"
-        },
-        "spec": {
-            "containers": [{
-                "name": "test-container",
-                "securityContext": {
-                    "allowPrivilegeEscalation": true
-                }
-            }]
-        }
-    }
+test_allowescalation_true {
+    input := {"securityContext": {"allowPrivilegeEscalation": true}}
     
-    violations := violation with input as input
-    count(violations) == 1
+    container_allows_escalation(input)
 }

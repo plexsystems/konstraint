@@ -10,8 +10,11 @@ import data.lib.core
 import data.lib.psps
 
 violation[msg] {
-    psps.psps[psp]
-    psp.spec.privileged
+    psp_allows_privileged
 
     msg := core.format(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]))
+}
+
+psp_allows_privileged {
+    psps.psps[_].spec.privileged
 }

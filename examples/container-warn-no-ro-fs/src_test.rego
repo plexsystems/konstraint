@@ -1,39 +1,13 @@
 package container_warn_no_ro_fs
 
-test_pos {
-    input := {
-        "kind": "Pod",
-        "metadata": {
-            "name": "test-pod"
-        },
-        "spec": {
-            "containers": [{
-                "name": "test-container",
-                "securityContext": {
-                    "readOnlyRootFilesystem": true
-                }
-            }]
-        }
-    }
-    warns := warn with input as input
-    count(warns) == 0
+test_rofs_true {
+    input := {"securityContext": {"readOnlyRootFilesystem": true}}
+    
+    not no_read_only_filesystem(input)
 }
 
-test_neg {
-    input := {
-        "kind": "Pod",
-        "metadata": {
-            "name": "test-pod"
-        },
-        "spec": {
-            "containers": [{
-                "name": "test-container",
-                "securityContext": {
-                    "readOnlyRootFilesystem": false
-                }
-            }]
-        }
-    }
-    warns := warn with input as input
-    count(warns) == 1
+test_rofs_false {
+    input := {"securityContext": {"readOnlyRootFilesystem": false}}
+    
+    no_read_only_filesystem(input)
 }

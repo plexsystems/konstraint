@@ -10,8 +10,11 @@ import data.lib.core
 import data.lib.psps
 
 violation[msg] {
-    psps.psps[psp]
-    psp.spec.hostAliases
+    psp_allows_hostaliases
 
     msg := core.format(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]))
+}
+
+psp_allows_hostaliases {
+    psps.psps[_].spec.hostAliases
 }

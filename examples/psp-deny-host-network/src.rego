@@ -11,8 +11,11 @@ import data.lib.core
 import data.lib.psps
 
 violation[msg] {
-    psps.psps[psp]
-    psp.spec.hostNetwork
+    psp_allows_hostnetwork
 
     msg := core.format(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]))
+}
+
+psp_allows_hostnetwork {
+    psps.psps[_].spec.hostNetwork
 }

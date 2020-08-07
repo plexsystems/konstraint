@@ -1,6 +1,6 @@
 package psp_deny_added_caps
 
-test_pos {
+test_dropped_all {
     input := {
         "kind": "PodSecurityPolicy",
         "metadata": {
@@ -13,8 +13,7 @@ test_pos {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 0
+    psp_dropped_all_capabilities with input as input
 }
 
 test_case_insensitivty {
@@ -30,8 +29,7 @@ test_case_insensitivty {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 0
+    psp_dropped_all_capabilities with input as input
 }
 
 test_null {
@@ -45,11 +43,10 @@ test_null {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 1
+    not psp_dropped_all_capabilities with input as input
 }
 
-test_neg {
+test_dropped_none {
     input := {
         "kind": "PodSecurityPolicy",
         "metadata": {
@@ -62,6 +59,5 @@ test_neg {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 1
+    not psp_dropped_all_capabilities with input as input
 }
