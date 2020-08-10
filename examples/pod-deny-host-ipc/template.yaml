@@ -58,6 +58,8 @@ spec:
 
       import data.lib.core
 
+      default pod = false
+
       pod = core.resource.spec.template {
           pod_templates := ["daemonset","deployment","job","replicaset","replicationcontroller","statefulset"]
           lower(core.kind) == pod_templates[_]
@@ -87,9 +89,13 @@ spec:
       import data.lib.pods
 
       violation[msg] {
-          pods.pod.spec.hostIPC
+          pod_has_hostipc
 
           msg := core.format(sprintf("%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name]))
+      }
+
+      pod_has_hostipc {
+          pods.pod.spec.hostIPC
       }
     target: admission.k8s.gatekeeper.sh
 status: {}

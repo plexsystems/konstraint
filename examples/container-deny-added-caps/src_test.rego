@@ -1,43 +1,22 @@
 package container_deny_added_caps
 
-test_pos {
+test_dropped_all {
     input := {
-        "kind": "Pod",
-        "metadata": {
-            "name": "test-pod"
-        },
-        "spec": {
-            "containers": [{
-                "name": "test-container",
-                "securityContext": {
-                    "capabilities": {
-                        "drop": ["alL"]
-                    }
-                }
-            }]
+        "securityContext": {
+            "capabilities": {"drop": ["alL"]}
         }
     }
-    violations := violation with input as input
-    count(violations) == 0
+
+    
+    container_dropped_all_capabilities(input)
 }
 
-test_neg {
+test_dropped_none {
     input := {
-        "kind": "Pod",
-        "metadata": {
-            "name": "test-pod"
-        },
-        "spec": {
-            "containers": [{
-                "name": "test-container",
-                "securityContext": {
-                    "capabilities": {
-                        "drop": ["none"]
-                    }
-                }
-            }]
+        "securityContext": {
+            "capabilities": {"drop": ["none"]}
         }
     }
-    violations := violation with input as input
-    count(violations) == 1
+    
+    not container_dropped_all_capabilities(input)
 }

@@ -17,7 +17,7 @@
 }
 
 @test "[CREATE] Creating constraints using --output matches expected output" {
-  run ./build/konstraint create examples/container-deny-latest-tag --output test/create
+  run ./build/konstraint create test/create --output test/create
   git diff --quiet -- test/create/constraint_Create.yaml
   git diff --quiet -- test/create/template_Create.yaml
 }

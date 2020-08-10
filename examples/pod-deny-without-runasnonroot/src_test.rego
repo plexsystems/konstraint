@@ -1,6 +1,6 @@
 package pod_deny_without_runasnonroot
 
-test_pos {
+test_runasnonroot_true {
     input := {
         "kind": "Pod",
         "metadata": {
@@ -13,26 +13,21 @@ test_pos {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 0
+    pod_runasnonroot with input as input
 }
 
-test_null {
+test_runasnonroot_null {
     input := {
         "kind": "Pod",
         "metadata": {
             "name": "test-pod"
-        },
-        "spec": {
-            "securityContext": {}
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 1
+    not pod_runasnonroot with input as input
 }
 
-test_neg {
+test_runasnonroot_false {
     input := {
         "kind": "Pod",
         "metadata": {
@@ -45,6 +40,5 @@ test_neg {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 1
+    not pod_runasnonroot with input as input
 }

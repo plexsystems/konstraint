@@ -1,6 +1,6 @@
 package psp_warn_no_ro_fs
 
-test_happy {
+test_rofs_true {
     input := {
         "kind": "PodSecurityPolicy",
         "metadata": {
@@ -10,8 +10,8 @@ test_happy {
             "readOnlyRootFilesystem": true
         }
     }
-    violations := warn with input as input
-    count(violations) == 0
+
+    not no_read_only_filesystem(input)
 }
 
 test_null {
@@ -24,11 +24,11 @@ test_null {
             "a": "b"
         }
     }
-    violations := warn with input as input
-    count(violations) == 1
+
+    no_read_only_filesystem(input)
 }
 
-test_neg {
+test_rofs_false {
     input := {
         "kind": "PodSecurityPolicy",
         "metadata": {
@@ -38,6 +38,6 @@ test_neg {
             "readOnlyRootFilesystem": false
         }
     }
-    violations := warn with input as input
-    count(violations) == 1
+
+    no_read_only_filesystem(input)
 }

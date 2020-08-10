@@ -1,6 +1,6 @@
 package psp_deny_escalation
 
-test_pos {
+test_allowescalation_false {
     input := {
         "kind": "PodSecurityPolicy",
         "metadata": {
@@ -11,8 +11,7 @@ test_pos {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 0
+    not allows_escalation(input)
 }
 
 test_null {
@@ -26,11 +25,10 @@ test_null {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 1
+    allows_escalation(input)
 }
 
-test_neg {
+test_allowescalation_true {
     input := {
         "kind": "PodSecurityPolicy",
         "metadata": {
@@ -41,6 +39,5 @@ test_neg {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 1
+    allows_escalation(input)
 }

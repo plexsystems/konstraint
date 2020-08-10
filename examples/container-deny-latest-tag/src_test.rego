@@ -1,40 +1,19 @@
 package container_deny_latest_tag
 
 test_input_as_image_without_latest_tag {
-    input := {
-        "kind": "Pod",
-        "metadata": {"name": "test"},
-        "spec": {
-        "containers": [{"name": "test", "image": "image:1.0.0"}]
-        }
-    }
+    input := {"name": "test", "image": "image:1.0.0"}
 
-    violations := violation with input as input
-    count(violations) == 0
+    not has_latest_tag(input)
 }
 
 test_input_as_image_with_latest_tag {
-    input := {
-        "kind": "Pod",
-        "metadata": {"name": "test"},
-        "spec": {
-        "containers": [{"name": "test", "image": "image:latest"}]
-        }
-    }
+    input := {"name": "test", "image": "image:latest"}
 
-    violations := violation with input as input
-    count(violations) == 1
+    has_latest_tag(input)
 }
 
 test_input_as_image_with_no_tag {
-    input := {
-        "kind": "Pod",
-        "metadata": {"name": "test"},
-        "spec": {
-        "containers": [{"name": "test", "image": "image"}]
-        }
-    }
+    input := {"name": "test", "image": "image"}
 
-    violations := violation with input as input
-    count(violations) == 1
+    has_latest_tag(input)
 }

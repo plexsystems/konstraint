@@ -1,67 +1,23 @@
 package container_deny_privileged
 
-test_privileged {
-  input := {
-    "kind": "Pod",
-    "metadata": {"name": "test"},
-    "spec": {
-      "containers": [{
-        "name": "test",
-        "securityContext": {
-          "privileged": true
-        }
-      }]
-    }
-  }
+test_privileged_true {
+    input := {"securityContext": {"privileged": true}}
 
-  violations := violation with input as input
-  count(violations) == 1
+    container_is_privileged(input)
 }
 
-test_not_privileged {
-  input := {
-    "kind": "Pod",
-    "metadata": {"name": "test"},
-    "spec": {
-      "containers": [{
-        "name": "test",
-        "securityContext": {
-          "privileged": false
-        }
-      }]
-    }
-  }
+test_privileged_false {
+    input := {"securityContext": {"privileged": false}}
 
-  violations := violation with input as input
-  count(violations) == 0
+    not container_is_privileged(input)
 }
 
 test_added_capability {
-  input := {
-    "kind": "Pod",
-    "metadata": {"name": "test"},
-    "spec": {
-      "containers": [{
-        "name": "test",
+    input := {
         "securityContext": {
-          "capabilities": {
-            "add": ["CAP_SYS_ADMIN"]
-          }
+            "capabilities": {"add": ["CAP_SYS_ADMIN"]}
         }
-      }]
     }
-  }
 
-  violations := violation with input as input
-  count(violations) == 1
-}
-
-test_null {
-  input := {
-    "kind": "Pod",
-    "metadata": {"name": "test"},
-  }
-
-  violations := violation with input as input
-  count(violations) == 0
+    container_is_privileged(input)
 }

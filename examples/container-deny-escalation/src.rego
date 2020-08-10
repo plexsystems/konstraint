@@ -10,16 +10,16 @@ import data.lib.core
 import data.lib.pods
 
 violation[msg] {
-    container_allows_escalation
+    pods.containers[container]
+    container_allows_escalation(container)
 
     msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]))
 }
 
-
-container_allows_escalation {
-    pods.containers[_].securityContext.allowPrivilegeEscalation == true
+container_allows_escalation(c) {
+    c.securityContext.allowPrivilegeEscalation == true
 }
 
-container_allows_escalation {
-    core.missing_field(pods.containers[_].securityContext, "allowPrivilegeEscalation")
+container_allows_escalation(c) {
+    core.missing_field(c.securityContext, "allowPrivilegeEscalation")
 }

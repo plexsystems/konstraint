@@ -17,7 +17,7 @@ policy:
 .PHONY: update-static
 update-static: build
 	./build/konstraint create examples
-	./build/konstraint create examples --output test/create
+	./build/konstraint create test/create --output test/create
 	./build/konstraint doc examples --output examples/policies.md
 	./build/konstraint doc examples --output test/doc/expected.md
 

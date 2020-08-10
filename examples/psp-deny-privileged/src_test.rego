@@ -1,6 +1,6 @@
 package psp_deny_privileged
 
-test_pos {
+test_privileged_false {
     input := {
         "kind": "PodSecurityPolicy",
         "metadata": {
@@ -11,11 +11,10 @@ test_pos {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 0
+    not psp_allows_privileged with input as input
 }
 
-test_neg {
+test_privileged_true {
     input := {
         "kind": "PodSecurityPolicy",
         "metadata": {
@@ -26,7 +25,6 @@ test_neg {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 1
+    psp_allows_privileged with input as input
 }
 

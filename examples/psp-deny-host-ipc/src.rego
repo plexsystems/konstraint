@@ -10,8 +10,11 @@ import data.lib.core
 import data.lib.psps
 
 violation[msg] {
-    psps.psps[psp]
-    psp.spec.hostIPC
+    psp_allows_hostipc
 
     msg := core.format(sprintf("%s/%s: Allows for sharing the host IPC namespace", [core.kind, core.name]))
+}
+
+psp_allows_hostipc {
+    psps.psps[_].spec.hostIPC
 }

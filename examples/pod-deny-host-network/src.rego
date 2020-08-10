@@ -10,7 +10,11 @@ import data.lib.core
 import data.lib.pods
 
 violation[msg] {
-    pods.pod.spec.hostNetwork
+    pod_has_hostnetwork
 
     msg := core.format(sprintf("%s/%s: Pod allows for accessing the host network", [core.kind, core.name]))
+}
+
+pod_has_hostnetwork {
+    pods.pod.spec.hostNetwork
 }

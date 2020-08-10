@@ -1,6 +1,6 @@
 package psp_deny_host_network
 
-test_pos {
+test_hostnetwork_false {
     input := {
         "kind": "PodSecurityPolicy",
         "metadata": {
@@ -11,11 +11,10 @@ test_pos {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 0
+    not psp_allows_hostnetwork with input as input
 }
 
-test_neg {
+test_hostnetwork_true {
     input := {
         "kind": "PodSecurityPolicy",
         "metadata": {
@@ -26,6 +25,5 @@ test_neg {
         }
     }
 
-    violations := violation with input as input
-    count(violations) == 1
+    psp_allows_hostnetwork with input as input
 }
