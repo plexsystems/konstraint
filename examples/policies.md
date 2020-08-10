@@ -47,9 +47,13 @@ import data.lib.security
 
 violation[msg] {
     pods.containers[container]
-    not security.dropped_capability(container, "all")
+    not container_dropped_all_capabilities(container)
 
     msg := core.format(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]))
+}
+
+container_dropped_all_capabilities(container) {
+    security.dropped_capability(container, "all")
 }
 ```
 
@@ -73,18 +77,18 @@ import data.lib.core
 import data.lib.pods
 
 violation[msg] {
-    container_allows_escalation
+    pods.containers[container]
+    container_allows_escalation(container)
 
     msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]))
 }
 
-
-container_allows_escalation {
-    pods.containers[_].securityContext.allowPrivilegeEscalation == true
+container_allows_escalation(c) {
+    c.securityContext.allowPrivilegeEscalation == true
 }
 
-container_allows_escalation {
-    core.missing_field(pods.containers[_].securityContext, "allowPrivilegeEscalation")
+container_allows_escalation(c) {
+    core.missing_field(c.securityContext, "allowPrivilegeEscalation")
 }
 ```
 
@@ -146,18 +150,18 @@ import data.lib.security
 
 
 violation[msg] {
-  pods.containers[container]
-  is_privileged(container)
+    pods.containers[container]
+    container_is_privileged(container)
 
-  msg = core.format(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]))
+    msg = core.format(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]))
 }
 
-is_privileged(container) {
-  container.securityContext.privileged
+container_is_privileged(container) {
+    container.securityContext.privileged
 }
 
-is_privileged(container) {
-  security.added_capability(container, "CAP_SYS_ADMIN")
+container_is_privileged(container) {
+    security.added_capability(container, "CAP_SYS_ADMIN")
 }
 ```
 
@@ -245,9 +249,13 @@ import data.lib.core
 import data.lib.pods
 
 violation[msg] {
-    pods.pod.spec.hostIPC
+    pod_has_hostipc
 
     msg := core.format(sprintf("%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name]))
+}
+
+pod_has_hostipc {
+    pods.pod.spec.hostIPC
 }
 ```
 
@@ -271,9 +279,13 @@ import data.lib.core
 import data.lib.pods
 
 violation[msg] {
-    pods.pod.spec.hostNetwork
+    pod_has_hostnetwork
 
     msg := core.format(sprintf("%s/%s: Pod allows for accessing the host network", [core.kind, core.name]))
+}
+
+pod_has_hostnetwork {
+    pods.pod.spec.hostNetwork
 }
 ```
 
@@ -298,9 +310,13 @@ import data.lib.core
 import data.lib.pods
 
 violation[msg] {
-    pods.pod.spec.hostPID
+    pod_has_hostpid
 
     msg := core.format(sprintf("%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name]))
+}
+
+pod_has_hostpid {
+    pods.pod.spec.hostPID
 }
 ```
 
@@ -325,9 +341,13 @@ import data.lib.core
 
 violation[msg] {
     pods.pod
-    not pods.pod.spec.securityContext.runAsNonRoot
+    not pod_runasnonroot
 
     msg := core.format(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]))
+}
+
+pod_runasnonroot {
+    pods.pod.spec.securityContext.runAsNonRoot
 }
 ```
 
@@ -353,10 +373,14 @@ import data.lib.psps
 import data.lib.security
 
 violation[msg] {
-    psps.psps[psp]
-    not security.dropped_capability(psp, "all")
+    not psp_dropped_all_capabilities
 
     msg := core.format(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]))
+}
+
+psp_dropped_all_capabilities {
+    psps.psps[psp]
+    security.dropped_capability(psp, "all")
 }
 ```
 
@@ -415,10 +439,13 @@ import data.lib.core
 import data.lib.psps
 
 violation[msg] {
-    psps.psps[psp]
-    psp.spec.hostAliases
+    psp_allows_hostaliases
 
     msg := core.format(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]))
+}
+
+psp_allows_hostaliases {
+    psps.psps[_].spec.hostAliases
 }
 ```
 
@@ -442,10 +469,13 @@ import data.lib.core
 import data.lib.psps
 
 violation[msg] {
-    psps.psps[psp]
-    psp.spec.hostIPC
+    psp_allows_hostipc
 
     msg := core.format(sprintf("%s/%s: Allows for sharing the host IPC namespace", [core.kind, core.name]))
+}
+
+psp_allows_hostipc {
+    psps.psps[_].spec.hostIPC
 }
 ```
 
@@ -470,10 +500,13 @@ import data.lib.core
 import data.lib.psps
 
 violation[msg] {
-    psps.psps[psp]
-    psp.spec.hostNetwork
+    psp_allows_hostnetwork
 
     msg := core.format(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]))
+}
+
+psp_allows_hostnetwork {
+    psps.psps[_].spec.hostNetwork
 }
 ```
 
@@ -498,9 +531,13 @@ import data.lib.core
 import data.lib.psps
 
 violation[msg] {
-    psps.psps[psp]
-    psp.spec.hostPID
+    psp_allows_hostpid
+    
     msg = core.format(sprintf("%s/%s: Allows for sharing the host PID namespace", [core.kind, core.name]))
+}
+
+psp_allows_hostpid {
+    psps.psps[_].spec.hostPID
 }
 ```
 
@@ -524,10 +561,13 @@ import data.lib.core
 import data.lib.psps
 
 violation[msg] {
-    psps.psps[psp]
-    psp.spec.privileged
+    psp_allows_privileged
 
     msg := core.format(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]))
+}
+
+psp_allows_privileged {
+    psps.psps[_].spec.privileged
 }
 ```
 
