@@ -173,7 +173,7 @@ _source: [container-deny-privileged](container-deny-privileged)_
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
-Resource constraints on containers ensure that a given workload does not take up more resources than it required
+Resource constraints on containers ensure that a given workload does not take up more resources than it requires
 and potentially starve other applications that need to run.
 
 ### Rego
