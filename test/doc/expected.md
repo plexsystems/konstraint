@@ -2,7 +2,7 @@
 
 ## Violations
 
-* [Containers must drop all capabilitites](#containers-must-drop-all-capabilitites)
+* [Containers must drop all capabilities](#containers-must-drop-all-capabilities)
 * [Containers must not allow for privilege escalation](#containers-must-not-allow-for-privilege-escalation)
 * [Images must not use the latest tag](#images-must-not-use-the-latest-tag)
 * [Containers must not run as privileged](#containers-must-not-run-as-privileged)
@@ -26,7 +26,7 @@
 * [Containers should not have a writable root filesystem](#containers-should-not-have-a-writable-root-filesystem)
 * [PodSecurityPolicies should require that a read-only root filesystem is set](#podsecuritypolicies-should-require-that-a-read-only-root-filesystem-is-set)
 
-## Containers must drop all capabilitites
+## Containers must drop all capabilities
 
 **Severity:** violation
 
@@ -100,7 +100,7 @@ _source: [../../examples/container-deny-escalation](../../examples/container-den
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
-Using the latest tag on images can cause unexpected problems in production. By specifing a pinned version
+Using the latest tag on images can cause unexpected problems in production. By specifying a pinned version
 we can have higher confidence that our applications are immutable and do not change unexpectedly.
 
 ### Rego
@@ -297,7 +297,7 @@ _source: [../../examples/pod-deny-host-network](../../examples/pod-deny-host-net
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
-Pods that can acess the host's process tree can view and attempt to
+Pods that can access the host's process tree can view and attempt to
 modify processes outside of their namespace, breaking that security
 boundary.
 
@@ -457,7 +457,7 @@ _source: [../../examples/psp-deny-host-alias](../../examples/psp-deny-host-alias
 
 **Resources:** policy/PodSecurityPolicy
 
-Allowing pods to to access the host IPC can read memory of
+Allowing pods to access the host IPC can read memory of
 the other containers, breaking that security boundary.
 
 ### Rego
@@ -487,7 +487,7 @@ _source: [../../examples/psp-deny-host-ipc](../../examples/psp-deny-host-ipc)_
 
 **Resources:** policy/PodSecurityPolicy
 
-Allowing pods to acess the host's process tree can view and attempt to
+Allowing pods to access the host's process tree can view and attempt to
 modify processes outside of their namespace, breaking that security
 boundary.
 
@@ -518,7 +518,7 @@ _source: [../../examples/psp-deny-host-network](../../examples/psp-deny-host-net
 
 **Resources:** policy/PodSecurityPolicy
 
-Allowing pods to acess the host's process tree can view and attempt to
+Allowing pods to access the host's process tree can view and attempt to
 modify processes outside of their namespace, breaking that security
 boundary.
 
@@ -532,7 +532,7 @@ import data.lib.psps
 
 violation[msg] {
     psp_allows_hostpid
-    
+
     msg = core.format(sprintf("%s/%s: Allows for sharing the host PID namespace", [core.kind, core.name]))
 }
 
@@ -641,7 +641,7 @@ _source: [../../examples/container-warn-no-ro-fs](../../examples/container-warn-
 
 **Resources:** policy/PodSecurityPolicy
 
-Allowping pods to access the host's network interfaces can potentially
+Allowing pods to access the host's network interfaces can potentially
 access and tamper with traffic the pod should not have access to.
 
 ### Rego

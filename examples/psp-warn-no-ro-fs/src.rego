@@ -1,6 +1,6 @@
 # @title PodSecurityPolicies should require that a read-only root filesystem is set
-# 
-# Allowping pods to access the host's network interfaces can potentially
+#
+# Allowing pods to access the host's network interfaces can potentially
 # access and tamper with traffic the pod should not have access to.
 #
 # @kinds policy/PodSecurityPolicy

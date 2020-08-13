@@ -1,4 +1,4 @@
-# @title Containers must drop all capabilitites
+# @title Containers must drop all capabilities
 #
 # Granting containers privileged capabilities on the node makes it easier
 # for containers to escalate their privileges. As such, this is not allowed
