@@ -18,6 +18,9 @@ Generate the documentation
 
 Save the documentation to a specific directory
 	konstraint doc --output docs/policies.md
+	
+Set the URL where the policies are hosted at
+	konstraint doc --url https://github.com/plexsystems/konstraint
 ```
 
 ### Options
@@ -25,6 +28,7 @@ Save the documentation to a specific directory
 ```
   -h, --help            help for doc
   -o, --output string   Output location (including filename) for the policy documentation (default "policies.md")
+      --url string      The URL where the policy files are hosted at (e.g. https://github.com/policies
 ```
 
 ### SEE ALSO
