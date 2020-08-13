@@ -76,9 +76,20 @@ spec:
           not is_exception
           psp = core.resource
       }
-    rego: "package psp_deny_host_pid\n\nimport data.lib.core\nimport data.lib.psps\n\nviolation[msg]
-      {\n    psp_allows_hostpid\n    \n    msg = core.format(sprintf(\"%s/%s: Allows
-      for sharing the host PID namespace\", [core.kind, core.name]))\n}\n\npsp_allows_hostpid
-      {\n    psps.psps[_].spec.hostPID\n}\n"
+    rego: |
+      package psp_deny_host_pid
+
+      import data.lib.core
+      import data.lib.psps
+
+      violation[msg] {
+          psp_allows_hostpid
+
+          msg = core.format(sprintf("%s/%s: Allows for sharing the host PID namespace", [core.kind, core.name]))
+      }
+
+      psp_allows_hostpid {
+          psps.psps[_].spec.hostPID
+      }
     target: admission.k8s.gatekeeper.sh
 status: {}

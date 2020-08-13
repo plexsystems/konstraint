@@ -1,6 +1,6 @@
 # @title Pods must not run with access to the host PID namespace
 #
-# Pods that can acess the host's process tree can view and attempt to
+# Pods that can access the host's process tree can view and attempt to
 # modify processes outside of their namespace, breaking that security
 # boundary.
 #
