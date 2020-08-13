@@ -175,6 +175,10 @@ func getDocumentation(path string, severity string, outputDirectory string) ([]D
 			return nil, fmt.Errorf("get header: %w", err)
 		}
 
+		if header.Title == "" {
+			continue
+		}
+
 		relPath, err := filepath.Rel(outputDirectory, policy.FilePath)
 		if err != nil {
 			return nil, fmt.Errorf("rel path: %w", err)
