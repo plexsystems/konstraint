@@ -36,11 +36,18 @@ func newDocCommand() *cobra.Command {
 	konstraint doc
 
 Save the documentation to a specific directory
-	konstraint doc --output docs/policies.md`,
+	konstraint doc --output docs/policies.md
+	
+Set the Url where the policies are hosted at
+	konstraint doc --url github.com/plexsystems/konstraint`,
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := viper.BindPFlag("output", cmd.Flags().Lookup("output")); err != nil {
 				return fmt.Errorf("bind output flag: %w", err)
+			}
+
+			if err := viper.BindPFlag("url", cmd.Flags().Lookup("url")); err != nil {
+				return fmt.Errorf("bind url flag: %w", err)
 			}
 
 			path := "."
@@ -53,6 +60,7 @@ Save the documentation to a specific directory
 	}
 
 	cmd.Flags().StringP("output", "o", "policies.md", "Output location (including filename) for the policy documentation")
+	cmd.Flags().String("url", "", "The Url where the policy files are hosted at (e.g. github.com/policies")
 
 	return &cmd
 }
@@ -175,22 +183,26 @@ func getDocumentation(path string, severity string, outputDirectory string) ([]D
 			return nil, fmt.Errorf("get header: %w", err)
 		}
 
-		relPath, err := filepath.Rel(outputDirectory, policy.FilePath)
-		if err != nil {
-			return nil, fmt.Errorf("rel path: %w", err)
-		}
-		relDir := filepath.Dir(relPath)
+		var url string
+		if viper.GetString("url") != "" {
+			url = viper.GetString("url") + "/" + policy.FilePath
+		} else {
+			relPath, err := filepath.Rel(outputDirectory, policy.FilePath)
+			if err != nil {
+				return nil, fmt.Errorf("rel path: %w", err)
+			}
+			relDir := filepath.Dir(relPath)
 
-		// Markdown specification notes that all pathing should be represented
-		// with a forward slash.
-		relDir = strings.ReplaceAll(relDir, string(os.PathSeparator), "/")
+			// Markdown specification notes that all pathing should be represented
+			// with a forward slash.
+			url = strings.ReplaceAll(relDir, string(os.PathSeparator), "/")
+		}
 
 		regoWithoutComments := getRegoWithoutComments(policy.Contents)
-
 		document := Document{
 			Header:   header,
 			Severity: trimContent(severity),
-			URL:      trimContent(relDir),
+			URL:      trimContent(url),
 			Rego:     trimContent(regoWithoutComments),
 		}
 
