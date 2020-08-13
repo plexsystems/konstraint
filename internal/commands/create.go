@@ -66,13 +66,18 @@ func runCreateCommand(path string) error {
 		return fmt.Errorf("get library path: %w", err)
 	}
 
-	libraries, err := rego.GetFiles(libraryPath)
-	if err != nil {
-		return fmt.Errorf("get libraries: %w", err)
+	for _, policy := range policies {
+		if len(policy.ImportPackages) > 0 && libraryPath == "" {
+			return fmt.Errorf("policy %v imported libraries %v, but libraries were not found", policy.FilePath, policy.ImportPackages)
+		}
 	}
 
-	for l := range libraries {
-		libraries[l].Contents = getRegoWithoutComments(libraries[l].Contents)
+	var libraries []rego.File
+	if libraryPath != "" {
+		libraries, err = rego.GetFiles(libraryPath)
+		if err != nil {
+			return fmt.Errorf("get libraries: %w", err)
+		}
 	}
 
 	var templateFileName, constraintFileName, outputDir string
