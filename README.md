@@ -1,6 +1,7 @@
 # Konstraint
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/plexsystems/konstraint)](https://goreportcard.com/report/github.com/plexsystems/konstraint)
+[![GitHub release](https://img.shields.io/github/release/plexsystems/konstraint.svg)](https://github.com/plexsystems/konstraint/releases)
 
 ![logo](images/logo.png)
 
@@ -23,14 +24,6 @@ With Gatekeeper, policies are evaluated in the context of an [AdmissionReview](h
 With [Conftest](https://github.com/open-policy-agent/conftest), policies are written against `yaml` files.
 
 This creates a scenario where the policy needs to be written differently depending upon the context in which the policy is being evaluated in.
-
-`Konstraint` aims to:
-
-- Auto-generate both `ConstraintTemplates` and the Constraints themselves. The `.rego` files are the source of truth and all development should happen in those files.
-
-- Auto-generate the documentation for the policies, using the `.rego` files as the source of truth.
-
-- Enable the same policy to be used with Gatekeeper `AdmissionReviews` and Conftest `yaml` files. This is accomplished with the provided libraries.
 
 ### Kubernetes Libraries
 

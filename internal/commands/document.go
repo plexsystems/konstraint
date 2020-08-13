@@ -183,6 +183,10 @@ func getDocumentation(path string, severity string, outputDirectory string) ([]D
 			return nil, fmt.Errorf("get header: %w", err)
 		}
 
+		if header.Title == "" {
+			continue
+		}
+
 		var url string
 		if viper.GetString("url") != "" {
 			url = viper.GetString("url") + "/" + policy.FilePath

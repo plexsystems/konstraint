@@ -1,6 +1,6 @@
 # @title PodSecurityPolicies must not allow access to the host IPC
-# 
-# Allowing pods to to access the host IPC can read memory of
+#
+# Allowing pods to access the host IPC can read memory of
 # the other containers, breaking that security boundary.
 #
 # @kinds policy/PodSecurityPolicy
