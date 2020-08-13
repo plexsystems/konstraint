@@ -38,8 +38,8 @@ func newDocCommand() *cobra.Command {
 Save the documentation to a specific directory
 	konstraint doc --output docs/policies.md
 	
-Set the Url where the policies are hosted at
-	konstraint doc --url github.com/plexsystems/konstraint`,
+Set the URL where the policies are hosted at
+	konstraint doc --url https://github.com/plexsystems/konstraint`,
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := viper.BindPFlag("output", cmd.Flags().Lookup("output")); err != nil {
@@ -60,7 +60,7 @@ Set the Url where the policies are hosted at
 	}
 
 	cmd.Flags().StringP("output", "o", "policies.md", "Output location (including filename) for the policy documentation")
-	cmd.Flags().String("url", "", "The Url where the policy files are hosted at (e.g. github.com/policies")
+	cmd.Flags().String("url", "", "The URL where the policy files are hosted at (e.g. https://github.com/policies")
 
 	return &cmd
 }
