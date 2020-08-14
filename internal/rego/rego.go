@@ -157,7 +157,7 @@ func getFiles(files []string) ([]File, error) {
 }
 
 func getRuleNamesFromModule(module *ast.Module) ([]string, error) {
-	re, err := regexp.Compile(`^\s*([a-z]+)\s*\[\s*msg`)
+	re, err := regexp.Compile(`^\s*([a-z]+)\s*\[\s*\{?\s*"?msg`)
 	if err != nil {
 		return nil, fmt.Errorf("compile regex: %w", err)
 	}
