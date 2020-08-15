@@ -25,7 +25,7 @@ test_rule_has_resource_type_with_pod {
 }
 
 test_rule_has_resource_type_with_resourceall {
-    input := {"resources": ["ResourceAll"]}
+    input := {"resources": ["*"]}
 
     rule_has_resource_type(input, "pod")
 }

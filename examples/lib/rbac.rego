@@ -8,7 +8,7 @@ rule_has_verb(rule, verb) {
 }
 
 rule_has_resource_type(rule, type) {
-    types := ["resourceall", lower(type)]
+    types := ["*", lower(type)]
     types[_] == lower(rule.resources[_])
 }
 
