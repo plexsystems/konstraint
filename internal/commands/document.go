@@ -1,11 +1,14 @@
 package commands
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"github.com/plexsystems/konstraint/internal/rego"
 
@@ -18,14 +21,17 @@ type Header struct {
 	Title       string
 	Description string
 	Resources   string
+	Anchor      string
 }
 
 // Document is a single policy document.
 type Document struct {
-	Header   Header
-	Severity string
-	URL      string
-	Rego     string
+	Header       Header
+	Severities   []string
+	HasViolation bool
+	HasWarning   bool
+	URL          string
+	Rego         string
 }
 
 func newDocCommand() *cobra.Command {
@@ -67,111 +73,32 @@ Set the URL where the policies are hosted at
 
 func runDocCommand(path string) error {
 	outputDirectory := filepath.Dir(viper.GetString("output"))
-	violationDocs, err := getDocumentation(path, "violation", outputDirectory)
+	docs, err := getDocumentation(path, outputDirectory)
 	if err != nil {
-		return fmt.Errorf("get violation documentation: %w", err)
+		return fmt.Errorf("get documentation: %w", err)
 	}
 
-	warningDocs, err := getDocumentation(path, "warn", outputDirectory)
+	t, err := template.New("docs").Parse(docTemplate)
 	if err != nil {
-		return fmt.Errorf("get warn documentation: %w", err)
+		return fmt.Errorf("parsing template: %w", err)
 	}
 
-	documentContents := "# Policies"
-	documentContents += "\n\n"
-
-	// Table of contents (Violations)
-	if len(violationDocs) > 0 {
-		documentContents += "## Violations"
-		documentContents += "\n\n"
-		for _, document := range violationDocs {
-			documentContents += "* [" + document.Header.Title + "](#" + strings.ReplaceAll(strings.ToLower(document.Header.Title), " ", "-") + ")"
-			documentContents += "\n"
-		}
-
-		documentContents += "\n"
+	var templateBuffer bytes.Buffer
+	w := bufio.NewWriter(&templateBuffer)
+	err = t.Execute(w, docs)
+	if err != nil {
+		return fmt.Errorf("executing template: %w", err)
 	}
 
-	// Table of contents (Warnings)
-	if len(warningDocs) > 0 {
-		documentContents += "## Warnings"
-		documentContents += "\n\n"
-		for _, document := range warningDocs {
-			documentContents += "* [" + document.Header.Title + "](#" + strings.ReplaceAll(strings.ToLower(document.Header.Title), " ", "-") + ")"
-			documentContents += "\n"
-		}
-
-		documentContents += "\n"
-	}
-
-	for _, document := range violationDocs {
-		documentContents += "## " + document.Header.Title
-		documentContents += "\n\n"
-
-		documentContents += "**Severity:** " + document.Severity
-		documentContents += "\n\n"
-
-		documentContents += "**Resources:** " + document.Header.Resources
-		documentContents += "\n\n"
-
-		documentContents += document.Header.Description
-		documentContents += "\n\n"
-
-		documentContents += "### Rego"
-		documentContents += "\n\n"
-
-		documentContents += "```rego"
-		documentContents += "\n"
-
-		documentContents += document.Rego
-		documentContents += "\n"
-
-		documentContents += "```"
-		documentContents += "\n\n"
-
-		documentContents += "_source: [" + document.URL + "](" + document.URL + ")_"
-		documentContents += "\n\n"
-	}
-
-	for _, document := range warningDocs {
-		documentContents += "## " + document.Header.Title
-		documentContents += "\n\n"
-
-		documentContents += "**Severity:** " + document.Severity
-		documentContents += "\n\n"
-
-		documentContents += "**Resources:** " + document.Header.Resources
-		documentContents += "\n\n"
-
-		documentContents += document.Header.Description
-		documentContents += "\n\n"
-
-		documentContents += "### Rego"
-		documentContents += "\n\n"
-
-		documentContents += "```rego"
-		documentContents += "\n"
-
-		documentContents += document.Rego
-		documentContents += "\n"
-
-		documentContents += "```"
-		documentContents += "\n"
-
-		documentContents += "_source: [" + document.URL + "](" + document.URL + ")_"
-		documentContents += "\n\n"
-	}
-
-	documentContents = strings.TrimSuffix(documentContents, "\n")
-	if err := ioutil.WriteFile(viper.GetString("output"), []byte(documentContents), os.ModePerm); err != nil {
+	if err := ioutil.WriteFile(viper.GetString("output"), templateBuffer.Bytes(), os.ModePerm); err != nil {
 		return fmt.Errorf("writing documentation: %w", err)
 	}
 
 	return nil
 }
 
-func getDocumentation(path string, severity string, outputDirectory string) ([]Document, error) {
-	policies, err := rego.GetFilesWithRule(path, severity)
+func getDocumentation(path string, outputDirectory string) ([]Document, error) {
+	policies, err := rego.GetFiles(path)
 	if err != nil {
 		return nil, fmt.Errorf("get files: %w", err)
 	}
@@ -204,10 +131,18 @@ func getDocumentation(path string, severity string, outputDirectory string) ([]D
 
 		regoWithoutComments := getRegoWithoutComments(policy.Contents)
 		document := Document{
-			Header:   header,
-			Severity: trimContent(severity),
-			URL:      trimContent(url),
-			Rego:     trimContent(regoWithoutComments),
+			Header:     header,
+			Severities: policy.RuleNames,
+			URL:        trimContent(url),
+			Rego:       trimContent(regoWithoutComments),
+		}
+
+		if contains(policy.RuleNames, "violation") {
+			document.HasViolation = true
+		}
+
+		if contains(policy.RuleNames, "warn") {
+			document.HasWarning = true
 		}
 
 		documents = append(documents, document)
@@ -239,10 +174,13 @@ func getHeader(comments []string) (Header, error) {
 		description += comment + "\n"
 	}
 
+	anchor := strings.ReplaceAll(strings.ToLower(title), " ", "-")
+
 	header := Header{
 		Title:       trimContent(title),
 		Description: trimContent(description),
 		Resources:   trimContent(resources),
+		Anchor:      trimContent(anchor),
 	}
 
 	return header, nil

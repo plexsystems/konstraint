@@ -26,9 +26,38 @@
 * [Containers should not have a writable root filesystem](#containers-should-not-have-a-writable-root-filesystem)
 * [PodSecurityPolicies should require that a read-only root filesystem is set](#podsecuritypolicies-should-require-that-a-read-only-root-filesystem-is-set)
 
+
+## Deprecated Deployment and DaemonSet API
+
+**Severity:** warn 
+
+**Resources:** apps/DaemonSet apps/Deployment
+
+The `extensions/v1beta1 API` has been deprecated in favor of `apps/v1`. Later versions of Kubernetes
+remove this API so to ensure that the Deployment or DaemonSet can be successfully deployed to the cluster,
+the version for both of these resources must be `apps/v1`.
+
+### Rego
+
+```rego
+package any_warn_deprecated_api_versions
+
+import data.lib.core
+
+warn[msg] {
+    resources := ["DaemonSet", "Deployment"]
+    core.apiVersion == "extensions/v1beta1"
+    core.kind == resources[_]
+    
+    msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]))
+}
+```
+
+_source: [../../examples/any-warn-deprecated-api-versions](../../examples/any-warn-deprecated-api-versions)_
+
 ## Containers must drop all capabilities
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -61,7 +90,7 @@ _source: [../../examples/container-deny-added-caps](../../examples/container-den
 
 ## Containers must not allow for privilege escalation
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -96,7 +125,7 @@ _source: [../../examples/container-deny-escalation](../../examples/container-den
 
 ## Images must not use the latest tag
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -131,7 +160,7 @@ _source: [../../examples/container-deny-latest-tag](../../examples/container-den
 
 ## Containers must not run as privileged
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -169,7 +198,7 @@ _source: [../../examples/container-deny-privileged](../../examples/container-den
 
 ## Containers must define resource constraints
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -201,9 +230,45 @@ container_resources_provided(container) {
 
 _source: [../../examples/container-deny-without-resource-constraints](../../examples/container-deny-without-resource-constraints)_
 
+## Containers should not have a writable root filesystem
+
+**Severity:** warn 
+
+**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+
+In order to prevent persistence in the case of a compromise, it is
+important to make the root filesystem read-only.
+
+### Rego
+
+```rego
+package container_warn_no_ro_fs
+
+import data.lib.core
+import data.lib.pods
+
+warn[msg] {
+    pods.containers[container]
+    no_read_only_filesystem(container)
+
+    msg := core.format(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]))
+}
+
+no_read_only_filesystem(container) {
+    core.has_field(container.securityContext, "readOnlyRootFilesystem")
+    not container.securityContext.readOnlyRootFilesystem
+}
+
+no_read_only_filesystem(container) {
+    core.missing_field(container.securityContext, "readOnlyRootFilesystem")
+}
+```
+
+_source: [../../examples/container-warn-no-ro-fs](../../examples/container-warn-no-ro-fs)_
+
 ## Pods must not have access to the host aliases
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -233,7 +298,7 @@ _source: [../../examples/pod-deny-host-alias](../../examples/pod-deny-host-alias
 
 ## Pods must not run with access to the host IPC
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -263,7 +328,7 @@ _source: [../../examples/pod-deny-host-ipc](../../examples/pod-deny-host-ipc)_
 
 ## Pods must not run with access to the host networking
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -293,7 +358,7 @@ _source: [../../examples/pod-deny-host-network](../../examples/pod-deny-host-net
 
 ## Pods must not run with access to the host PID namespace
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -324,7 +389,7 @@ _source: [../../examples/pod-deny-host-pid](../../examples/pod-deny-host-pid)_
 
 ## Pods must run as non-root
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -355,7 +420,7 @@ _source: [../../examples/pod-deny-without-runasnonroot](../../examples/pod-deny-
 
 ## PodSecurityPolicies must require all capabilities are dropped
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -388,7 +453,7 @@ _source: [../../examples/psp-deny-added-caps](../../examples/psp-deny-added-caps
 
 ## PodSecurityPolicies must not allow privileged escalation
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -423,7 +488,7 @@ _source: [../../examples/psp-deny-escalation](../../examples/psp-deny-escalation
 
 ## PodSecurityPolicies must not allow access to the host aliases
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -453,7 +518,7 @@ _source: [../../examples/psp-deny-host-alias](../../examples/psp-deny-host-alias
 
 ## PodSecurityPolicies must not allow access to the host IPC
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -483,7 +548,7 @@ _source: [../../examples/psp-deny-host-ipc](../../examples/psp-deny-host-ipc)_
 
 ## PodSecurityPolicies must not allow access to the host network
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -514,7 +579,7 @@ _source: [../../examples/psp-deny-host-network](../../examples/psp-deny-host-net
 
 ## PodSecurityPolicies must not allow access to the host PID namespace
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -545,7 +610,7 @@ _source: [../../examples/psp-deny-host-pid](../../examples/psp-deny-host-pid)_
 
 ## PodSecurityPolicies must require containers to not run as privileged
 
-**Severity:** violation
+**Severity:** violation 
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -563,108 +628,4 @@ import data.lib.psps
 violation[msg] {
     psp_allows_privileged
 
-    msg := core.format(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]))
-}
-
-psp_allows_privileged {
-    psps.psps[_].spec.privileged
-}
-```
-
-_source: [../../examples/psp-deny-privileged](../../examples/psp-deny-privileged)_
-
-## Deprecated Deployment and DaemonSet API
-
-**Severity:** warn
-
-**Resources:** apps/DaemonSet apps/Deployment
-
-The `extensions/v1beta1 API` has been deprecated in favor of `apps/v1`. Later versions of Kubernetes
-remove this API so to ensure that the Deployment or DaemonSet can be successfully deployed to the cluster,
-the version for both of these resources must be `apps/v1`.
-
-### Rego
-
-```rego
-package any_warn_deprecated_api_versions
-
-import data.lib.core
-
-warn[msg] {
-    resources := ["DaemonSet", "Deployment"]
-    core.apiVersion == "extensions/v1beta1"
-    core.kind == resources[_]
-    
-    msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]))
-}
-```
-_source: [../../examples/any-warn-deprecated-api-versions](../../examples/any-warn-deprecated-api-versions)_
-
-## Containers should not have a writable root filesystem
-
-**Severity:** warn
-
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-
-In order to prevent persistence in the case of a compromise, it is
-important to make the root filesystem read-only.
-
-### Rego
-
-```rego
-package container_warn_no_ro_fs
-
-import data.lib.core
-import data.lib.pods
-
-warn[msg] {
-    pods.containers[container]
-    no_read_only_filesystem(container)
-
-    msg := core.format(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]))
-}
-
-no_read_only_filesystem(container) {
-    core.has_field(container.securityContext, "readOnlyRootFilesystem")
-    not container.securityContext.readOnlyRootFilesystem
-}
-
-no_read_only_filesystem(container) {
-    core.missing_field(container.securityContext, "readOnlyRootFilesystem")
-}
-```
-_source: [../../examples/container-warn-no-ro-fs](../../examples/container-warn-no-ro-fs)_
-
-## PodSecurityPolicies should require that a read-only root filesystem is set
-
-**Severity:** warn
-
-**Resources:** policy/PodSecurityPolicy
-
-Allowing pods to access the host's network interfaces can potentially
-access and tamper with traffic the pod should not have access to.
-
-### Rego
-
-```rego
-package psp_warn_no_ro_fs
-
-import data.lib.core
-import data.lib.psps
-
-warn[msg] {
-    psps.psps[psp]
-    no_read_only_filesystem(psp)
-
-    msg := core.format(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]))
-}
-
-no_read_only_filesystem(psp) {
-    core.missing_field(psp.spec, "readOnlyRootFilesystem")
-}
-
-no_read_only_filesystem(psp) {
-    not psp.spec.readOnlyRootFilesystem
-}
-```
-_source: [../../examples/psp-warn-no-ro-fs](../../examples/psp-warn-no-ro-fs)_
+    msg := core.format(sprint
