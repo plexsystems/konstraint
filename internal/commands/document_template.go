@@ -10,8 +10,8 @@ const docTemplate = `# Policies
 
 {{range .}}{{if .HasWarning}}* [{{.Header.Title}}](#{{.Header.Anchor}})
 {{end}}{{end}}
-
-{{range .}}## {{.Header.Title}}
+{{range .}}
+## {{.Header.Title}}
 
 **Severity:** {{.Severities}}
 
@@ -21,5 +21,4 @@ const docTemplate = `# Policies
 
 ### Rego` + "\n\n```rego\n" + "{{.Rego}}\n" + "```\n" + `
 _source: [{{.URL}}]({{.URL}})_
-
 {{end}}`

@@ -1,10 +1,7 @@
 package commands
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -83,14 +80,13 @@ func runDocCommand(path string) error {
 		return fmt.Errorf("parsing template: %w", err)
 	}
 
-	var templateBuffer bytes.Buffer
-	w := bufio.NewWriter(&templateBuffer)
-	if err := t.Execute(w, docs); err != nil {
-		return fmt.Errorf("executing template: %w", err)
+	f, err := os.OpenFile(viper.GetString("output"), os.O_CREATE|os.O_WRONLY, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("opening file for writing: %w", err)
 	}
 
-	if err := ioutil.WriteFile(viper.GetString("output"), templateBuffer.Bytes(), os.ModePerm); err != nil {
-		return fmt.Errorf("writing documentation: %w", err)
+	if err := t.Execute(f, docs); err != nil {
+		return fmt.Errorf("executing template: %w", err)
 	}
 
 	return nil

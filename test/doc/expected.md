@@ -628,4 +628,48 @@ import data.lib.psps
 violation[msg] {
     psp_allows_privileged
 
-    msg := core.format(sprintf("%s/%s: Allows fo
+    msg := core.format(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]))
+}
+
+psp_allows_privileged {
+    psps.psps[_].spec.privileged
+}
+```
+
+_source: [../../examples/psp-deny-privileged](../../examples/psp-deny-privileged)_
+
+## PodSecurityPolicies should require that a read-only root filesystem is set
+
+**Severity:** warn
+
+**Resources:** policy/PodSecurityPolicy
+
+Allowing pods to access the host's network interfaces can potentially
+access and tamper with traffic the pod should not have access to.
+
+### Rego
+
+```rego
+package psp_warn_no_ro_fs
+
+import data.lib.core
+import data.lib.psps
+
+warn[msg] {
+    psps.psps[psp]
+    no_read_only_filesystem(psp)
+
+    msg := core.format(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]))
+}
+
+no_read_only_filesystem(psp) {
+    core.missing_field(psp.spec, "readOnlyRootFilesystem")
+}
+
+no_read_only_filesystem(psp) {
+    not psp.spec.readOnlyRootFilesystem
+}
+```
+
+_source: [../../examples/psp-warn-no-ro-fs](../../examples/psp-warn-no-ro-fs)_
+
