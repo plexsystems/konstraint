@@ -85,8 +85,7 @@ func runDocCommand(path string) error {
 
 	var templateBuffer bytes.Buffer
 	w := bufio.NewWriter(&templateBuffer)
-	err = t.Execute(w, docs)
-	if err != nil {
+	if err := t.Execute(w, docs); err != nil {
 		return fmt.Errorf("executing template: %w", err)
 	}
 
