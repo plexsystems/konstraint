@@ -27,7 +27,7 @@ type Header struct {
 // Document is a single policy document.
 type Document struct {
 	Header       Header
-	Severities   []string
+	Severities   string
 	HasViolation bool
 	HasWarning   bool
 	URL          string
@@ -131,7 +131,7 @@ func getDocumentation(path string, outputDirectory string) ([]Document, error) {
 		regoWithoutComments := getRegoWithoutComments(policy.Contents)
 		document := Document{
 			Header:     header,
-			Severities: policy.RuleNames,
+			Severities: strings.Join(policy.RuleNames, " "),
 			URL:        trimContent(url),
 			Rego:       trimContent(regoWithoutComments),
 		}

@@ -13,7 +13,7 @@ const docTemplate = `# Policies
 
 {{range .}}## {{.Header.Title}}
 
-**Severity:** {{range .Severities}}{{.}} {{end}}
+**Severity:** {{.Severities}}
 
 **Resources:** {{.Header.Resources}}
 

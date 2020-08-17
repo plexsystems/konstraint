@@ -29,7 +29,7 @@
 
 ## Deprecated Deployment and DaemonSet API
 
-**Severity:** warn 
+**Severity:** warn
 
 **Resources:** apps/DaemonSet apps/Deployment
 
@@ -57,7 +57,7 @@ _source: [../../examples/any-warn-deprecated-api-versions](../../examples/any-wa
 
 ## Containers must drop all capabilities
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -90,7 +90,7 @@ _source: [../../examples/container-deny-added-caps](../../examples/container-den
 
 ## Containers must not allow for privilege escalation
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -125,7 +125,7 @@ _source: [../../examples/container-deny-escalation](../../examples/container-den
 
 ## Images must not use the latest tag
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -160,7 +160,7 @@ _source: [../../examples/container-deny-latest-tag](../../examples/container-den
 
 ## Containers must not run as privileged
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -198,7 +198,7 @@ _source: [../../examples/container-deny-privileged](../../examples/container-den
 
 ## Containers must define resource constraints
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -232,7 +232,7 @@ _source: [../../examples/container-deny-without-resource-constraints](../../exam
 
 ## Containers should not have a writable root filesystem
 
-**Severity:** warn 
+**Severity:** warn
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -268,7 +268,7 @@ _source: [../../examples/container-warn-no-ro-fs](../../examples/container-warn-
 
 ## Pods must not have access to the host aliases
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -298,7 +298,7 @@ _source: [../../examples/pod-deny-host-alias](../../examples/pod-deny-host-alias
 
 ## Pods must not run with access to the host IPC
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -328,7 +328,7 @@ _source: [../../examples/pod-deny-host-ipc](../../examples/pod-deny-host-ipc)_
 
 ## Pods must not run with access to the host networking
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -358,7 +358,7 @@ _source: [../../examples/pod-deny-host-network](../../examples/pod-deny-host-net
 
 ## Pods must not run with access to the host PID namespace
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -389,7 +389,7 @@ _source: [../../examples/pod-deny-host-pid](../../examples/pod-deny-host-pid)_
 
 ## Pods must run as non-root
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -420,7 +420,7 @@ _source: [../../examples/pod-deny-without-runasnonroot](../../examples/pod-deny-
 
 ## PodSecurityPolicies must require all capabilities are dropped
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -453,7 +453,7 @@ _source: [../../examples/psp-deny-added-caps](../../examples/psp-deny-added-caps
 
 ## PodSecurityPolicies must not allow privileged escalation
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -488,7 +488,7 @@ _source: [../../examples/psp-deny-escalation](../../examples/psp-deny-escalation
 
 ## PodSecurityPolicies must not allow access to the host aliases
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -518,7 +518,7 @@ _source: [../../examples/psp-deny-host-alias](../../examples/psp-deny-host-alias
 
 ## PodSecurityPolicies must not allow access to the host IPC
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -548,7 +548,7 @@ _source: [../../examples/psp-deny-host-ipc](../../examples/psp-deny-host-ipc)_
 
 ## PodSecurityPolicies must not allow access to the host network
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -579,7 +579,7 @@ _source: [../../examples/psp-deny-host-network](../../examples/psp-deny-host-net
 
 ## PodSecurityPolicies must not allow access to the host PID namespace
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -610,7 +610,7 @@ _source: [../../examples/psp-deny-host-pid](../../examples/psp-deny-host-pid)_
 
 ## PodSecurityPolicies must require containers to not run as privileged
 
-**Severity:** violation 
+**Severity:** violation
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -628,4 +628,4 @@ import data.lib.psps
 violation[msg] {
     psp_allows_privileged
 
-    msg := core.format(sprint
+    msg := core.format(sprintf("%s/%s: Allows fo
