@@ -2,23 +2,23 @@ package commands
 
 const docTemplate = `# Policies
 
-## Violations
+{{ range $severity, $value := . }}## {{ $severity }}s
 
-{{range .}}{{if .HasViolation}}* [{{.Header.Title}}](#{{.Header.Anchor}})
-{{end}}{{end}}
-## Warnings
+{{ range . }}* [{{ .Header.Title }}](#{{ .Header.Anchor }})
+{{end}}
+{{end}}
 
-{{range .}}{{if .HasWarning}}* [{{.Header.Title}}](#{{.Header.Anchor}})
-{{end}}{{end}}
-{{range .}}
-## {{.Header.Title}}
+{{ range $severity, $value := . }}{{ range $value }}## {{ .Header.Title }}
 
-**Severity:** {{.Severities}}
+**Severity:** {{ $severity }}
 
-**Resources:** {{.Header.Resources}}
+**Resources:** {{ .Header.Resources }}
 
-{{.Header.Description}}
+{{ .Header.Description }}
 
-### Rego` + "\n\n```rego\n" + "{{.Rego}}\n" + "```\n" + `
-_source: [{{.URL}}]({{.URL}})_
-{{end}}`
+### Rego` + "\n\n```rego\n" + "{{ .Rego }}\n" + "```\n" + `
+_source: [{{ .URL }}]({{ .URL }})_
+
+{{end}}
+{{end}}
+`

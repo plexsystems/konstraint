@@ -23,12 +23,9 @@ type Header struct {
 
 // Document is a single policy document.
 type Document struct {
-	Header       Header
-	Severities   string
-	HasViolation bool
-	HasWarning   bool
-	URL          string
-	Rego         string
+	Header Header
+	URL    string
+	Rego   string
 }
 
 func newDocCommand() *cobra.Command {
@@ -80,7 +77,7 @@ func runDocCommand(path string) error {
 		return fmt.Errorf("parsing template: %w", err)
 	}
 
-	f, err := os.OpenFile(viper.GetString("output"), os.O_CREATE|os.O_WRONLY, os.ModePerm)
+	f, err := os.OpenFile(viper.GetString("output"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("opening file for writing: %w", err)
 	}
@@ -92,13 +89,13 @@ func runDocCommand(path string) error {
 	return nil
 }
 
-func getDocumentation(path string, outputDirectory string) ([]Document, error) {
+func getDocumentation(path string, outputDirectory string) (map[string][]Document, error) {
 	policies, err := rego.GetFiles(path)
 	if err != nil {
 		return nil, fmt.Errorf("get files: %w", err)
 	}
 
-	var documents []Document
+	documents := make(map[string][]Document)
 	for _, policy := range policies {
 		header, err := getHeader(policy.Comments)
 		if err != nil {
@@ -126,21 +123,22 @@ func getDocumentation(path string, outputDirectory string) ([]Document, error) {
 
 		regoWithoutComments := getRegoWithoutComments(policy.Contents)
 		document := Document{
-			Header:     header,
-			Severities: strings.Join(policy.RuleNames, " "),
-			URL:        trimContent(url),
-			Rego:       trimContent(regoWithoutComments),
+			Header: header,
+			URL:    trimContent(url),
+			Rego:   trimContent(regoWithoutComments),
 		}
 
 		if contains(policy.RuleNames, "violation") {
-			document.HasViolation = true
+			documents["Violation"] = append(documents["Violation"], document)
+			continue
 		}
 
 		if contains(policy.RuleNames, "warn") {
-			document.HasWarning = true
+			documents["Warning"] = append(documents["Warning"], document)
+			continue
 		}
 
-		documents = append(documents, document)
+		documents["Other"] = append(documents["Other"], document)
 	}
 
 	return documents, nil
