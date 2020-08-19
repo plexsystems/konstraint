@@ -26,9 +26,11 @@
 * [Containers should not have a writable root filesystem](#containers-should-not-have-a-writable-root-filesystem)
 * [PodSecurityPolicies should require that a read-only root filesystem is set](#podsecuritypolicies-should-require-that-a-read-only-root-filesystem-is-set)
 
+
+
 ## Containers must drop all capabilities
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -61,7 +63,7 @@ _source: [../../examples/container-deny-added-caps](../../examples/container-den
 
 ## Containers must not allow for privilege escalation
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -96,7 +98,7 @@ _source: [../../examples/container-deny-escalation](../../examples/container-den
 
 ## Images must not use the latest tag
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -131,7 +133,7 @@ _source: [../../examples/container-deny-latest-tag](../../examples/container-den
 
 ## Containers must not run as privileged
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -169,7 +171,7 @@ _source: [../../examples/container-deny-privileged](../../examples/container-den
 
 ## Containers must define resource constraints
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -203,7 +205,7 @@ _source: [../../examples/container-deny-without-resource-constraints](../../exam
 
 ## Pods must not have access to the host aliases
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -233,7 +235,7 @@ _source: [../../examples/pod-deny-host-alias](../../examples/pod-deny-host-alias
 
 ## Pods must not run with access to the host IPC
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -263,7 +265,7 @@ _source: [../../examples/pod-deny-host-ipc](../../examples/pod-deny-host-ipc)_
 
 ## Pods must not run with access to the host networking
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -293,7 +295,7 @@ _source: [../../examples/pod-deny-host-network](../../examples/pod-deny-host-net
 
 ## Pods must not run with access to the host PID namespace
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -324,7 +326,7 @@ _source: [../../examples/pod-deny-host-pid](../../examples/pod-deny-host-pid)_
 
 ## Pods must run as non-root
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -355,7 +357,7 @@ _source: [../../examples/pod-deny-without-runasnonroot](../../examples/pod-deny-
 
 ## PodSecurityPolicies must require all capabilities are dropped
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -388,7 +390,7 @@ _source: [../../examples/psp-deny-added-caps](../../examples/psp-deny-added-caps
 
 ## PodSecurityPolicies must not allow privileged escalation
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -423,7 +425,7 @@ _source: [../../examples/psp-deny-escalation](../../examples/psp-deny-escalation
 
 ## PodSecurityPolicies must not allow access to the host aliases
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -453,7 +455,7 @@ _source: [../../examples/psp-deny-host-alias](../../examples/psp-deny-host-alias
 
 ## PodSecurityPolicies must not allow access to the host IPC
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -483,7 +485,7 @@ _source: [../../examples/psp-deny-host-ipc](../../examples/psp-deny-host-ipc)_
 
 ## PodSecurityPolicies must not allow access to the host network
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -514,7 +516,7 @@ _source: [../../examples/psp-deny-host-network](../../examples/psp-deny-host-net
 
 ## PodSecurityPolicies must not allow access to the host PID namespace
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -545,7 +547,7 @@ _source: [../../examples/psp-deny-host-pid](../../examples/psp-deny-host-pid)_
 
 ## PodSecurityPolicies must require containers to not run as privileged
 
-**Severity:** violation
+**Severity:** Violation
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -573,9 +575,10 @@ psp_allows_privileged {
 
 _source: [../../examples/psp-deny-privileged](../../examples/psp-deny-privileged)_
 
+
 ## Deprecated Deployment and DaemonSet API
 
-**Severity:** warn
+**Severity:** Warning
 
 **Resources:** apps/DaemonSet apps/Deployment
 
@@ -598,11 +601,12 @@ warn[msg] {
     msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]))
 }
 ```
+
 _source: [../../examples/any-warn-deprecated-api-versions](../../examples/any-warn-deprecated-api-versions)_
 
 ## Containers should not have a writable root filesystem
 
-**Severity:** warn
+**Severity:** Warning
 
 **Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
@@ -633,11 +637,12 @@ no_read_only_filesystem(container) {
     core.missing_field(container.securityContext, "readOnlyRootFilesystem")
 }
 ```
+
 _source: [../../examples/container-warn-no-ro-fs](../../examples/container-warn-no-ro-fs)_
 
 ## PodSecurityPolicies should require that a read-only root filesystem is set
 
-**Severity:** warn
+**Severity:** Warning
 
 **Resources:** policy/PodSecurityPolicy
 
@@ -667,4 +672,8 @@ no_read_only_filesystem(psp) {
     not psp.spec.readOnlyRootFilesystem
 }
 ```
+
 _source: [../../examples/psp-warn-no-ro-fs](../../examples/psp-warn-no-ro-fs)_
+
+
+
