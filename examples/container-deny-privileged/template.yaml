@@ -111,7 +111,6 @@ spec:
       import data.lib.pods
       import data.lib.security
 
-
       violation[msg] {
           pods.containers[container]
           container_is_privileged(container)

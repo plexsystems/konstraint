@@ -1,14 +1,14 @@
-package container_deny_latest_tag
-
-import data.lib.core
-import data.lib.pods
-
 # @title Images must not use the latest tag
 #
 # Using the latest tag on images can cause unexpected problems in production. By specifying a pinned version
 # we can have higher confidence that our applications are immutable and do not change unexpectedly.
 #
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+package container_deny_latest_tag
+
+import data.lib.core
+import data.lib.pods
+
 violation[msg] {
     pods.containers[container]
     has_latest_tag(container)

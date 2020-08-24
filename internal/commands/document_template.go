@@ -1,14 +1,17 @@
 package commands
 
 const docTemplate = `# Policies
-
-{{ range $severity, $value := . }}## {{ $severity }}s
+{{ range $severity, $value := . }}
+## {{ $severity }}s
 
 {{ range . }}* [{{ .Header.Title }}](#{{ .Header.Anchor }})
-{{end}}
-{{end}}
+{{ end }}
 
-{{ range $severity, $value := . }}{{ range $value }}## {{ .Header.Title }}
+{{- end }}
+
+{{- range $severity, $value := . }}
+{{- range $value }}
+## {{ .Header.Title }}
 
 **Severity:** {{ $severity }}
 
@@ -16,9 +19,13 @@ const docTemplate = `# Policies
 
 {{ .Header.Description }}
 
-### Rego` + "\n\n```rego\n" + "{{ .Rego }}\n" + "```\n" + `
-_source: [{{ .URL }}]({{ .URL }})_
+### Rego
+{{ $codeblock := "` + "```" + `" }}
+{{ $codeblock }}rego
+{{ .Rego }}
+{{ $codeblock}}
 
-{{end}}
-{{end}}
-`
+_source: [{{ .URL }}]({{ .URL }})_
+{{ end }}
+
+{{- end }}`

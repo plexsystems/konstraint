@@ -1,9 +1,3 @@
-package container_deny_privileged
-
-import data.lib.core
-import data.lib.pods
-import data.lib.security
-
 # @title Containers must not run as privileged
 #
 # Privileged containers can easily escalate to root privileges on the node. As
@@ -11,6 +5,11 @@ import data.lib.security
 # to obtain the same effect are not allowed.
 #
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+package container_deny_privileged
+
+import data.lib.core
+import data.lib.pods
+import data.lib.security
 
 violation[msg] {
     pods.containers[container]
