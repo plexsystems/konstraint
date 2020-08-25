@@ -133,8 +133,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("marshal constraint: %w", err)
 		}
 
-		err = ioutil.WriteFile(filepath.Join(outputDir, constraintFileName), constraintBytes, os.ModePerm)
-		if err != nil {
+		if err := ioutil.WriteFile(filepath.Join(outputDir, constraintFileName), constraintBytes, os.ModePerm); err != nil {
 			return fmt.Errorf("writing constraint: %w", err)
 		}
 	}

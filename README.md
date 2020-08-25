@@ -5,7 +5,23 @@
 
 ![logo](images/logo.png)
 
-Konstraint is a CLI tool to assist with the creation and management of constraints when using [Gatekeeper](https://github.com/open-policy-agent/gatekeeper).
+Konstraint is a CLI tool to assist with the creation and management of templates and constraints when using [Gatekeeper](https://github.com/open-policy-agent/gatekeeper).
+
+## Installation
+
+```text
+GO111MODULE=on go get github.com/plexsystems/konstraint
+```
+
+Binaries are also available on the [releases](https://github.com/plexsystems/konstraint/releases) page.
+
+## Usage
+
+To create the Gatekeeper resources, use `konstraint create <policy_dir>`.
+
+To generate the accompanying documentation, use `konstraint doc <policy_dir>`.
+
+Both commands support the `--output` flag to specify where to save the output. For more detailed usage documentation, see the [CLI Documentation](docs/cli/konstraint.md).
 
 ## Why this tool exists
 
@@ -27,26 +43,18 @@ This creates a scenario where the policy needs to be written differently dependi
 
 ### Kubernetes Libraries
 
-In the [examples/lib](examples/lib) directory, there are multiple libraries that enable policies to easily be written for both Conftest and Gatekeeper. You can include as little or as many of these libraries into your policies as desired.
+In the [examples/lib](examples/lib) directory, there are multiple libraries that enable policies to be written for both Conftest and Gatekeeper.
+
+You can include as little or as many of these libraries into your policies as desired.
 
 #### Purpose
 
-By first validating the Kubernetes manifests with `Conftest` on a local machine, we are able to catch manifests that would otherwise violate policy without needing to deploy to a cluster running Gatekeeper.
-
-## Installation
-
-Once you have executed the below, it will either be installed into your $GOPATH or $HOME/go.
-
-```text
-GO111MODULE=on go get github.com/plexsystems/konstraint
-```
-
-## Usage
-
-To create the Gatekeeper resources, use `konstraint create <policy_dir>`. To generate the accompanying documentation, use `konstraint doc <policy_dir>`. Both commands support the `--output` flag to specify where to save the output. For more detailed usage documentation, see the [CLI Documentation](docs/cli/konstraint.md).
+By first validating the Kubernetes manifests with `Conftest` on a local machine, we can catch manifests that would otherwise violate policy without needing to deploy to a cluster running Gatekeeper.
 
 ## FAQ
 
 **Konstraint ran without error, but I don't see any new files.**
 
-This typically means no policies were found, or the policies did not have any `violation[]` rules so they are not compatible with Gatekeeper. For more information, see [How Constraints are Created](docs/constraint_creation.md).
+This typically means no policies were found, or the policies did not have any `violation[]` rules, so they are not compatible with Gatekeeper.
+
+For more information, see [How Constraints are Created](docs/constraint_creation.md).
