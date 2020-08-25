@@ -31,11 +31,11 @@ func TestNewFile_RuleNames(t *testing.T) {
 		ruleCount int
 		ruleNames []string
 	}{
-		{"package test\ndefault test = true", 0, nil},
+		{"package test\ndefault test = true", 1, []string{"test"}},
 		{"package test\nviolation[msg] { msg = true }", 1, []string{"violation"}},
 		{"package test\nwarn[msg] { msg = true }", 1, []string{"warn"}},
 		{"package test\nviolation[msg] { msg = true }\nwarn[msg] { msg = true }", 2, []string{"violation", "warn"}},
-		{"package test\nviolation[msg] { msg = true }\nviolation[msg] { msg = true }", 1, []string{"violation"}},
+		{"package test\nviolation[msg] { msg = true }\nviolation[msg] { msg = true }", 2, []string{"violation", "violation"}},
 	}
 
 	for _, test := range rulesNamesTests {
@@ -51,13 +51,6 @@ func TestNewFile_RuleNames(t *testing.T) {
 		if !reflect.DeepEqual(regoFile.RuleNames, test.ruleNames) {
 			t.Errorf("expected rule names to be %v, but was %v", test.ruleNames, regoFile.RuleNames)
 		}
-	}
-}
-
-func TestGetPolicies(t *testing.T) {
-	policies := getPolicies(testRegoFiles)
-	if len(policies) != 2 {
-		t.Errorf("expected %v policies, but got %v", 2, len(policies))
 	}
 }
 

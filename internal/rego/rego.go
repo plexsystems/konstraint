@@ -109,8 +109,7 @@ func getFilePaths(path string) ([]string, error) {
 
 func getFilesWithRule(regoFiles []File, rule string) []File {
 	var matchingPolicies []File
-	allPolicies := getPolicies(regoFiles)
-	for _, policy := range allPolicies {
+	for _, policy := range regoFiles {
 		for _, ruleName := range policy.RuleNames {
 			if ruleName == rule {
 				matchingPolicies = append(matchingPolicies, policy)
@@ -119,17 +118,6 @@ func getFilesWithRule(regoFiles []File, rule string) []File {
 	}
 
 	return matchingPolicies
-}
-
-func getPolicies(regoFiles []File) []File {
-	var policies []File
-	for _, regoFile := range regoFiles {
-		if len(regoFile.RuleNames) > 0 {
-			policies = append(policies, regoFile)
-		}
-	}
-
-	return policies
 }
 
 func getFiles(files []string) ([]File, error) {
