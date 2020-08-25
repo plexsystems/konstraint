@@ -26,8 +26,6 @@
 * [Containers should not have a writable root filesystem](#containers-should-not-have-a-writable-root-filesystem)
 * [PodSecurityPolicies should require that a read-only root filesystem is set](#podsecuritypolicies-should-require-that-a-read-only-root-filesystem-is-set)
 
-
-
 ## Containers must drop all capabilities
 
 **Severity:** Violation
@@ -149,7 +147,6 @@ package container_deny_privileged
 import data.lib.core
 import data.lib.pods
 import data.lib.security
-
 
 violation[msg] {
     pods.containers[container]
@@ -575,7 +572,6 @@ psp_allows_privileged {
 
 _source: [psp-deny-privileged](psp-deny-privileged)_
 
-
 ## Deprecated Deployment and DaemonSet API
 
 **Severity:** Warning
@@ -597,7 +593,7 @@ warn[msg] {
     resources := ["DaemonSet", "Deployment"]
     core.apiVersion == "extensions/v1beta1"
     core.kind == resources[_]
-    
+
     msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]))
 }
 ```
@@ -674,6 +670,3 @@ no_read_only_filesystem(psp) {
 ```
 
 _source: [psp-warn-no-ro-fs](psp-warn-no-ro-fs)_
-
-
-
