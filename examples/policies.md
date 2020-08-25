@@ -19,6 +19,7 @@
 * [PodSecurityPolicies must not allow access to the host network](#podsecuritypolicies-must-not-allow-access-to-the-host-network)
 * [PodSecurityPolicies must not allow access to the host PID namespace](#podsecuritypolicies-must-not-allow-access-to-the-host-pid-namespace)
 * [PodSecurityPolicies must require containers to not run as privileged](#podsecuritypolicies-must-require-containers-to-not-run-as-privileged)
+* [Roles must not allow use of privileged PodSecurityPolicies](#roles-must-not-allow-use-of-privileged-podsecuritypolicies)
 
 ## Warnings
 
@@ -571,6 +572,52 @@ psp_allows_privileged {
 ```
 
 _source: [psp-deny-privileged](psp-deny-privileged)_
+
+## Roles must not allow use of privileged PodSecurityPolicies
+
+**Severity:** Violation
+
+**Resources:** rbac.authorization.k8s.io/Role
+
+Workloads not running in the exempted namespaces must not use PodSecurityPolicies with privileged permissions.
+
+### Rego
+
+```rego
+package role_deny_use_privileged_psps
+
+import data.lib.core
+import data.lib.rbac
+import data.lib.security
+
+violation[msg] {
+    role_uses_privileged_psp
+
+    msg := core.format(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]))
+}
+
+role_uses_privileged_psp {
+    rule := core.resource.rules[_]
+    rbac.rule_has_resource_type(rule, "podsecuritypolicies")
+    rbac.rule_has_verb(rule, "use")
+    rbac.rule_has_resource_name(rule, privileged_psps[_].metadata.name)
+}
+
+privileged_psps[psp] {
+    psp := data.inventory.cluster["policy/v1beta1"].PodSecurityPolicy[_]
+    psp_is_privileged(psp)
+}
+
+psp_is_privileged(psp) {
+    psp.spec.privileged
+}
+
+psp_is_privileged(psp) {
+    security.added_capability(psp, "SYS_ADMIN")
+}
+```
+
+_source: [role-deny-use-privileged-psp](role-deny-use-privileged-psp)_
 
 ## Deprecated Deployment and DaemonSet API
 

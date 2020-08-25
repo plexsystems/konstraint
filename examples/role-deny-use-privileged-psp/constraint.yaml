@@ -1,0 +1,11 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: RoleDenyUsePrivilegedPsp
+metadata:
+  name: roledenyuseprivilegedpsp
+spec:
+  match:
+    kinds:
+    - apiGroups:
+      - rbac.authorization.k8s.io
+      kinds:
+      - Role
