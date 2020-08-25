@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 
@@ -60,9 +59,9 @@ func NewFile(filePath string, contents string) (File, error) {
 		importPackages = append(importPackages, module.Imports[i].Path.String())
 	}
 
-	ruleNames, err := getRuleNamesFromModule(module)
-	if err != nil {
-		return File{}, fmt.Errorf("get module rules: %w", err)
+	var ruleNames []string
+	for _, rule := range module.Rules {
+		ruleNames = append(ruleNames, rule.Head.Name.String())
 	}
 
 	var comments []string
@@ -156,27 +155,6 @@ func getFiles(files []string) ([]File, error) {
 	return regoFiles, nil
 }
 
-func getRuleNamesFromModule(module *ast.Module) ([]string, error) {
-	re, err := regexp.Compile(`^\s*([a-z]+)\s*\[\s*\{?\s*"?msg`)
-	if err != nil {
-		return nil, fmt.Errorf("compile regex: %w", err)
-	}
-
-	var ruleNames []string
-	for _, rule := range module.Rules {
-		match := re.FindStringSubmatch(rule.Head.String())
-		if len(match) == 0 {
-			continue
-		}
-		if contains(ruleNames, match[1]) {
-			continue
-		}
-		ruleNames = append(ruleNames, match[1])
-	}
-
-	return ruleNames, nil
-}
-
 func readFilesContents(filePaths []string) (map[string]string, error) {
 	filesContents := make(map[string]string)
 	for _, filePath := range filePaths {
@@ -192,14 +170,4 @@ func readFilesContents(filePaths []string) (map[string]string, error) {
 	}
 
 	return filesContents, nil
-}
-
-func contains(collection []string, item string) bool {
-	for _, value := range collection {
-		if strings.EqualFold(value, item) {
-			return true
-		}
-	}
-
-	return false
 }

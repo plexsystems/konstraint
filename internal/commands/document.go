@@ -133,11 +133,10 @@ func getDocumentation(path string, outputDirectory string) (map[string][]Documen
 			continue
 		}
 
-		if contains(policy.RuleNames, "warn") {
-			documents["Warning"] = append(documents["Warning"], document)
-			continue
-		}
-
+		// When a policy file does not contain any rules that match an expected name
+		// add the policy to the Other category in the documentation.
+		//
+		// There is no way to know which category to put the policy file into at this point.
 		documents["Other"] = append(documents["Other"], document)
 	}
 
