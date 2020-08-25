@@ -23,7 +23,7 @@ const docTemplate = `# Policies
 {{ $codeblock := "` + "```" + `" }}
 {{ $codeblock }}rego
 {{ .Rego }}
-{{ $codeblock}}
+{{ $codeblock }}
 
 _source: [{{ .URL }}]({{ .URL }})_
 {{ end }}
