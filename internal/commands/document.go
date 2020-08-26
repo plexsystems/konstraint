@@ -60,7 +60,7 @@ Set the URL where the policies are hosted at
 	}
 
 	cmd.Flags().StringP("output", "o", "policies.md", "Output location (including filename) for the policy documentation")
-	cmd.Flags().String("url", "", "The URL where the policy files are hosted at (e.g. https://github.com/policies")
+	cmd.Flags().String("url", "", "The URL where the policy files are hosted at (e.g. https://github.com/policies)")
 
 	return &cmd
 }
