@@ -60,29 +60,14 @@ func runCreateCommand(path string) error {
 		return fmt.Errorf("get violations: %w", err)
 	}
 
-	var templateFileName, constraintFileName, outputDir string
-	outputFlag := viper.GetString("output")
-	if outputFlag == "" {
-		templateFileName = "template.yaml"
-		constraintFileName = "constraint.yaml"
-	} else {
-		outputDir = outputFlag
-	}
-
 	for _, violation := range violations {
-		policyDir := filepath.Dir(violation.Path())
-		if outputFlag == "" {
-			outputDir = policyDir
-		} else {
+		templateFileName := "template.yaml"
+		constraintFileName := "constraint.yaml"
+		outputDir := filepath.Dir(violation.Path())
+		if viper.GetString("output") != "" {
+			outputDir = viper.GetString("output")
 			templateFileName = fmt.Sprintf("template_%s.yaml", violation.Kind())
 			constraintFileName = fmt.Sprintf("constraint_%s.yaml", violation.Kind())
-		}
-
-		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-			err := os.MkdirAll(outputDir, os.ModePerm)
-			if err != nil {
-				return fmt.Errorf("create output directory: %w", err)
-			}
 		}
 
 		constraintTemplate := getConstraintTemplate(violation)
@@ -91,8 +76,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
 		}
 
-		err = ioutil.WriteFile(filepath.Join(outputDir, templateFileName), constraintTemplateBytes, os.ModePerm)
-		if err != nil {
+		if err := ioutil.WriteFile(filepath.Join(outputDir, templateFileName), constraintTemplateBytes, os.ModePerm); err != nil {
 			return fmt.Errorf("writing template: %w", err)
 		}
 
@@ -135,7 +119,7 @@ func getConstraintTemplate(violation rego.Rego) v1beta1.ConstraintTemplate {
 				{
 					Target: "admission.k8s.gatekeeper.sh",
 					Libs:   violation.Libraries(),
-					Rego:   violation.Contents(),
+					Rego:   violation.Source(),
 				},
 			},
 		},
@@ -144,10 +128,17 @@ func getConstraintTemplate(violation rego.Rego) v1beta1.ConstraintTemplate {
 	return constraintTemplate
 }
 
-func getConstraint(policy rego.Rego) (unstructured.Unstructured, error) {
+func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 	constraint := unstructured.Unstructured{}
-	constraint.SetName(policy.Name())
-	constraint.SetGroupVersionKind(schema.GroupVersionKind{Group: "constraints.gatekeeper.sh", Version: "v1beta1", Kind: policy.Kind()})
+
+	gvk := schema.GroupVersionKind{
+		Group:   "constraints.gatekeeper.sh",
+		Version: "v1beta1",
+		Kind:    violation.Kind(),
+	}
+
+	constraint.SetGroupVersionKind(gvk)
+	constraint.SetName(violation.Name())
 
 	dryrun := viper.GetBool("dryrun")
 	if dryrun {
@@ -156,7 +147,7 @@ func getConstraint(policy rego.Rego) (unstructured.Unstructured, error) {
 		}
 	}
 
-	matchers := policy.Matchers()
+	matchers := violation.Matchers()
 	if len(matchers.KindMatchers) == 0 {
 		return constraint, nil
 	}

@@ -97,12 +97,7 @@ func getDocumentation(path string, outputDirectory string) (map[string][]Documen
 
 	documents := make(map[string][]Document)
 	for _, policy := range policies {
-		header, err := getHeader(policy)
-		if err != nil {
-			return nil, fmt.Errorf("get header: %w", err)
-		}
-
-		if header.Title == "" {
+		if policy.Title() == "" {
 			continue
 		}
 
@@ -121,45 +116,25 @@ func getDocumentation(path string, outputDirectory string) (map[string][]Documen
 			url = strings.ReplaceAll(relDir, string(os.PathSeparator), "/")
 		}
 
+		header := Header{
+			Title:       policy.Title(),
+			Description: policy.Description(),
+			Resources:   policy.Matchers().String(),
+			Anchor:      strings.ToLower(strings.ReplaceAll(policy.Title(), " ", "-")),
+		}
+
 		document := Document{
 			Header: header,
 			URL:    url,
-			Rego:   policy.Contents(),
+			Rego:   policy.Source(),
 		}
 
-		if policy.Severity() == "violation" {
-			documents["Violation"] = append(documents["Violation"], document)
-			continue
+		if policy.Severity() == "" {
+			documents["Other"] = append(documents["Other"], document)
+		} else {
+			documents[policy.Severity()] = append(documents[policy.Severity()], document)
 		}
-
-		if policy.Severity() == "warn" {
-			documents["Warning"] = append(documents["Warning"], document)
-			continue
-		}
-
-		if policy.Severity() == "deny" {
-			documents["Deny"] = append(documents["Deny"], document)
-			continue
-		}
-
-		// When a policy file does not contain any rules that match an expected name
-		// add the policy to the Other category in the documentation.
-		//
-		// There is no way to know which category to put the policy file into at this point.
-		documents["Other"] = append(documents["Other"], document)
 	}
 
 	return documents, nil
-}
-
-func getHeader(policy rego.Rego) (Header, error) {
-	anchor := strings.ReplaceAll(policy.Title(), " ", "-")
-	header := Header{
-		Title:       policy.Title(),
-		Description: policy.Description(),
-		Resources:   policy.Matchers().String(),
-		Anchor:      anchor,
-	}
-
-	return header, nil
 }

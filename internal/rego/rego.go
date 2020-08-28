@@ -23,11 +23,6 @@ func Parse(path string) (Rego, error) {
 		return Rego{}, fmt.Errorf("get contents: %w", err)
 	}
 
-	// Many YAML parsers do not like rendering out CRLF when writing the YAML to disk.
-	// This causes ConstraintTemplates to be rendered with the line breaks as text,
-	// rather than the actual line break.
-	contents = strings.ReplaceAll(string(contents), "\r", "")
-
 	module, err := ast.ParseModule(path, contents)
 	if err != nil {
 		return Rego{}, fmt.Errorf("parse module: %w", err)
@@ -51,15 +46,29 @@ func Parse(path string) (Rego, error) {
 }
 
 func (r Rego) Severity() string {
-	severities := []string{"violation", "warn", "deny"}
+	rules := []string{"violation", "warn", "deny"}
 
+	var severity string
 	for i := range r.module.Rules {
-		if contains(severities, r.module.Rules[i].Head.Name.String()) {
-			return r.module.Rules[i].Head.Name.String()
+		currentRule := r.module.Rules[i].Head.Name.String()
+		if !contains(rules, currentRule) {
+			continue
 		}
+
+		severity = currentRule
+
+		if severity == "deny" {
+			severity = "violation"
+		}
+
+		if severity == "warn" {
+			severity = "warning"
+		}
+
+		break
 	}
 
-	return ""
+	return strings.Title(severity)
 }
 
 func GetAll(directory string) ([]Rego, error) {
@@ -107,7 +116,6 @@ func (r Rego) Kind() string {
 	kind := filepath.Base(filepath.Dir(r.path))
 	kind = strings.ReplaceAll(kind, "-", " ")
 	kind = strings.Title(kind)
-
 	kind = strings.ReplaceAll(kind, " ", "")
 
 	return kind
@@ -129,29 +137,39 @@ func (r Rego) Title() string {
 		}
 
 		title = strings.SplitAfter(r.module.Comments[c].String(), "@title")[1]
-		title = strings.TrimPrefix(title, " ")
 		break
 	}
 
-	return title
+	return trimContent(title)
 }
 
 func (r Rego) Description() string {
 	var description string
 	for c := range r.module.Comments {
-		if strings.HasPrefix(r.module.Comments[c].String(), "@") {
+		comment := strings.TrimSpace(string(r.module.Comments[c].Text))
+		if strings.Contains(comment, "@") {
 			continue
 		}
 
-		description = strings.TrimSpace(description)
-		description += description + "\n"
+		description += comment
+		description += "\n"
 	}
 
-	return description
+	return trimContent(description)
 }
 
-func (r Rego) Contents() string {
-	return r.contents
+func (r Rego) Source() string {
+	var regoWithoutComments string
+	lines := strings.Split(r.contents, "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		regoWithoutComments += line + "\n"
+	}
+
+	return trimContent(regoWithoutComments)
 }
 
 func (r Rego) Libraries() []string {
@@ -242,7 +260,7 @@ func getContents(path string) (string, error) {
 }
 
 func getFilePaths(path string) ([]string, error) {
-	var regoFilePaths []string
+	var filePaths []string
 	err := filepath.Walk(path, func(currentFilePath string, fileInfo os.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("walk path: %w", err)
@@ -256,7 +274,7 @@ func getFilePaths(path string) ([]string, error) {
 			return nil
 		}
 
-		regoFilePaths = append(regoFilePaths, currentFilePath)
+		filePaths = append(filePaths, currentFilePath)
 
 		return nil
 	})
@@ -264,7 +282,7 @@ func getFilePaths(path string) ([]string, error) {
 		return nil, err
 	}
 
-	return regoFilePaths, nil
+	return filePaths, nil
 }
 
 func contains(collection []string, item string) bool {
@@ -275,4 +293,10 @@ func contains(collection []string, item string) bool {
 	}
 
 	return false
+}
+
+func trimContent(content string) string {
+	content = strings.TrimSpace(content)
+	content = strings.Trim(content, "\n")
+	return content
 }
