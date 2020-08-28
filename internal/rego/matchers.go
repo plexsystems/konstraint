@@ -1,13 +1,20 @@
-package commands
+package rego
 
-import (
-	"path/filepath"
-	"strings"
-)
+import "strings"
 
 // Matchers are all of the matchers that can be applied to constraints.
 type Matchers struct {
 	KindMatchers []KindMatcher
+}
+
+func (m Matchers) String() string {
+	var result string
+	for _, kindMatcher := range m.KindMatchers {
+		result += kindMatcher.APIGroup + "/" + kindMatcher.Kind + " "
+	}
+
+	result = strings.TrimSpace(result)
+	return result
 }
 
 // KindMatcher are the matchers that are applied to constraints.
@@ -16,24 +23,15 @@ type KindMatcher struct {
 	Kind     string
 }
 
-// GetMatchersFromComments returns all of the matchers found in the collection of comments.
-func GetMatchersFromComments(comments []string) Matchers {
+func (r Rego) Matchers() Matchers {
 	var matchers Matchers
-	for _, comment := range comments {
-		if strings.Contains(comment, "@kinds") {
-			matchers.KindMatchers = getKindMatchers(comment)
+	for _, comment := range r.module.Comments {
+		if strings.Contains(comment.String(), "@kinds") {
+			matchers.KindMatchers = getKindMatchers(comment.String())
 		}
 	}
 
 	return matchers
-}
-
-// GetKindFromPath returns the kind of the resource based on its file path.
-func GetKindFromPath(path string) string {
-	name := getNameFromPath(path)
-	kind := strings.ReplaceAll(name, " ", "")
-
-	return kind
 }
 
 func getKindMatchers(comment string) []KindMatcher {
@@ -52,12 +50,4 @@ func getKindMatchers(comment string) []KindMatcher {
 	}
 
 	return kindMatchers
-}
-
-func getNameFromPath(path string) string {
-	name := filepath.Base(filepath.Dir(path))
-	name = strings.ReplaceAll(name, "-", " ")
-	name = strings.Title(name)
-
-	return name
 }

@@ -5,80 +5,240 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/open-policy-agent/opa/ast"
 )
 
-// File is a parsed Rego file.
-type File struct {
-	FilePath       string
-	PackageName    string
-	ImportPackages []string
-	Contents       string
-	RuleNames      []string
-	Comments       []string
+type Rego struct {
+	path      string
+	contents  string
+	libraries []string
+	module    *ast.Module
 }
 
-// GetFiles gets all Rego files in the given path and its subdirectories.
-func GetFiles(path string) ([]File, error) {
-	filePaths, err := getFilePaths(path)
+func Parse(path string) (Rego, error) {
+	contents, err := getContents(path)
 	if err != nil {
-		return nil, fmt.Errorf("load files: %w", err)
+		return Rego{}, fmt.Errorf("get contents: %w", err)
 	}
 
-	files, err := getFiles(filePaths)
+	// Many YAML parsers do not like rendering out CRLF when writing the YAML to disk.
+	// This causes ConstraintTemplates to be rendered with the line breaks as text,
+	// rather than the actual line break.
+	contents = strings.ReplaceAll(string(contents), "\r", "")
+
+	module, err := ast.ParseModule(path, contents)
 	if err != nil {
-		return nil, fmt.Errorf("load files: %w", err)
+		return Rego{}, fmt.Errorf("parse module: %w", err)
 	}
 
-	return files, nil
+	allLibraries, err := getLibraries(path, module)
+	if err != nil {
+		return Rego{}, fmt.Errorf("get libraries: %w", err)
+	}
+
+	libraries := getRecursiveImports(module, allLibraries)
+
+	rego := Rego{
+		path:      path,
+		contents:  contents,
+		module:    module,
+		libraries: libraries,
+	}
+
+	return rego, nil
 }
 
-// GetFilesWithRule gets all Rego files in the given path and its subdirectories that contain the specified rule.
-func GetFilesWithRule(path string, rule string) ([]File, error) {
-	allFiles, err := GetFiles(path)
-	if err != nil {
-		return nil, fmt.Errorf("load policies: %w", err)
+func (r Rego) Severity() string {
+	severities := []string{"violation", "warn", "deny"}
+
+	for i := range r.module.Rules {
+		if contains(severities, r.module.Rules[i].Head.Name.String()) {
+			return r.module.Rules[i].Head.Name.String()
+		}
 	}
 
-	filesWithRule := getFilesWithRule(allFiles, rule)
-	return filesWithRule, nil
+	return ""
 }
 
-// NewFile parses the rego and creates a File
-func NewFile(filePath string, contents string) (File, error) {
-	module, err := ast.ParseModule(filePath, contents)
+func GetAll(directory string) ([]Rego, error) {
+	filePaths, err := getFilePaths(directory)
 	if err != nil {
-		return File{}, fmt.Errorf("parse module: %w", err)
+		return nil, fmt.Errorf("get file paths: %w", err)
 	}
 
-	var importPackages []string
+	var violations []Rego
+	for _, filePath := range filePaths {
+		rego, err := Parse(filePath)
+		if err != nil {
+			return nil, fmt.Errorf("parse: %w", err)
+		}
+
+		if rego.Severity() == "" {
+			continue
+		}
+
+		violations = append(violations, rego)
+	}
+
+	return violations, nil
+}
+
+func GetViolations(directory string) ([]Rego, error) {
+	files, err := GetAll(directory)
+	if err != nil {
+		return nil, fmt.Errorf("get all: %w", err)
+	}
+
+	var violations []Rego
+	for _, file := range files {
+		if file.Severity() != "violation" {
+			continue
+		}
+
+		violations = append(violations, file)
+	}
+
+	return violations, nil
+}
+
+func (r Rego) Kind() string {
+	kind := filepath.Base(filepath.Dir(r.path))
+	kind = strings.ReplaceAll(kind, "-", " ")
+	kind = strings.Title(kind)
+
+	kind = strings.ReplaceAll(kind, " ", "")
+
+	return kind
+}
+
+func (r Rego) Name() string {
+	return strings.ToLower(r.Kind())
+}
+
+func (r Rego) Path() string {
+	return r.path
+}
+
+func (r Rego) Title() string {
+	var title string
+	for c := range r.module.Comments {
+		if !strings.Contains(r.module.Comments[c].String(), "@title") {
+			continue
+		}
+
+		title = strings.SplitAfter(r.module.Comments[c].String(), "@title")[1]
+		title = strings.TrimPrefix(title, " ")
+		break
+	}
+
+	return title
+}
+
+func (r Rego) Description() string {
+	var description string
+	for c := range r.module.Comments {
+		if strings.HasPrefix(r.module.Comments[c].String(), "@") {
+			continue
+		}
+
+		description = strings.TrimSpace(description)
+		description += description + "\n"
+	}
+
+	return description
+}
+
+func (r Rego) Contents() string {
+	return r.contents
+}
+
+func (r Rego) Libraries() []string {
+	return r.libraries
+}
+
+func getLibraries(path string, module *ast.Module) (map[string]*ast.Module, error) {
+	if len(module.Imports) == 0 {
+		return make(map[string]*ast.Module), nil
+	}
+
+	libraryDir, err := findLibraryDir(path)
+	if err != nil {
+		return nil, fmt.Errorf("find library dir: %w", err)
+	}
+
+	libraryFilePaths, err := getFilePaths(libraryDir)
+	if err != nil {
+		return nil, fmt.Errorf("get file paths: %w", err)
+	}
+
+	libraries := make(map[string]*ast.Module)
+	for _, libraryFilePath := range libraryFilePaths {
+		contents, err := getContents(libraryFilePath)
+		if err != nil {
+			return nil, fmt.Errorf("get contents: %w", err)
+		}
+
+		libraryModule, err := ast.ParseModule(libraryFilePath, contents)
+		if err != nil {
+			return nil, fmt.Errorf("parse module: %w", err)
+		}
+
+		libraries[libraryModule.Package.Path.String()] = libraryModule
+	}
+
+	return libraries, nil
+}
+
+func findLibraryDir(path string) (string, error) {
+	allowedLibraryDirectories := []string{"lib", "libs", "util", "utils"}
+
+	currentDirectory := filepath.Dir(path)
+	files, err := ioutil.ReadDir(currentDirectory)
+	if err != nil {
+		return "", fmt.Errorf("read directory: %w", err)
+	}
+
+	for i := range files {
+		if files[i].IsDir() && contains(allowedLibraryDirectories, files[i].Name()) {
+			return filepath.Join(currentDirectory, files[i].Name()), nil
+		}
+	}
+
+	return findLibraryDir(filepath.Dir(path))
+}
+
+func getRecursiveImports(module *ast.Module, imports map[string]*ast.Module) []string {
+	var recursiveImports []string
+	var nestedImports []*ast.Module
 	for i := range module.Imports {
-		importPackages = append(importPackages, module.Imports[i].Path.String())
+		importModule := imports[module.Imports[i].Path.String()]
+		recursiveImports = append(recursiveImports, importModule.String())
+
+		if len(importModule.Imports) > 0 {
+			nestedImports = append(nestedImports, importModule)
+		}
 	}
 
-	var ruleNames []string
-	for _, rule := range module.Rules {
-		ruleNames = append(ruleNames, rule.Head.Name.String())
+	for i := range nestedImports {
+		return append(recursiveImports, getRecursiveImports(nestedImports[i], imports)...)
 	}
 
-	var comments []string
-	for _, comment := range module.Comments {
-		comments = append(comments, string(comment.Text))
+	return []string{}
+}
+
+func getContents(path string) (string, error) {
+	contents, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("read file: %w", err)
 	}
 
-	file := File{
-		FilePath:       filePath,
-		PackageName:    module.Package.Path.String(),
-		ImportPackages: importPackages,
-		Contents:       contents,
-		RuleNames:      ruleNames,
-		Comments:       comments,
-	}
+	// Many YAML parsers do not like rendering out CRLF when writing the YAML to disk.
+	// This causes ConstraintTemplates to be rendered with the line breaks as text,
+	// rather than the actual line break.
+	return strings.ReplaceAll(string(contents), "\r", ""), nil
 
-	return file, nil
 }
 
 func getFilePaths(path string) ([]string, error) {
@@ -107,55 +267,12 @@ func getFilePaths(path string) ([]string, error) {
 	return regoFilePaths, nil
 }
 
-func getFilesWithRule(regoFiles []File, rule string) []File {
-	var matchingPolicies []File
-	for _, policy := range regoFiles {
-		for _, ruleName := range policy.RuleNames {
-			if ruleName == rule {
-				matchingPolicies = append(matchingPolicies, policy)
-			}
+func contains(collection []string, item string) bool {
+	for _, value := range collection {
+		if strings.EqualFold(value, item) {
+			return true
 		}
 	}
 
-	return matchingPolicies
-}
-
-func getFiles(files []string) ([]File, error) {
-	filesContents, err := readFilesContents(files)
-	if err != nil {
-		return nil, fmt.Errorf("read files: %w", err)
-	}
-
-	var regoFiles []File
-	for path, contents := range filesContents {
-		regoFile, err := NewFile(path, contents)
-		if err != nil {
-			return nil, fmt.Errorf("new rego file: %w", err)
-		}
-
-		regoFiles = append(regoFiles, regoFile)
-	}
-
-	sort.Slice(regoFiles, func(i, j int) bool {
-		return regoFiles[i].FilePath < regoFiles[j].FilePath
-	})
-
-	return regoFiles, nil
-}
-
-func readFilesContents(filePaths []string) (map[string]string, error) {
-	filesContents := make(map[string]string)
-	for _, filePath := range filePaths {
-		data, err := ioutil.ReadFile(filePath)
-		if err != nil {
-			return nil, fmt.Errorf("read file: %w", err)
-		}
-
-		// Many YAML parsers do not like rendering out CRLF when writing the YAML to disk.
-		// This causes ConstraintTemplates to be rendered with the line breaks as text,
-		// rather than the actual line break.
-		filesContents[filePath] = strings.ReplaceAll(string(data), "\r", "")
-	}
-
-	return filesContents, nil
+	return false
 }
