@@ -5,11 +5,6 @@
   git diff --quiet -- examples/policies.md
 }
 
-@test "[DOC] Outputting documentation to a different output directory" {
-  run ./build/konstraint doc examples --output test/doc/expected.md
-  git diff --quiet -- test/doc/expected.md
-}
-
 @test "[CREATE] Creating constraints and templates matches examples" {
   run ./build/konstraint create examples
   git diff --quiet -- examples/container-images/constraint.yaml
@@ -17,7 +12,7 @@
 }
 
 @test "[CREATE] Creating constraints using --output matches expected output" {
-  run ./build/konstraint create test/create --output test/create
-  git diff --quiet -- test/create/constraint_Create.yaml
-  git diff --quiet -- test/create/template_Create.yaml
+  run ./build/konstraint create test --output test
+  git diff --quiet -- test/constraint_Create.yaml
+  git diff --quiet -- test/template_Create.yaml
 }

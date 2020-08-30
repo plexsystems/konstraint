@@ -10,6 +10,7 @@ import (
 	"github.com/open-policy-agent/opa/ast"
 )
 
+// Rego represents a Rego file.
 type Rego struct {
 	path      string
 	contents  string
@@ -17,6 +18,7 @@ type Rego struct {
 	module    *ast.Module
 }
 
+// Parse parses the file at the given path.
 func Parse(path string) (Rego, error) {
 	contents, err := getContents(path)
 	if err != nil {
@@ -28,11 +30,12 @@ func Parse(path string) (Rego, error) {
 		return Rego{}, fmt.Errorf("parse module: %w", err)
 	}
 
+	// Libraries are loaded during the Parse method to enable consumers to be able to
+	// call the Libraries() method without needing to perform an error check.
 	allLibraries, err := getLibraries(path, module)
 	if err != nil {
 		return Rego{}, fmt.Errorf("get libraries: %w", err)
 	}
-
 	libraries := getRecursiveImports(module, allLibraries)
 
 	rego := Rego{
@@ -45,20 +48,15 @@ func Parse(path string) (Rego, error) {
 	return rego, nil
 }
 
+// Severity returns the severity of the file.
 func (r Rego) Severity() string {
 	rules := []string{"violation", "warn", "deny"}
 
 	var severity string
 	for i := range r.module.Rules {
-		currentRule := r.module.Rules[i].Head.Name.String()
-		if !contains(rules, currentRule) {
+		severity = r.module.Rules[i].Head.Name.String()
+		if !contains(rules, severity) {
 			continue
-		}
-
-		severity = currentRule
-
-		if severity == "deny" {
-			severity = "violation"
 		}
 
 		if severity == "warn" {
@@ -71,13 +69,15 @@ func (r Rego) Severity() string {
 	return strings.Title(severity)
 }
 
+// GetAll gets all of the files found in the given directory as well as any subdirectories
+// that contain a valid severity.
 func GetAll(directory string) ([]Rego, error) {
 	filePaths, err := getFilePaths(directory)
 	if err != nil {
 		return nil, fmt.Errorf("get file paths: %w", err)
 	}
 
-	var violations []Rego
+	var files []Rego
 	for _, filePath := range filePaths {
 		rego, err := Parse(filePath)
 		if err != nil {
@@ -88,12 +88,14 @@ func GetAll(directory string) ([]Rego, error) {
 			continue
 		}
 
-		violations = append(violations, rego)
+		files = append(files, rego)
 	}
 
-	return violations, nil
+	return files, nil
 }
 
+// GetViolations gets all of the files found in the given directory as well as any subdirectories
+// that have a violation severity.
 func GetViolations(directory string) ([]Rego, error) {
 	files, err := GetAll(directory)
 	if err != nil {
@@ -112,6 +114,7 @@ func GetViolations(directory string) ([]Rego, error) {
 	return violations, nil
 }
 
+// Kind returns the Kubernetes Kind for the file.
 func (r Rego) Kind() string {
 	kind := filepath.Base(filepath.Dir(r.path))
 	kind = strings.ReplaceAll(kind, "-", " ")
@@ -121,14 +124,17 @@ func (r Rego) Kind() string {
 	return kind
 }
 
+// Name returns the name of the policy.
 func (r Rego) Name() string {
 	return strings.ToLower(r.Kind())
 }
 
+// Path returns the original file path of the file.
 func (r Rego) Path() string {
 	return r.path
 }
 
+// Title returns the title of the file found in the header comment of the file.
 func (r Rego) Title() string {
 	var title string
 	for c := range r.module.Comments {
@@ -143,10 +149,18 @@ func (r Rego) Title() string {
 	return trimContent(title)
 }
 
+// Description returns the entire description found in the header comment of the file.
 func (r Rego) Description() string {
 	var description string
 	for c := range r.module.Comments {
 		comment := strings.TrimSpace(string(r.module.Comments[c].Text))
+
+		// The kinds token is the last line of the header block so when this
+		// token appears, we consider this point to be the end of the description.
+		if strings.Contains(comment, "@kinds") {
+			break
+		}
+
 		if strings.Contains(comment, "@") {
 			continue
 		}
@@ -158,6 +172,7 @@ func (r Rego) Description() string {
 	return trimContent(description)
 }
 
+// Source returns the source code inside of this file, minus any comments.
 func (r Rego) Source() string {
 	var regoWithoutComments string
 	lines := strings.Split(r.contents, "\n")
@@ -172,16 +187,24 @@ func (r Rego) Source() string {
 	return trimContent(regoWithoutComments)
 }
 
+// Libraries returns all of the contents for the libraries that this file imports. This operation
+// is performed recursively to include the contents of each imports import.
 func (r Rego) Libraries() []string {
 	return r.libraries
 }
 
+// getLibraries will get all of the libraries and store them into a map that is keyed
+// by the name of the package.
+//
+// This enables us to take any given import found inside of a Rego file and find
+// the associated module.
 func getLibraries(path string, module *ast.Module) (map[string]*ast.Module, error) {
 	if len(module.Imports) == 0 {
-		return make(map[string]*ast.Module), nil
+		return map[string]*ast.Module{}, nil
 	}
 
-	libraryDir, err := findLibraryDir(path)
+	currentDirectory := filepath.Dir(path)
+	libraryDir, err := findLibraryDir(currentDirectory)
 	if err != nil {
 		return nil, fmt.Errorf("find library dir: %w", err)
 	}
@@ -209,38 +232,36 @@ func getLibraries(path string, module *ast.Module) (map[string]*ast.Module, erro
 	return libraries, nil
 }
 
-func findLibraryDir(path string) (string, error) {
-	allowedLibraryDirectories := []string{"lib", "libs", "util", "utils"}
-
-	currentDirectory := filepath.Dir(path)
-	files, err := ioutil.ReadDir(currentDirectory)
+func findLibraryDir(directory string) (string, error) {
+	files, err := ioutil.ReadDir(directory)
 	if err != nil {
 		return "", fmt.Errorf("read directory: %w", err)
 	}
 
 	for i := range files {
-		if files[i].IsDir() && contains(allowedLibraryDirectories, files[i].Name()) {
-			return filepath.Join(currentDirectory, files[i].Name()), nil
+		if !files[i].IsDir() {
+			continue
 		}
+
+		if !contains([]string{"lib", "libs", "util", "utils"}, files[i].Name()) {
+			continue
+		}
+
+		return filepath.Join(directory, files[i].Name()), nil
 	}
 
-	return findLibraryDir(filepath.Dir(path))
+	// In the event that a library directory was not found in the current directory, we
+	// recursively call the method, going up a directory each time until it is found.
+	return findLibraryDir(filepath.Dir(directory))
 }
 
 func getRecursiveImports(module *ast.Module, imports map[string]*ast.Module) []string {
 	var recursiveImports []string
-	var nestedImports []*ast.Module
 	for i := range module.Imports {
 		importModule := imports[module.Imports[i].Path.String()]
 		recursiveImports = append(recursiveImports, importModule.String())
 
-		if len(importModule.Imports) > 0 {
-			nestedImports = append(nestedImports, importModule)
-		}
-	}
-
-	for i := range nestedImports {
-		return append(recursiveImports, getRecursiveImports(nestedImports[i], imports)...)
+		return append(recursiveImports, getRecursiveImports(importModule, imports)...)
 	}
 
 	return []string{}
