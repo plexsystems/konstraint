@@ -104,7 +104,7 @@ func GetViolations(directory string) ([]Rego, error) {
 
 	var violations []Rego
 	for _, file := range files {
-		if file.Severity() != "violation" {
+		if file.Severity() != "Violation" {
 			continue
 		}
 

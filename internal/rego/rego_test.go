@@ -1,15 +1,13 @@
 package rego
 
 import (
+	"fmt"
 	"testing"
-
-	"github.com/open-policy-agent/opa/ast"
 )
 
 func TestKind(t *testing.T) {
-	policy, err := Parse("../../test/src.rego")
-	if err != nil {
-		t.Fatal("unable to parse policy")
+	policy := Rego{
+		path: "some/path/my-policy/src.rego",
 	}
 
 	actual := policy.Kind()
@@ -34,7 +32,10 @@ func TestName(t *testing.T) {
 }
 
 func TestTitle(t *testing.T) {
-	policy := newPolicy()
+	policy, err := newPolicy()
+	if err != nil {
+		t.Fatal("new policy:", err)
+	}
 
 	actual := policy.Title()
 
@@ -45,7 +46,10 @@ func TestTitle(t *testing.T) {
 }
 
 func TestDescription(t *testing.T) {
-	policy := newPolicy()
+	policy, err := newPolicy()
+	if err != nil {
+		t.Fatal("new policy:", err)
+	}
 
 	actual := policy.Description()
 
@@ -56,7 +60,10 @@ func TestDescription(t *testing.T) {
 }
 
 func TestSeverity(t *testing.T) {
-	policy := newPolicy()
+	policy, err := newPolicy()
+	if err != nil {
+		t.Fatal("new policy:", err)
+	}
 
 	actual := policy.Severity()
 
@@ -67,17 +74,19 @@ func TestSeverity(t *testing.T) {
 }
 
 func TestSource(t *testing.T) {
-	policy := newPolicy()
+	policy, err := newPolicy()
+	if err != nil {
+		t.Fatal("new policy:", err)
+	}
 
 	actual := policy.Source()
 
 	const expected = `package test
 
-import data.lib.core
-import data.lib.pods
+import data.lib.libraryA
 
 violation[msg] {
-	true
+    true
 }`
 
 	if actual != expected {
@@ -85,28 +94,11 @@ violation[msg] {
 	}
 }
 
-func newPolicy() Rego {
-	policy := `
-# @title The title
-#
-# The description
-#
-# @kinds apps/Deployment core/Pod 
-package test
-
-import data.lib.core
-import data.lib.pods
-
-# The comment
-violation[msg] {
-	true
-}`
-
-	module, _ := ast.ParseModule("", policy)
-	rego := Rego{
-		contents: policy,
-		module:   module,
+func newPolicy() (Rego, error) {
+	rego, err := Parse("../../test/src.rego")
+	if err != nil {
+		return Rego{}, fmt.Errorf("parse: %w", err)
 	}
 
-	return rego
+	return rego, nil
 }
