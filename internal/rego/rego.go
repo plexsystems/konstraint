@@ -11,7 +11,7 @@ import (
 	"github.com/open-policy-agent/opa/ast"
 )
 
-// Rego represents a Rego file.
+// Rego represents a parsed rego file.
 type Rego struct {
 	path      string
 	contents  string
@@ -19,7 +19,7 @@ type Rego struct {
 	libraries []string
 }
 
-// Parse parses the file at the given path.
+// Parse parses a rego file at the given path.
 func Parse(path string) (Rego, error) {
 	contents, err := getContents(path)
 	if err != nil {
@@ -51,7 +51,7 @@ func Parse(path string) (Rego, error) {
 	return rego, nil
 }
 
-// Severity returns the severity of the file.
+// Severity returns the severity of the rego file.
 func (r Rego) Severity() string {
 	rules := []string{"violation", "warn", "deny"}
 
@@ -72,8 +72,8 @@ func (r Rego) Severity() string {
 	return strings.Title(severity)
 }
 
-// GetAll gets all of the files found in the given directory as well as any subdirectories
-// that contain a valid severity.
+// GetAll gets all of the rego files found in the given directory as well as any subdirectories.
+// Only rego files that contain a valid severity will be returned.
 func GetAll(directory string) ([]Rego, error) {
 	filePaths, err := getFilePaths(directory)
 	if err != nil {
@@ -117,7 +117,9 @@ func GetViolations(directory string) ([]Rego, error) {
 	return violations, nil
 }
 
-// Kind returns the Kubernetes Kind for the file.
+// Kind returns the Kubernetes Kind of the rego file.
+// The kind of the rego file is determined by the name of the directory
+// that the rego file exists in.
 func (r Rego) Kind() string {
 	kind := filepath.Base(filepath.Dir(r.path))
 	kind = strings.ReplaceAll(kind, "-", " ")
@@ -127,17 +129,19 @@ func (r Rego) Kind() string {
 	return kind
 }
 
-// Name returns the name of the policy.
+// Name returns the name of the rego file.
+// The name of the rego file is its kind as lowercase.
 func (r Rego) Name() string {
 	return strings.ToLower(r.Kind())
 }
 
-// Path returns the original file path of the file.
+// Path returns the original file path of the rego file.
 func (r Rego) Path() string {
 	return r.path
 }
 
-// Title returns the title of the file found in the header comment of the file.
+// Title returns the title found in the header comment of the rego file.
+// The @title token can be used to set the title of the rego file.
 func (r Rego) Title() string {
 	var title string
 	for c := range r.module.Comments {
@@ -152,14 +156,14 @@ func (r Rego) Title() string {
 	return trimContent(title)
 }
 
-// Description returns the entire description found in the header comment of the file.
+// Description returns the entire description found in the header comment of the rego file.
 func (r Rego) Description() string {
 	var description string
 	for c := range r.module.Comments {
 		comment := strings.TrimSpace(string(r.module.Comments[c].Text))
 
-		// The kinds token is the last line of the header block so when this
-		// token appears, we consider this point to be the end of the description.
+		// The @kinds token is the last line of the header block.
+		// When this token appears, we consider this point to be the end of the description.
 		if strings.Contains(comment, "@kinds") {
 			break
 		}
@@ -175,7 +179,7 @@ func (r Rego) Description() string {
 	return trimContent(description)
 }
 
-// Source returns the source code inside of this file, minus any comments.
+// Source returns the original source code inside of the rego file, minus any comments.
 func (r Rego) Source() string {
 	var regoWithoutComments string
 	lines := strings.Split(r.contents, "\n")
@@ -191,8 +195,8 @@ func (r Rego) Source() string {
 	return regoWithoutComments
 }
 
-// Libraries returns all of the contents for the libraries that this file imports. This operation
-// is performed recursively to include the contents of each imports import.
+// Libraries returns all of the contents for the libraries that this file imports.
+// This operation is performed recursively to include the contents of each imports import.
 func (r Rego) Libraries() []string {
 	return r.libraries
 }

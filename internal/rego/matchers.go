@@ -25,7 +25,7 @@ type KindMatcher struct {
 	Kind     string
 }
 
-// Matchers returns all of the matchers found in the file.
+// Matchers returns all of the matchers found in the rego file.
 func (r Rego) Matchers() Matchers {
 	var matchers Matchers
 	for _, comment := range r.module.Comments {
