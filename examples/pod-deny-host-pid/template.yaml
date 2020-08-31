@@ -10,7 +10,7 @@ spec:
         kind: PodDenyHostPid
   targets:
   - libs:
-    - |
+    - |-
       package lib.core
 
       default is_gatekeeper = false
@@ -53,7 +53,7 @@ spec:
       missing_field(obj, field) = true {
           not has_field(obj, field)
       }
-    - |
+    - |-
       package lib.pods
 
       import data.lib.core
@@ -82,7 +82,7 @@ spec:
       volumes[volume] {
           volume = pod.spec.volumes[_]
       }
-    rego: |
+    rego: |-
       package pod_deny_host_pid
 
       import data.lib.core

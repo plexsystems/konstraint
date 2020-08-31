@@ -1,8 +1,6 @@
 package rego
 
 import (
-	"fmt"
-	"strings"
 	"testing"
 )
 
@@ -33,12 +31,15 @@ func TestName(t *testing.T) {
 }
 
 func TestTitle(t *testing.T) {
-	policy, err := newPolicy()
-	if err != nil {
-		t.Fatal("new policy:", err)
+	comments := []string{
+		"@title The title",
 	}
 
-	actual := policy.Title()
+	rego := Rego{
+		comments: comments,
+	}
+
+	actual := rego.Title()
 
 	const expected = "The title"
 	if actual != expected {
@@ -47,12 +48,18 @@ func TestTitle(t *testing.T) {
 }
 
 func TestDescription(t *testing.T) {
-	policy, err := newPolicy()
-	if err != nil {
-		t.Fatal("new policy:", err)
+	comments := []string{
+		"@title The title",
+		"The description",
+		"@kinds The kinds",
+		"Extra comment",
 	}
 
-	actual := policy.Description()
+	rego := Rego{
+		comments: comments,
+	}
+
+	actual := rego.Description()
 
 	const expected = "The description"
 	if actual != expected {
@@ -61,46 +68,40 @@ func TestDescription(t *testing.T) {
 }
 
 func TestSeverity(t *testing.T) {
-	policy, err := newPolicy()
-	if err != nil {
-		t.Fatal("new policy:", err)
+	rules := []string{
+		"violation",
+		"warn",
 	}
 
-	actual := policy.Severity()
+	rego := Rego{
+		rules: rules,
+	}
 
-	const expected = "Violation"
+	actual := rego.Severity()
+
+	const expected = Violation
 	if actual != expected {
 		t.Errorf("unexpected Severity. expected %v, actual %v", expected, actual)
 	}
 }
 
 func TestSource(t *testing.T) {
-	policy, err := newPolicy()
-	if err != nil {
-		t.Fatal("new policy:", err)
-	}
-
-	actual := policy.Source()
-
-	const expected = `package test
-
-import data.lib.libraryA
-
-violation[msg] {
-    true
-}
+	raw := `first
+# second
+third
+# fourth
 `
 
-	if !strings.EqualFold(actual, expected) {
+	rego := Rego{
+		raw: raw,
+	}
+
+	actual := rego.Source()
+
+	const expected = `first
+third`
+
+	if actual != expected {
 		t.Errorf("unexpected Source. expected %v, actual %v", expected, actual)
 	}
-}
-
-func newPolicy() (Rego, error) {
-	rego, err := Parse("../../test/src.rego")
-	if err != nil {
-		return Rego{}, fmt.Errorf("parse: %w", err)
-	}
-
-	return rego, nil
 }

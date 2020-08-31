@@ -118,7 +118,7 @@ func getConstraintTemplate(violation rego.Rego) v1beta1.ConstraintTemplate {
 			Targets: []v1beta1.Target{
 				{
 					Target: "admission.k8s.gatekeeper.sh",
-					Libs:   violation.Libraries(),
+					Libs:   violation.Dependencies(),
 					Rego:   violation.Source(),
 				},
 			},

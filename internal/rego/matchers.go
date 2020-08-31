@@ -28,9 +28,9 @@ type KindMatcher struct {
 // Matchers returns all of the matchers found in the rego file.
 func (r Rego) Matchers() Matchers {
 	var matchers Matchers
-	for _, comment := range r.module.Comments {
-		if strings.Contains(comment.String(), "@kinds") {
-			matchers.KindMatchers = getKindMatchers(comment.String())
+	for _, comment := range r.comments {
+		if strings.HasPrefix(comment, "@kinds") {
+			matchers.KindMatchers = getKindMatchers(comment)
 		}
 	}
 

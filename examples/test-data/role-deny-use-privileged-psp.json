@@ -1,0 +1,18 @@
+{
+  "inventory": {
+    "cluster": {
+      "policy/v1beta1": {
+        "PodSecurityPolicy": {
+          "test": {
+            "metadata": {
+              "name": "test"                 
+            },
+            "spec": {
+              "privileged": true
+            }
+          }
+        }
+      }
+    }
+  }
+}

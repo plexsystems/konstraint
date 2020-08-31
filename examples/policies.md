@@ -19,6 +19,7 @@
 * [PodSecurityPolicies must not allow access to the host network](#podsecuritypolicies-must-not-allow-access-to-the-host-network)
 * [PodSecurityPolicies must not allow access to the host PID namespace](#podsecuritypolicies-must-not-allow-access-to-the-host-pid-namespace)
 * [PodSecurityPolicies must require containers to not run as privileged](#podsecuritypolicies-must-require-containers-to-not-run-as-privileged)
+* [Roles must not allow use of privileged PodSecurityPolicies](#roles-must-not-allow-use-of-privileged-podsecuritypolicies)
 
 ## Warnings
 
@@ -55,7 +56,6 @@ violation[msg] {
 container_dropped_all_capabilities(container) {
     security.dropped_capability(container, "all")
 }
-
 ```
 
 _source: [container-deny-added-caps](container-deny-added-caps)_
@@ -91,7 +91,6 @@ container_allows_escalation(c) {
 container_allows_escalation(c) {
     core.missing_field(c.securityContext, "allowPrivilegeEscalation")
 }
-
 ```
 
 _source: [container-deny-escalation](container-deny-escalation)_
@@ -127,7 +126,6 @@ has_latest_tag(c) {
 has_latest_tag(c) {
     contains(c.image, ":") == false
 }
-
 ```
 
 _source: [container-deny-latest-tag](container-deny-latest-tag)_
@@ -165,7 +163,6 @@ container_is_privileged(container) {
 container_is_privileged(container) {
     security.added_capability(container, "CAP_SYS_ADMIN")
 }
-
 ```
 
 _source: [container-deny-privileged](container-deny-privileged)_
@@ -200,7 +197,6 @@ container_resources_provided(container) {
     container.resources.limits.cpu
     container.resources.limits.memory
 }
-
 ```
 
 _source: [container-deny-without-resource-constraints](container-deny-without-resource-constraints)_
@@ -231,7 +227,6 @@ violation[msg] {
 pod_host_alias {
     pods.pod.spec.hostAliases
 }
-
 ```
 
 _source: [pod-deny-host-alias](pod-deny-host-alias)_
@@ -262,7 +257,6 @@ violation[msg] {
 pod_has_hostipc {
     pods.pod.spec.hostIPC
 }
-
 ```
 
 _source: [pod-deny-host-ipc](pod-deny-host-ipc)_
@@ -293,7 +287,6 @@ violation[msg] {
 pod_has_hostnetwork {
     pods.pod.spec.hostNetwork
 }
-
 ```
 
 _source: [pod-deny-host-network](pod-deny-host-network)_
@@ -325,7 +318,6 @@ violation[msg] {
 pod_has_hostpid {
     pods.pod.spec.hostPID
 }
-
 ```
 
 _source: [pod-deny-host-pid](pod-deny-host-pid)_
@@ -357,7 +349,6 @@ violation[msg] {
 pod_runasnonroot {
     pods.pod.spec.securityContext.runAsNonRoot
 }
-
 ```
 
 _source: [pod-deny-without-runasnonroot](pod-deny-without-runasnonroot)_
@@ -391,7 +382,6 @@ psp_dropped_all_capabilities {
     psps.psps[psp]
     security.dropped_capability(psp, "all")
 }
-
 ```
 
 _source: [psp-deny-added-caps](psp-deny-added-caps)_
@@ -427,7 +417,6 @@ allows_escalation(p) {
 allows_escalation(p) {
     core.missing_field(p.spec, "allowPrivilegeEscalation")
 }
-
 ```
 
 _source: [psp-deny-escalation](psp-deny-escalation)_
@@ -458,7 +447,6 @@ violation[msg] {
 psp_allows_hostaliases {
     psps.psps[_].spec.hostAliases
 }
-
 ```
 
 _source: [psp-deny-host-alias](psp-deny-host-alias)_
@@ -489,7 +477,6 @@ violation[msg] {
 psp_allows_hostipc {
     psps.psps[_].spec.hostIPC
 }
-
 ```
 
 _source: [psp-deny-host-ipc](psp-deny-host-ipc)_
@@ -521,7 +508,6 @@ violation[msg] {
 psp_allows_hostnetwork {
     psps.psps[_].spec.hostNetwork
 }
-
 ```
 
 _source: [psp-deny-host-network](psp-deny-host-network)_
@@ -553,7 +539,6 @@ violation[msg] {
 psp_allows_hostpid {
     psps.psps[_].spec.hostPID
 }
-
 ```
 
 _source: [psp-deny-host-pid](psp-deny-host-pid)_
@@ -584,10 +569,55 @@ violation[msg] {
 psp_allows_privileged {
     psps.psps[_].spec.privileged
 }
-
 ```
 
 _source: [psp-deny-privileged](psp-deny-privileged)_
+
+## Roles must not allow use of privileged PodSecurityPolicies
+
+**Severity:** Violation
+
+**Resources:** rbac.authorization.k8s.io/Role
+
+Workloads not running in the exempted namespaces must not use PodSecurityPolicies with privileged permissions.
+
+### Rego
+
+```rego
+package role_deny_use_privileged_psps
+
+import data.lib.core
+import data.lib.rbac
+import data.lib.security
+
+violation[msg] {
+    role_uses_privileged_psp
+
+    msg := core.format(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]))
+}
+
+role_uses_privileged_psp {
+    rule := core.resource.rules[_]
+    rbac.rule_has_resource_type(rule, "podsecuritypolicies")
+    rbac.rule_has_verb(rule, "use")
+    rbac.rule_has_resource_name(rule, privileged_psps[_].metadata.name)
+}
+
+privileged_psps[psp] {
+    psp := data.inventory.cluster["policy/v1beta1"].PodSecurityPolicy[_]
+    psp_is_privileged(psp)
+}
+
+psp_is_privileged(psp) {
+    psp.spec.privileged
+}
+
+psp_is_privileged(psp) {
+    security.added_capability(psp, "SYS_ADMIN")
+}
+```
+
+_source: [role-deny-use-privileged-psp](role-deny-use-privileged-psp)_
 
 ## Deprecated Deployment and DaemonSet API
 
@@ -613,7 +643,6 @@ warn[msg] {
 
     msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]))
 }
-
 ```
 
 _source: [any-warn-deprecated-api-versions](any-warn-deprecated-api-versions)_
@@ -650,7 +679,6 @@ no_read_only_filesystem(container) {
 no_read_only_filesystem(container) {
     core.missing_field(container.securityContext, "readOnlyRootFilesystem")
 }
-
 ```
 
 _source: [container-warn-no-ro-fs](container-warn-no-ro-fs)_
@@ -686,7 +714,6 @@ no_read_only_filesystem(psp) {
 no_read_only_filesystem(psp) {
     not psp.spec.readOnlyRootFilesystem
 }
-
 ```
 
 _source: [psp-warn-no-ro-fs](psp-warn-no-ro-fs)_

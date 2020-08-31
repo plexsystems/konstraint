@@ -60,7 +60,7 @@ Set the URL where the policies are hosted at
 	}
 
 	cmd.Flags().StringP("output", "o", "policies.md", "Output location (including filename) for the policy documentation")
-	cmd.Flags().String("url", "", "The URL where the policy files are hosted at (e.g. https://github.com/policies")
+	cmd.Flags().String("url", "", "The URL where the policy files are hosted at (e.g. https://github.com/policies)")
 
 	return &cmd
 }
@@ -89,13 +89,13 @@ func runDocCommand(path string) error {
 	return nil
 }
 
-func getDocumentation(path string, outputDirectory string) (map[string][]Document, error) {
-	policies, err := rego.GetAll(path)
+func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]Document, error) {
+	policies, err := rego.GetAllSeverities(path)
 	if err != nil {
 		return nil, fmt.Errorf("get all: %w", err)
 	}
 
-	documents := make(map[string][]Document)
+	documents := make(map[rego.Severity][]Document)
 	for _, policy := range policies {
 		if policy.Title() == "" {
 			continue

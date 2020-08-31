@@ -9,19 +9,11 @@ When using `konstraint doc`, Konstraint will create documentation for each polic
 The following rule names are organized into their own sections as they have special meaning within the context of Gatekeeper and Conftest:
 
 - `violation` (supported by Gatekeeper and Conftest)
-- `deny` (supported by Conftest)
 - `warn` (supported by Conftest)
 
 If a policy file does not contain any of the above rules, the policy is added to the `Other` section.
 
 ## Importing Libraries
-
-Libraries can be stored in the following folder names:
-
-- `lib`
-- `libs`
-- `util`
-- `utils`
 
 The Rego for the libraries will be added to the generated `ConstraintTemplate` if and only if the policy imports the library. This helps prevent importing Rego code that will go unused.
 

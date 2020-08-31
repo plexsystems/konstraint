@@ -10,7 +10,7 @@ spec:
         kind: PspDenyAddedCaps
   targets:
   - libs:
-    - |
+    - |-
       package lib.core
 
       default is_gatekeeper = false
@@ -53,7 +53,7 @@ spec:
       missing_field(obj, field) = true {
           not has_field(obj, field)
       }
-    - |
+    - |-
       package lib.psps
 
       import data.lib.core
@@ -76,7 +76,7 @@ spec:
           not is_exception
           psp = core.resource
       }
-    - |
+    - |-
       package lib.security
 
       dropped_capability(container, cap) {
@@ -98,7 +98,7 @@ spec:
       added_capability(psp, cap) {
           lower(psp.spec.defaultAddCapabilities[_]) == lower(cap)
       }
-    rego: |
+    rego: |-
       package psp_deny_added_caps
 
       import data.lib.core

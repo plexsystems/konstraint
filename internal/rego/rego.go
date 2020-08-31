@@ -1,127 +1,106 @@
 package rego
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
-	"github.com/open-policy-agent/opa/ast"
+	"github.com/open-policy-agent/opa/loader"
+)
+
+// Severity describes the severity level of the rego file.
+type Severity string
+
+// The defined severity levels represent the valid severity
+// levels that a rego file can have.
+const (
+	Violation Severity = "Violation"
+	Warning   Severity = "Warning"
 )
 
 // Rego represents a parsed rego file.
 type Rego struct {
-	path      string
-	contents  string
-	module    *ast.Module
-	libraries []string
+	path         string
+	raw          string
+	comments     []string
+	rules        []string
+	dependencies []string
 }
 
-// Parse parses a rego file at the given path.
-func Parse(path string) (Rego, error) {
-	contents, err := getContents(path)
-	if err != nil {
-		return Rego{}, fmt.Errorf("get contents: %w", err)
-	}
-
-	module, err := ast.ParseModule(path, contents)
-	if err != nil {
-		return Rego{}, fmt.Errorf("parse module: %w", err)
-	}
-
-	for c := range module.Comments {
-		module.Comments[c].Text = bytes.TrimSpace(module.Comments[c].Text)
-	}
-
-	allLibraries, err := getLibraries(path, module)
-	if err != nil {
-		return Rego{}, fmt.Errorf("get libraries: %w", err)
-	}
-	libraries := getRecursiveImports(module, allLibraries)
-
-	rego := Rego{
-		path:      path,
-		contents:  contents,
-		module:    module,
-		libraries: libraries,
-	}
-
-	return rego, nil
-}
-
-// Severity returns the severity of the rego file.
-func (r Rego) Severity() string {
-	rules := []string{"violation", "warn", "deny"}
-
-	var severity string
-	for i := range r.module.Rules {
-		severity = r.module.Rules[i].Head.Name.String()
-		if !contains(rules, severity) {
-			continue
-		}
-
-		if severity == "warn" {
-			severity = "warning"
-		}
-
-		break
-	}
-
-	return strings.Title(severity)
-}
-
-// GetAll gets all of the rego files found in the given directory as well as any subdirectories.
+// GetAllSeverities gets all of the rego files found in the given
+// directory as well as any subdirectories.
 // Only rego files that contain a valid severity will be returned.
-func GetAll(directory string) ([]Rego, error) {
-	filePaths, err := getFilePaths(directory)
+func GetAllSeverities(directory string) ([]Rego, error) {
+	regos, err := parseDirectory(directory)
 	if err != nil {
-		return nil, fmt.Errorf("get file paths: %w", err)
+		return nil, fmt.Errorf("get all: %w", err)
 	}
 
-	var files []Rego
-	for _, filePath := range filePaths {
-		rego, err := Parse(filePath)
-		if err != nil {
-			return nil, fmt.Errorf("parse: %w", err)
-		}
-
+	var allSeverities []Rego
+	for _, rego := range regos {
 		if rego.Severity() == "" {
 			continue
 		}
 
-		files = append(files, rego)
+		allSeverities = append(allSeverities, rego)
 	}
 
-	return files, nil
+	return allSeverities, nil
 }
 
-// GetViolations gets all of the files found in the given directory as well as any subdirectories
-// that have a violation severity.
+// GetViolations gets all of the files found in the given
+// directory as well as any subdirectories.
+// Only rego files that have a severity of violation will be returned.
 func GetViolations(directory string) ([]Rego, error) {
-	files, err := GetAll(directory)
+	regos, err := parseDirectory(directory)
 	if err != nil {
 		return nil, fmt.Errorf("get all: %w", err)
 	}
 
 	var violations []Rego
-	for _, file := range files {
-		if file.Severity() != "Violation" {
+	for _, rego := range regos {
+		if rego.Severity() != Violation {
 			continue
 		}
 
-		violations = append(violations, file)
+		violations = append(violations, rego)
 	}
 
 	return violations, nil
 }
 
+// Path returns the original path of the rego file.
+func (r Rego) Path() string {
+	return r.path
+}
+
+// Severity returns the severity of the rego file.
+// When a rego file has multiple rules that are considered
+// to be different severities, the first rule is chosen.
+func (r Rego) Severity() Severity {
+	var severity Severity
+	for _, rule := range r.rules {
+		if rule == "violation" {
+			severity = Violation
+			break
+		}
+
+		if rule == "warn" {
+			severity = Warning
+			break
+		}
+	}
+
+	return severity
+}
+
 // Kind returns the Kubernetes Kind of the rego file.
-// The kind of the rego file is determined by the name of the directory
-// that the rego file exists in.
+// The kind of the rego file is determined by the
+// name of the directory that the rego file exists in.
 func (r Rego) Kind() string {
-	kind := filepath.Base(filepath.Dir(r.path))
+	kind := filepath.Base(filepath.Dir(r.Path()))
 	kind = strings.ReplaceAll(kind, "-", " ")
 	kind = strings.Title(kind)
 	kind = strings.ReplaceAll(kind, " ", "")
@@ -135,40 +114,34 @@ func (r Rego) Name() string {
 	return strings.ToLower(r.Kind())
 }
 
-// Path returns the original file path of the rego file.
-func (r Rego) Path() string {
-	return r.path
-}
-
 // Title returns the title found in the header comment of the rego file.
-// The @title token can be used to set the title of the rego file.
 func (r Rego) Title() string {
 	var title string
-	for c := range r.module.Comments {
-		if !strings.Contains(r.module.Comments[c].String(), "@title") {
+	for _, comment := range r.comments {
+		if !strings.Contains(comment, "@title") {
 			continue
 		}
 
-		title = strings.SplitAfter(r.module.Comments[c].String(), "@title")[1]
+		title = strings.SplitAfter(comment, "@title")[1]
 		break
 	}
 
-	return trimContent(title)
+	return trimString(title)
 }
 
-// Description returns the entire description found in the header comment of the rego file.
+// Description returns the entire description
+// found in the header comment of the rego file.
 func (r Rego) Description() string {
 	var description string
-	for c := range r.module.Comments {
-		comment := strings.TrimSpace(string(r.module.Comments[c].Text))
+	for _, comment := range r.comments {
 
-		// The @kinds token is the last line of the header block.
-		// When this token appears, we consider this point to be the end of the description.
-		if strings.Contains(comment, "@kinds") {
+		// When the  token appears, we consider this point to
+		// be the end of the description.
+		if strings.HasPrefix(comment, "@kinds") {
 			break
 		}
 
-		if strings.Contains(comment, "@") {
+		if strings.HasPrefix(comment, "@") {
 			continue
 		}
 
@@ -176,13 +149,96 @@ func (r Rego) Description() string {
 		description += "\n"
 	}
 
-	return trimContent(description)
+	return trimString(description)
 }
 
-// Source returns the original source code inside of the rego file, minus any comments.
+// Source returns the original source code inside
+// of the rego file without any comments.
 func (r Rego) Source() string {
+	return removeComments(r.raw)
+}
+
+// Dependencies returns all of the source for the rego files that this
+// rego file depends on.
+func (r Rego) Dependencies() []string {
+	var dependencies []string
+	for _, dependency := range r.dependencies {
+		dependencies = append(dependencies, removeComments(dependency))
+	}
+
+	return dependencies
+}
+
+func parseDirectory(directory string) ([]Rego, error) {
+
+	// Recursively find all rego files (ignoring test files), starting at the given directory.
+	result, err := loader.NewFileLoader().Filtered([]string{directory}, func(abspath string, info os.FileInfo, depth int) bool {
+		if strings.HasSuffix(info.Name(), "_test.rego") {
+			return true
+		}
+
+		if !info.IsDir() && filepath.Ext(info.Name()) != ".rego" {
+			return true
+		}
+
+		return false
+	})
+	if err != nil {
+		return nil, fmt.Errorf("all regos: %w", err)
+	}
+
+	if _, err := result.Compiler(); err != nil {
+		return nil, fmt.Errorf("compile: %w", err)
+	}
+
+	// Re-key the loaded rego file map based on the package path of the rego file.
+	// This makes finding the source rego file from an import path much easier.
+	files := make(map[string]*loader.RegoFile)
+	for _, regoFile := range result.Modules {
+		files[regoFile.Parsed.Package.Path.String()] = regoFile
+	}
+
+	var regos []Rego
+	for _, file := range files {
+		importPaths := getRecursiveImportPaths(file, files)
+		importPaths = dedupe(importPaths)
+
+		var dependencies []string
+		for _, importPath := range importPaths {
+			dependencies = append(dependencies, removeComments(string(files[importPath].Raw)))
+		}
+
+		var rules []string
+		for r := range file.Parsed.Rules {
+			rules = append(rules, file.Parsed.Rules[r].Head.Name.String())
+		}
+
+		var comments []string
+		for c := range file.Parsed.Comments {
+			comments = append(comments, trimString(string(file.Parsed.Comments[c].Text)))
+		}
+
+		rego := Rego{
+			path:         file.Name,
+			dependencies: dependencies,
+			rules:        rules,
+			comments:     comments,
+			raw:          string(file.Raw),
+		}
+
+		regos = append(regos, rego)
+	}
+
+	sort.Slice(regos, func(i, j int) bool {
+		return regos[i].path < regos[j].path
+	})
+
+	return regos, nil
+}
+
+func removeComments(raw string) string {
 	var regoWithoutComments string
-	lines := strings.Split(r.contents, "\n")
+	lines := strings.Split(raw, "\n")
 	for _, line := range lines {
 		if strings.HasPrefix(line, "#") {
 			continue
@@ -191,135 +247,38 @@ func (r Rego) Source() string {
 		regoWithoutComments += line + "\n"
 	}
 
-	regoWithoutComments = strings.TrimSuffix(regoWithoutComments, "\n")
-	return regoWithoutComments
+	return trimString(regoWithoutComments)
 }
 
-// Libraries returns all of the contents for the libraries that this file imports.
-// This operation is performed recursively to include the contents of each imports import.
-func (r Rego) Libraries() []string {
-	return r.libraries
+func trimString(text string) string {
+	text = strings.TrimSpace(text)
+	text = strings.Trim(text, "\n")
+	return text
 }
 
-// getLibraries will get all of the libraries and store them into a map that is keyed
-// by the name of the package.
-//
-// This enables us to take any given import found inside of a Rego file and find
-// the associated module.
-func getLibraries(path string, module *ast.Module) (map[string]Rego, error) {
-	if len(module.Imports) == 0 {
-		return map[string]Rego{}, nil
-	}
-
-	currentDirectory := filepath.Dir(path)
-	libraryDir, err := findLibraryDir(currentDirectory)
-	if err != nil {
-		return nil, fmt.Errorf("find library dir: %w", err)
-	}
-
-	libraryFilePaths, err := getFilePaths(libraryDir)
-	if err != nil {
-		return nil, fmt.Errorf("get file paths: %w", err)
-	}
-
-	libraries := make(map[string]Rego)
-	for _, libraryFilePath := range libraryFilePaths {
-		contents, err := getContents(libraryFilePath)
-		if err != nil {
-			return nil, fmt.Errorf("get contents: %w", err)
-		}
-
-		libraryModule, err := ast.ParseModule(libraryFilePath, contents)
-		if err != nil {
-			return nil, fmt.Errorf("parse module: %w", err)
-		}
-
-		rego := Rego{
-			contents: contents,
-			module:   libraryModule,
-		}
-
-		libraries[libraryModule.Package.Path.String()] = rego
-	}
-
-	return libraries, nil
-}
-
-func findLibraryDir(directory string) (string, error) {
-	files, err := ioutil.ReadDir(directory)
-	if err != nil {
-		return "", fmt.Errorf("read directory: %w", err)
-	}
-
-	for i := range files {
-		if !files[i].IsDir() {
-			continue
-		}
-
-		if !contains([]string{"lib", "libs", "util", "utils"}, files[i].Name()) {
-			continue
-		}
-
-		return filepath.Join(directory, files[i].Name()), nil
-	}
-
-	// In the event that a library directory was not found in the current directory, we
-	// recursively call the method, going up a directory each time until it is found.
-	return findLibraryDir(filepath.Dir(directory))
-}
-
-func getRecursiveImports(module *ast.Module, imports map[string]Rego) []string {
+func getRecursiveImportPaths(regoFile *loader.RegoFile, regoFiles map[string]*loader.RegoFile) []string {
 	var recursiveImports []string
-	for i := range module.Imports {
-		imported := imports[module.Imports[i].Path.String()]
-		recursiveImports = append(recursiveImports, imported.Source())
+	for i := range regoFile.Parsed.Imports {
+		imported := regoFiles[regoFile.Parsed.Imports[i].Path.String()]
+
+		recursiveImports = append(recursiveImports, imported.Parsed.Package.Path.String())
+		recursiveImports = append(recursiveImports, getRecursiveImportPaths(imported, regoFiles)...)
 	}
 
-	for i := range module.Imports {
-		imported := imports[module.Imports[i].Path.String()]
-		return append(recursiveImports, getRecursiveImports(imported.module, imports)...)
-	}
-
-	return []string{}
+	return recursiveImports
 }
 
-func getContents(path string) (string, error) {
-	contents, err := ioutil.ReadFile(path)
-	if err != nil {
-		return "", fmt.Errorf("read file: %w", err)
+func dedupe(collection []string) []string {
+	var dedupedCollection []string
+	for _, item := range collection {
+		if contains(dedupedCollection, item) {
+			continue
+		}
+
+		dedupedCollection = append(dedupedCollection, item)
 	}
 
-	// Many YAML parsers do not like rendering out CRLF when writing the YAML to disk.
-	// This causes ConstraintTemplates to be rendered with the line breaks as text,
-	// rather than the actual line break.
-	return strings.ReplaceAll(string(contents), "\r", ""), nil
-
-}
-
-func getFilePaths(path string) ([]string, error) {
-	var filePaths []string
-	err := filepath.Walk(path, func(currentFilePath string, fileInfo os.FileInfo, err error) error {
-		if err != nil {
-			return fmt.Errorf("walk path: %w", err)
-		}
-
-		if fileInfo.IsDir() && fileInfo.Name() == ".git" {
-			return filepath.SkipDir
-		}
-
-		if filepath.Ext(currentFilePath) != ".rego" || strings.HasSuffix(fileInfo.Name(), "_test.rego") {
-			return nil
-		}
-
-		filePaths = append(filePaths, currentFilePath)
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return filePaths, nil
+	return dedupedCollection
 }
 
 func contains(collection []string, item string) bool {
@@ -330,10 +289,4 @@ func contains(collection []string, item string) bool {
 	}
 
 	return false
-}
-
-func trimContent(content string) string {
-	content = strings.TrimSpace(content)
-	content = strings.Trim(content, "\n")
-	return content
 }

@@ -2,12 +2,12 @@ apiVersion: templates.gatekeeper.sh/v1beta1
 kind: ConstraintTemplate
 metadata:
   creationTimestamp: null
-  name: containerdenyprivileged
+  name: roledenyuseprivilegedpsp
 spec:
   crd:
     spec:
       names:
-        kind: ContainerDenyPrivileged
+        kind: RoleDenyUsePrivilegedPsp
   targets:
   - libs:
     - |-
@@ -54,33 +54,26 @@ spec:
           not has_field(obj, field)
       }
     - |-
-      package lib.pods
+      package lib.rbac
 
       import data.lib.core
 
-      default pod = false
-
-      pod = core.resource.spec.template {
-          pod_templates := ["daemonset","deployment","job","replicaset","replicationcontroller","statefulset"]
-          lower(core.kind) == pod_templates[_]
+      rule_has_verb(rule, verb) {
+          verbs := ["*", lower(verb)]
+          verbs[_] == lower(rule.verbs[_])
       }
 
-      pod = core.resource {
-          lower(core.kind) == "pod"
+      rule_has_resource_type(rule, type) {
+          types := ["*", lower(type)]
+          types[_] == lower(rule.resources[_])
       }
 
-      pod = core.resource.spec.jobTemplate.spec.template {
-          lower(core.kind) == "cronjob"
+      rule_has_resource_name(rule, name) {
+          name == rule.resourceNames[_]
       }
 
-      containers[container] {
-          keys = {"containers", "initContainers"}
-          all_containers = [c | keys[k]; c = pod.spec[k][_]]
-          container = all_containers[_]
-      }
-
-      volumes[volume] {
-          volume = pod.spec.volumes[_]
+      rule_has_resource_name(rule, name) {
+          core.missing_field(rule, "resourceNames")
       }
     - |-
       package lib.security
@@ -105,25 +98,36 @@ spec:
           lower(psp.spec.defaultAddCapabilities[_]) == lower(cap)
       }
     rego: |-
-      package container_deny_privileged
+      package role_deny_use_privileged_psps
 
       import data.lib.core
-      import data.lib.pods
+      import data.lib.rbac
       import data.lib.security
 
       violation[msg] {
-          pods.containers[container]
-          container_is_privileged(container)
+          role_uses_privileged_psp
 
-          msg = core.format(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]))
+          msg := core.format(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]))
       }
 
-      container_is_privileged(container) {
-          container.securityContext.privileged
+      role_uses_privileged_psp {
+          rule := core.resource.rules[_]
+          rbac.rule_has_resource_type(rule, "podsecuritypolicies")
+          rbac.rule_has_verb(rule, "use")
+          rbac.rule_has_resource_name(rule, privileged_psps[_].metadata.name)
       }
 
-      container_is_privileged(container) {
-          security.added_capability(container, "CAP_SYS_ADMIN")
+      privileged_psps[psp] {
+          psp := data.inventory.cluster["policy/v1beta1"].PodSecurityPolicy[_]
+          psp_is_privileged(psp)
+      }
+
+      psp_is_privileged(psp) {
+          psp.spec.privileged
+      }
+
+      psp_is_privileged(psp) {
+          security.added_capability(psp, "SYS_ADMIN")
       }
     target: admission.k8s.gatekeeper.sh
 status: {}
