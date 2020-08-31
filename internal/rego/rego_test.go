@@ -2,6 +2,7 @@ package rego
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -87,9 +88,10 @@ import data.lib.libraryA
 
 violation[msg] {
     true
-}`
+}
+`
 
-	if actual != expected {
+	if !strings.EqualFold(actual, expected) {
 		t.Errorf("unexpected Source. expected %v, actual %v", expected, actual)
 	}
 }

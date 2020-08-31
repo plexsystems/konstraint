@@ -1,6 +1,7 @@
 package rego
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -14,8 +15,8 @@ import (
 type Rego struct {
 	path      string
 	contents  string
-	libraries []string
 	module    *ast.Module
+	libraries []string
 }
 
 // Parse parses the file at the given path.
@@ -30,8 +31,10 @@ func Parse(path string) (Rego, error) {
 		return Rego{}, fmt.Errorf("parse module: %w", err)
 	}
 
-	// Libraries are loaded during the Parse method to enable consumers to be able to
-	// call the Libraries() method without needing to perform an error check.
+	for c := range module.Comments {
+		module.Comments[c].Text = bytes.TrimSpace(module.Comments[c].Text)
+	}
+
 	allLibraries, err := getLibraries(path, module)
 	if err != nil {
 		return Rego{}, fmt.Errorf("get libraries: %w", err)

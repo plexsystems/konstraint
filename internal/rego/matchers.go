@@ -1,6 +1,8 @@
 package rego
 
-import "strings"
+import (
+	"strings"
+)
 
 // Matchers are all of the matchers that can be applied to constraints.
 type Matchers struct {
@@ -12,8 +14,8 @@ func (m Matchers) String() string {
 	for _, kindMatcher := range m.KindMatchers {
 		result += kindMatcher.APIGroup + "/" + kindMatcher.Kind + " "
 	}
-
 	result = strings.TrimSpace(result)
+
 	return result
 }
 
@@ -38,7 +40,9 @@ func (r Rego) Matchers() Matchers {
 func getKindMatchers(comment string) []KindMatcher {
 	var kindMatchers []KindMatcher
 
-	kindMatcherGroups := strings.Split(comment, " ")[2:]
+	kindMatcherText := strings.TrimSpace(strings.SplitAfter(comment, "@kinds")[1])
+	kindMatcherGroups := strings.Split(kindMatcherText, " ")
+
 	for _, kindMatcherGroup := range kindMatcherGroups {
 		kindMatcherSegments := strings.Split(kindMatcherGroup, "/")
 
