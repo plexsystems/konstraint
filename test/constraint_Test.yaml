@@ -1,7 +1,7 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: Create
+kind: Test
 metadata:
-  name: create
+  name: test
 spec:
   match:
     kinds:

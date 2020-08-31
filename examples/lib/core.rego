@@ -8,7 +8,7 @@ is_gatekeeper {
 }
 
 resource = input.review.object {
-    is_gatekeepe
+    is_gatekeeper
 }
 
 resource = input {

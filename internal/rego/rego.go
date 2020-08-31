@@ -184,7 +184,8 @@ func (r Rego) Source() string {
 		regoWithoutComments += line + "\n"
 	}
 
-	return trimContent(regoWithoutComments)
+	regoWithoutComments = strings.TrimSuffix(regoWithoutComments, "\n")
+	return regoWithoutComments
 }
 
 // Libraries returns all of the contents for the libraries that this file imports. This operation
@@ -198,9 +199,9 @@ func (r Rego) Libraries() []string {
 //
 // This enables us to take any given import found inside of a Rego file and find
 // the associated module.
-func getLibraries(path string, module *ast.Module) (map[string]*ast.Module, error) {
+func getLibraries(path string, module *ast.Module) (map[string]Rego, error) {
 	if len(module.Imports) == 0 {
-		return map[string]*ast.Module{}, nil
+		return map[string]Rego{}, nil
 	}
 
 	currentDirectory := filepath.Dir(path)
@@ -214,7 +215,7 @@ func getLibraries(path string, module *ast.Module) (map[string]*ast.Module, erro
 		return nil, fmt.Errorf("get file paths: %w", err)
 	}
 
-	libraries := make(map[string]*ast.Module)
+	libraries := make(map[string]Rego)
 	for _, libraryFilePath := range libraryFilePaths {
 		contents, err := getContents(libraryFilePath)
 		if err != nil {
@@ -226,7 +227,12 @@ func getLibraries(path string, module *ast.Module) (map[string]*ast.Module, erro
 			return nil, fmt.Errorf("parse module: %w", err)
 		}
 
-		libraries[libraryModule.Package.Path.String()] = libraryModule
+		rego := Rego{
+			contents: contents,
+			module:   libraryModule,
+		}
+
+		libraries[libraryModule.Package.Path.String()] = rego
 	}
 
 	return libraries, nil
@@ -255,13 +261,16 @@ func findLibraryDir(directory string) (string, error) {
 	return findLibraryDir(filepath.Dir(directory))
 }
 
-func getRecursiveImports(module *ast.Module, imports map[string]*ast.Module) []string {
+func getRecursiveImports(module *ast.Module, imports map[string]Rego) []string {
 	var recursiveImports []string
 	for i := range module.Imports {
-		importModule := imports[module.Imports[i].Path.String()]
-		recursiveImports = append(recursiveImports, importModule.String())
+		imported := imports[module.Imports[i].Path.String()]
+		recursiveImports = append(recursiveImports, imported.Source())
+	}
 
-		return append(recursiveImports, getRecursiveImports(importModule, imports)...)
+	for i := range module.Imports {
+		imported := imports[module.Imports[i].Path.String()]
+		return append(recursiveImports, getRecursiveImports(imported.module, imports)...)
 	}
 
 	return []string{}
