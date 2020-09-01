@@ -161,12 +161,7 @@ func (r Rego) Source() string {
 // Dependencies returns all of the source for the rego files that this
 // rego file depends on.
 func (r Rego) Dependencies() []string {
-	var dependencies []string
-	for _, dependency := range r.dependencies {
-		dependencies = append(dependencies, removeComments(dependency))
-	}
-
-	return dependencies
+	return r.dependencies
 }
 
 func parseDirectory(directory string) ([]Rego, error) {
@@ -218,12 +213,17 @@ func parseDirectory(directory string) ([]Rego, error) {
 			comments = append(comments, trimString(string(file.Parsed.Comments[c].Text)))
 		}
 
+		// Many YAML parsers do not like rendering out CRLF when writing the YAML to disk.
+		// This causes ConstraintTemplates to be rendered with the line breaks as text,
+		// rather than the actual line break.
+		raw := strings.ReplaceAll(string(file.Raw), "\r", "")
+
 		rego := Rego{
 			path:         file.Name,
 			dependencies: dependencies,
 			rules:        rules,
 			comments:     comments,
-			raw:          string(file.Raw),
+			raw:          raw,
 		}
 
 		regos = append(regos, rego)
