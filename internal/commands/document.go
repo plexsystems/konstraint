@@ -92,7 +92,7 @@ func runDocCommand(path string) error {
 func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]Document, error) {
 	policies, err := rego.GetAllSeverities(path)
 	if err != nil {
-		return nil, fmt.Errorf("get all: %w", err)
+		return nil, fmt.Errorf("get all severities: %w", err)
 	}
 
 	documents := make(map[rego.Severity][]Document)

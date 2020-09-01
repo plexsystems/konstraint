@@ -35,7 +35,7 @@ type Rego struct {
 func GetAllSeverities(directory string) ([]Rego, error) {
 	regos, err := parseDirectory(directory)
 	if err != nil {
-		return nil, fmt.Errorf("get all: %w", err)
+		return nil, fmt.Errorf("parse directory: %w", err)
 	}
 
 	var allSeverities []Rego
@@ -56,7 +56,7 @@ func GetAllSeverities(directory string) ([]Rego, error) {
 func GetViolations(directory string) ([]Rego, error) {
 	regos, err := parseDirectory(directory)
 	if err != nil {
-		return nil, fmt.Errorf("get all: %w", err)
+		return nil, fmt.Errorf("parse directory: %w", err)
 	}
 
 	var violations []Rego
@@ -184,7 +184,7 @@ func parseDirectory(directory string) ([]Rego, error) {
 		return false
 	})
 	if err != nil {
-		return nil, fmt.Errorf("all regos: %w", err)
+		return nil, fmt.Errorf("filter rego files: %w", err)
 	}
 
 	if _, err := result.Compiler(); err != nil {
