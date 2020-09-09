@@ -89,28 +89,23 @@ func runDocCommand(path string) error {
 	return nil
 }
 
-func getDocumentation(path string, outputDirectory string) (map[string][]Document, error) {
-	policies, err := rego.GetFiles(path)
+func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]Document, error) {
+	policies, err := rego.GetAllSeverities(path)
 	if err != nil {
-		return nil, fmt.Errorf("get files: %w", err)
+		return nil, fmt.Errorf("get all severities: %w", err)
 	}
 
-	documents := make(map[string][]Document)
+	documents := make(map[rego.Severity][]Document)
 	for _, policy := range policies {
-		header, err := getHeader(policy.Comments)
-		if err != nil {
-			return nil, fmt.Errorf("get header: %w", err)
-		}
-
-		if header.Title == "" {
+		if policy.Title() == "" {
 			continue
 		}
 
 		var url string
 		if viper.GetString("url") != "" {
-			url = viper.GetString("url") + "/" + policy.FilePath
+			url = viper.GetString("url") + "/" + policy.Path()
 		} else {
-			relPath, err := filepath.Rel(outputDirectory, policy.FilePath)
+			relPath, err := filepath.Rel(outputDirectory, policy.Path())
 			if err != nil {
 				return nil, fmt.Errorf("rel path: %w", err)
 			}
@@ -121,91 +116,25 @@ func getDocumentation(path string, outputDirectory string) (map[string][]Documen
 			url = strings.ReplaceAll(relDir, string(os.PathSeparator), "/")
 		}
 
-		regoWithoutComments := getRegoWithoutComments(policy.Contents)
+		header := Header{
+			Title:       policy.Title(),
+			Description: policy.Description(),
+			Resources:   policy.Matchers().String(),
+			Anchor:      strings.ToLower(strings.ReplaceAll(policy.Title(), " ", "-")),
+		}
+
 		document := Document{
 			Header: header,
-			URL:    trimContent(url),
-			Rego:   trimContent(regoWithoutComments),
+			URL:    url,
+			Rego:   policy.Source(),
 		}
 
-		if contains(policy.RuleNames, "violation") {
-			documents["Violation"] = append(documents["Violation"], document)
-			continue
+		if policy.Severity() == "" {
+			documents["Other"] = append(documents["Other"], document)
+		} else {
+			documents[policy.Severity()] = append(documents[policy.Severity()], document)
 		}
-
-		if contains(policy.RuleNames, "warn") {
-			documents["Warning"] = append(documents["Warning"], document)
-			continue
-		}
-
-		documents["Other"] = append(documents["Other"], document)
 	}
 
 	return documents, nil
-}
-
-func getHeader(comments []string) (Header, error) {
-	var title string
-	var description string
-	var resources string
-	for _, comment := range comments {
-		if strings.Contains(comment, "@title") {
-			title = strings.SplitAfter(comment, "@title")[1]
-			title = strings.TrimPrefix(title, " ")
-			continue
-		}
-
-		if strings.Contains(comment, "@kinds") {
-			matchers := GetMatchersFromComments([]string{comment})
-			for _, kindMatcher := range matchers.KindMatchers {
-				resources += kindMatcher.APIGroup + "/" + kindMatcher.Kind + " "
-			}
-			break
-		}
-
-		comment = strings.TrimSpace(comment)
-		description += comment + "\n"
-	}
-
-	anchor := strings.ReplaceAll(strings.ToLower(title), " ", "-")
-
-	header := Header{
-		Title:       trimContent(title),
-		Description: trimContent(description),
-		Resources:   trimContent(resources),
-		Anchor:      trimContent(anchor),
-	}
-
-	return header, nil
-}
-
-func trimContent(content string) string {
-	content = strings.Trim(content, " ")
-	content = strings.Trim(content, "\n")
-	return content
-}
-
-func getRegoWithoutComments(rego string) string {
-	var regoWithoutComments string
-	lines := strings.Split(rego, "\n")
-	for _, line := range lines {
-		if strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		regoWithoutComments += line + "\n"
-	}
-
-	regoWithoutComments = strings.TrimSuffix(regoWithoutComments, "\n")
-	return regoWithoutComments
-}
-
-func contains(collection []string, item string) bool {
-	for _, value := range collection {
-		if strings.EqualFold(value, item) {
-			return true
-		}
-	}
-
-	return false
 }

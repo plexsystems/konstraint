@@ -1,0 +1,27 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  creationTimestamp: null
+  name: test
+spec:
+  crd:
+    spec:
+      names:
+        kind: Test
+  targets:
+  - libs:
+    - |-
+      package lib.libraryA
+
+      import data.lib.libraryB
+    - package lib.libraryB
+    rego: |-
+      package test
+
+      import data.lib.libraryA
+
+      violation[msg] {
+          true
+      }
+    target: admission.k8s.gatekeeper.sh
+status: {}

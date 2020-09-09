@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/plexsystems/konstraint/internal/rego"
 
@@ -56,74 +55,32 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 }
 
 func runCreateCommand(path string) error {
-	policies, err := rego.GetFilesWithRule(path, "violation")
+	violations, err := rego.GetViolations(path)
 	if err != nil {
-		return fmt.Errorf("get policies: %w", err)
+		return fmt.Errorf("get violations: %w", err)
 	}
 
-	libraryPath, err := getLibraryPath(path)
-	if err != nil {
-		return fmt.Errorf("get library path: %w", err)
-	}
-
-	for _, policy := range policies {
-		if len(policy.ImportPackages) > 0 && libraryPath == "" {
-			return fmt.Errorf("policy %v imported libraries %v, but libraries were not found", policy.FilePath, policy.ImportPackages)
-		}
-	}
-
-	var libraries []rego.File
-	if libraryPath != "" {
-		libraries, err = rego.GetFiles(libraryPath)
-		if err != nil {
-			return fmt.Errorf("get libraries: %w", err)
-		}
-	}
-
-	var templateFileName, constraintFileName, outputDir string
-	outputFlag := viper.GetString("output")
-	if outputFlag == "" {
-		templateFileName = "template.yaml"
-		constraintFileName = "constraint.yaml"
-	} else {
-		outputDir = outputFlag
-	}
-
-	for _, policy := range policies {
-		policyDir := filepath.Dir(policy.FilePath)
-
-		if outputFlag == "" {
-			outputDir = policyDir
-		} else {
-			templateFileName = fmt.Sprintf("template_%s.yaml", GetKindFromPath(policy.FilePath))
-			constraintFileName = fmt.Sprintf("constraint_%s.yaml", GetKindFromPath(policy.FilePath))
+	for _, violation := range violations {
+		templateFileName := "template.yaml"
+		constraintFileName := "constraint.yaml"
+		outputDir := filepath.Dir(violation.Path())
+		if viper.GetString("output") != "" {
+			outputDir = viper.GetString("output")
+			templateFileName = fmt.Sprintf("template_%s.yaml", violation.Kind())
+			constraintFileName = fmt.Sprintf("constraint_%s.yaml", violation.Kind())
 		}
 
-		importedLibraries := getImportedLibraries(policy, libraries)
-		var librariesContents []string
-		for _, library := range importedLibraries {
-			librariesContents = append(librariesContents, getRegoWithoutComments(library.Contents))
-		}
-
-		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-			err := os.MkdirAll(outputDir, os.ModePerm)
-			if err != nil {
-				return fmt.Errorf("create output directory: %w", err)
-			}
-		}
-
-		constraintTemplate := getConstraintTemplate(policy, librariesContents)
+		constraintTemplate := getConstraintTemplate(violation)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
 		}
 
-		err = ioutil.WriteFile(filepath.Join(outputDir, templateFileName), constraintTemplateBytes, os.ModePerm)
-		if err != nil {
+		if err := ioutil.WriteFile(filepath.Join(outputDir, templateFileName), constraintTemplateBytes, os.ModePerm); err != nil {
 			return fmt.Errorf("writing template: %w", err)
 		}
 
-		constraint, err := getConstraint(policy)
+		constraint, err := getConstraint(violation)
 		if err != nil {
 			return fmt.Errorf("get constraint: %w", err)
 		}
@@ -141,30 +98,28 @@ func runCreateCommand(path string) error {
 	return nil
 }
 
-func getConstraintTemplate(policy rego.File, libraries []string) v1beta1.ConstraintTemplate {
-	kind := GetKindFromPath(policy.FilePath)
-
+func getConstraintTemplate(violation rego.Rego) v1beta1.ConstraintTemplate {
 	constraintTemplate := v1beta1.ConstraintTemplate{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "templates.gatekeeper.sh/v1beta1",
 			Kind:       "ConstraintTemplate",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: strings.ToLower(kind),
+			Name: violation.Name(),
 		},
 		Spec: v1beta1.ConstraintTemplateSpec{
 			CRD: v1beta1.CRD{
 				Spec: v1beta1.CRDSpec{
 					Names: v1beta1.Names{
-						Kind: kind,
+						Kind: violation.Kind(),
 					},
 				},
 			},
 			Targets: []v1beta1.Target{
 				{
 					Target: "admission.k8s.gatekeeper.sh",
-					Libs:   libraries,
-					Rego:   getRegoWithoutComments(policy.Contents),
+					Libs:   violation.Dependencies(),
+					Rego:   violation.Source(),
 				},
 			},
 		},
@@ -173,11 +128,17 @@ func getConstraintTemplate(policy rego.File, libraries []string) v1beta1.Constra
 	return constraintTemplate
 }
 
-func getConstraint(policy rego.File) (unstructured.Unstructured, error) {
-	kind := GetKindFromPath(policy.FilePath)
+func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 	constraint := unstructured.Unstructured{}
-	constraint.SetName(strings.ToLower(kind))
-	constraint.SetGroupVersionKind(schema.GroupVersionKind{Group: "constraints.gatekeeper.sh", Version: "v1beta1", Kind: kind})
+
+	gvk := schema.GroupVersionKind{
+		Group:   "constraints.gatekeeper.sh",
+		Version: "v1beta1",
+		Kind:    violation.Kind(),
+	}
+
+	constraint.SetGroupVersionKind(gvk)
+	constraint.SetName(violation.Name())
 
 	dryrun := viper.GetBool("dryrun")
 	if dryrun {
@@ -186,7 +147,7 @@ func getConstraint(policy rego.File) (unstructured.Unstructured, error) {
 		}
 	}
 
-	matchers := GetMatchersFromComments(policy.Comments)
+	matchers := violation.Matchers()
 	if len(matchers.KindMatchers) == 0 {
 		return constraint, nil
 	}
@@ -224,68 +185,4 @@ func getConstraint(policy rego.File) (unstructured.Unstructured, error) {
 	}
 
 	return constraint, nil
-}
-
-func getLibraryPath(path string) (string, error) {
-	libraryFolderNames := []string{"lib", "libs", "util", "utils"}
-
-	var libraryPath string
-	err := filepath.Walk(path, func(currentFilePath string, fileInfo os.FileInfo, err error) error {
-		if err != nil {
-			return fmt.Errorf("walk path: %w", err)
-		}
-
-		if fileInfo.IsDir() && fileInfo.Name() == ".git" {
-			return filepath.SkipDir
-		}
-
-		if fileInfo.IsDir() && contains(libraryFolderNames, fileInfo.Name()) {
-			libraryPath = currentFilePath
-			return nil
-		}
-
-		return nil
-	})
-	if err != nil {
-		return "", err
-	}
-
-	return libraryPath, nil
-}
-
-func getImportedLibraries(file rego.File, allLibraries []rego.File) []rego.File {
-	var importedLibraries []rego.File
-	for _, importedPackage := range file.ImportPackages {
-		for _, library := range allLibraries {
-			if library.PackageName == importedPackage {
-				importedLibraries = append(importedLibraries, library)
-			}
-		}
-	}
-
-	for _, library := range importedLibraries {
-		importedLibraries = append(importedLibraries, getImportedLibraries(library, allLibraries)...)
-	}
-
-	importedLibraries = getUniqueRegoFiles(importedLibraries)
-	return importedLibraries
-}
-
-func getUniqueRegoFiles(files []rego.File) []rego.File {
-	var uniqueFiles []rego.File
-	for _, file := range files {
-		var seen bool
-		for _, uniqueFile := range uniqueFiles {
-			if file.PackageName == uniqueFile.PackageName {
-				seen = true
-				break
-			}
-		}
-
-		if !seen {
-			uniqueFiles = append(uniqueFiles, file)
-		}
-	}
-
-	return uniqueFiles
 }

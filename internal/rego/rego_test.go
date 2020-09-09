@@ -1,69 +1,107 @@
 package rego
 
 import (
-	"reflect"
 	"testing"
 )
 
-var (
-	testRegoFiles = []File{
-		{
-			FilePath:  "missingViolation.rego",
-			Contents:  "package test\ndefault a = true",
-			RuleNames: nil,
-		},
-		{
-			FilePath:  "withViolation.rego",
-			Contents:  "package test\nviolation[msg] { msg = true }",
-			RuleNames: []string{"violation"},
-		},
-		{
-			FilePath:  "withWarn.rego",
-			Contents:  "package test\nwarn[msg] { msg = true }",
-			RuleNames: []string{"warn"},
-		},
-	}
-)
-
-func TestNewFile_RuleNames(t *testing.T) {
-	var rulesNamesTests = []struct {
-		policy    string
-		ruleCount int
-		ruleNames []string
-	}{
-		{"package test\ndefault test = true", 0, nil},
-		{"package test\nviolation[msg] { msg = true }", 1, []string{"violation"}},
-		{"package test\nwarn[msg] { msg = true }", 1, []string{"warn"}},
-		{"package test\nviolation[msg] { msg = true }\nwarn[msg] { msg = true }", 2, []string{"violation", "warn"}},
-		{"package test\nviolation[msg] { msg = true }\nviolation[msg] { msg = true }", 1, []string{"violation"}},
+func TestKind(t *testing.T) {
+	policy := Rego{
+		path: "some/path/my-policy/src.rego",
 	}
 
-	for _, test := range rulesNamesTests {
-		regoFile, err := NewFile("test.rego", test.policy)
-		if err != nil {
-			t.Fatal("newRegoFile")
-		}
+	actual := policy.Kind()
 
-		if len(regoFile.RuleNames) != test.ruleCount {
-			t.Errorf("expected rule names count to be %v, but was %v", test.ruleCount, len(regoFile.RuleNames))
-		}
-
-		if !reflect.DeepEqual(regoFile.RuleNames, test.ruleNames) {
-			t.Errorf("expected rule names to be %v, but was %v", test.ruleNames, regoFile.RuleNames)
-		}
+	const expected = "MyPolicy"
+	if actual != expected {
+		t.Errorf("unexpected Kind. expected %v, actual %v", expected, actual)
 	}
 }
 
-func TestGetPolicies(t *testing.T) {
-	policies := getPolicies(testRegoFiles)
-	if len(policies) != 2 {
-		t.Errorf("expected %v policies, but got %v", 2, len(policies))
+func TestName(t *testing.T) {
+	policy := Rego{
+		path: "some/path/my-policy/src.rego",
+	}
+
+	actual := policy.Name()
+
+	const expected = "mypolicy"
+	if actual != expected {
+		t.Errorf("unexpected Name. expected %v, actual %v", expected, actual)
 	}
 }
 
-func TestGetPoliciesWithRule(t *testing.T) {
-	matchingPolicies := getFilesWithRule(testRegoFiles, "warn")
-	if len(matchingPolicies) != 1 {
-		t.Errorf("expected %v policies, but got %v", 1, len(matchingPolicies))
+func TestTitle(t *testing.T) {
+	comments := []string{
+		"@title The title",
+	}
+
+	rego := Rego{
+		comments: comments,
+	}
+
+	actual := rego.Title()
+
+	const expected = "The title"
+	if actual != expected {
+		t.Errorf("unexpected Title. expected %v, actual %v", expected, actual)
+	}
+}
+
+func TestDescription(t *testing.T) {
+	comments := []string{
+		"@title The title",
+		"The description",
+		"@kinds The kinds",
+		"Extra comment",
+	}
+
+	rego := Rego{
+		comments: comments,
+	}
+
+	actual := rego.Description()
+
+	const expected = "The description"
+	if actual != expected {
+		t.Errorf("unexpected Description. expected %v, actual %v", expected, actual)
+	}
+}
+
+func TestSeverity(t *testing.T) {
+	rules := []string{
+		"violation",
+		"warn",
+	}
+
+	rego := Rego{
+		rules: rules,
+	}
+
+	actual := rego.Severity()
+
+	const expected = Violation
+	if actual != expected {
+		t.Errorf("unexpected Severity. expected %v, actual %v", expected, actual)
+	}
+}
+
+func TestSource(t *testing.T) {
+	raw := `first
+# second
+third
+# fourth
+`
+
+	rego := Rego{
+		raw: raw,
+	}
+
+	actual := rego.Source()
+
+	const expected = `first
+third`
+
+	if actual != expected {
+		t.Errorf("unexpected Source. expected %v, actual %v", expected, actual)
 	}
 }

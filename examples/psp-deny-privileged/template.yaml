@@ -10,7 +10,7 @@ spec:
         kind: PspDenyPrivileged
   targets:
   - libs:
-    - |
+    - |-
       package lib.core
 
       default is_gatekeeper = false
@@ -53,7 +53,7 @@ spec:
       missing_field(obj, field) = true {
           not has_field(obj, field)
       }
-    - |
+    - |-
       package lib.psps
 
       import data.lib.core
@@ -76,7 +76,7 @@ spec:
           not is_exception
           psp = core.resource
       }
-    rego: |
+    rego: |-
       package psp_deny_privileged
 
       import data.lib.core

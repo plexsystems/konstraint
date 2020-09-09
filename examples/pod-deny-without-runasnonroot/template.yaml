@@ -10,7 +10,7 @@ spec:
         kind: PodDenyWithoutRunasnonroot
   targets:
   - libs:
-    - |
+    - |-
       package lib.pods
 
       import data.lib.core
@@ -39,7 +39,7 @@ spec:
       volumes[volume] {
           volume = pod.spec.volumes[_]
       }
-    - |
+    - |-
       package lib.core
 
       default is_gatekeeper = false
@@ -82,7 +82,7 @@ spec:
       missing_field(obj, field) = true {
           not has_field(obj, field)
       }
-    rego: |
+    rego: |-
       package pod_deny_without_runasnonroot
 
       import data.lib.pods

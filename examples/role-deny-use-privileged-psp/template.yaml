@@ -10,7 +10,7 @@ spec:
         kind: RoleDenyUsePrivilegedPsp
   targets:
   - libs:
-    - |
+    - |-
       package lib.core
 
       default is_gatekeeper = false
@@ -53,7 +53,7 @@ spec:
       missing_field(obj, field) = true {
           not has_field(obj, field)
       }
-    - |
+    - |-
       package lib.rbac
 
       import data.lib.core
@@ -75,7 +75,7 @@ spec:
       rule_has_resource_name(rule, name) {
           core.missing_field(rule, "resourceNames")
       }
-    - |
+    - |-
       package lib.security
 
       dropped_capability(container, cap) {
@@ -97,7 +97,7 @@ spec:
       added_capability(psp, cap) {
           lower(psp.spec.defaultAddCapabilities[_]) == lower(cap)
       }
-    rego: |
+    rego: |-
       package role_deny_use_privileged_psps
 
       import data.lib.core
