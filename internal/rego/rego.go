@@ -129,6 +129,22 @@ func (r Rego) Title() string {
 	return trimString(title)
 }
 
+// Enforcement returns the enforcement action in the header comment
+// Defaults to deny if no enforcement action is specified
+func (r Rego) Enforcement() string {
+	enforcement := "deny"
+	for _, comment := range r.comments {
+		if !strings.Contains(comment, "@enforcement") {
+			continue
+		}
+
+		enforcement = strings.SplitAfter(comment, "@enforcement")[1]
+		break
+	}
+
+	return trimString(enforcement)
+}
+
 // Description returns the entire description
 // found in the header comment of the rego file.
 func (r Rego) Description() string {

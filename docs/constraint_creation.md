@@ -48,12 +48,15 @@ This comment block should:
 - Include a human readable description of what the policy does.
 - Set the matchers used when generating the Constraints.
 
+It may also specify the enforcment action (either `deny` or `dryrun`) that Gatekeeper should take when a resource violates the constraint. If no enforcement action is specified, Konstraint defaults to using `deny` to align with Gatekeeper's default action. If the enforcement is set to `dryrun`, the policy will be skipped in the documentation generation.
+
 ```rego
 # @title Pods must not run with access to the host IPC
 #
 # Pods that are allowed to access the host IPC can read memory of
 # the other containers, breaking that security boundary.
 #
+# @enforcement deny
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 package pod_deny_host_ipc
 

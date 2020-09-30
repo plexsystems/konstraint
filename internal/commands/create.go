@@ -49,7 +49,7 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 	}
 
 	cmd.PersistentFlags().StringP("output", "o", "", "Specify an output directory for the Gatekeeper resources")
-	cmd.PersistentFlags().BoolP("dryrun", "d", false, "Sets the enforcement action of the constraints to dryrun")
+	cmd.PersistentFlags().BoolP("dryrun", "d", false, "Sets the enforcement action of the constraints to dryrun, overriding the @enforcement tag")
 
 	return &cmd
 }
@@ -140,8 +140,9 @@ func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 	constraint.SetGroupVersionKind(gvk)
 	constraint.SetName(violation.Name())
 
+	// the dryrun flag overrides any enforcement action specified in the rego header
 	dryrun := viper.GetBool("dryrun")
-	if dryrun {
+	if dryrun || violation.Enforcement() == "dryrun" {
 		if err := unstructured.SetNestedField(constraint.Object, "dryrun", "spec", "enforcementAction"); err != nil {
 			return unstructured.Unstructured{}, fmt.Errorf("set constraint dryrun: %w", err)
 		}

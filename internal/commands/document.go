@@ -101,6 +101,10 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 			continue
 		}
 
+		if policy.Enforcement() == "dryrun" {
+			continue
+		}
+
 		var url string
 		if viper.GetString("url") != "" {
 			url = viper.GetString("url") + "/" + policy.Path()
