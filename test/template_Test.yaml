@@ -20,7 +20,7 @@ spec:
 
       import data.lib.libraryA
 
-      violation[msg] {
+      violation["msg"] {
           true
       }
     target: admission.k8s.gatekeeper.sh
