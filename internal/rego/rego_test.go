@@ -105,3 +105,27 @@ third`
 		t.Errorf("unexpected Source. expected %v, actual %v", expected, actual)
 	}
 }
+
+func TestEnforcement(t *testing.T) {
+	comments := []string{
+		"@title Test",
+		"description",
+		"@enforcement dryrun",
+		"@kinds apps/Deployment",
+	}
+	rego := Rego{
+		comments: comments,
+	}
+
+	actual := rego.Enforcement()
+	const expected = "dryrun"
+	if actual != expected {
+		t.Errorf("unexpected Enforcement. expected %v, actual %v", expected, actual)
+	}
+
+	actualDefault := Rego{}.Enforcement()
+	const expectedDefault = "deny"
+	if actualDefault != expectedDefault {
+		t.Errorf("unexpected Enforcement. expected %v, actual %v", expectedDefault, actualDefault)
+	}
+}
