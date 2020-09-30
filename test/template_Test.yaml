@@ -10,13 +10,12 @@ spec:
         kind: Test
   targets:
   - libs:
-    - |
+    - |-
       package lib.libraryA
 
       import data.lib.libraryB
-    - |
-      package lib.libraryB
-    rego: |
+    - package lib.libraryB
+    rego: |-
       package test
 
       import data.lib.libraryA
