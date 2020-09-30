@@ -10,17 +10,18 @@ spec:
         kind: Test
   targets:
   - libs:
-    - |-
+    - |
       package lib.libraryA
 
       import data.lib.libraryB
-    - package lib.libraryB
-    rego: |-
+    - |
+      package lib.libraryB
+    rego: |
       package test
 
       import data.lib.libraryA
 
-      violation[msg] {
+      violation["msg"] {
           true
       }
     target: admission.k8s.gatekeeper.sh

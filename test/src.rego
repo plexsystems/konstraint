@@ -7,6 +7,6 @@ package test
 
 import data.lib.libraryA
 
-violation[msg] {
+violation["msg"] {
     true
 }
