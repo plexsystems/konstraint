@@ -27,5 +27,6 @@ update-static: build
 release:
 	@test $(version)
 	GOOS=darwin GOARCH=amd64 go build -o build/konstraint-darwin-amd64 -ldflags="-X 'github.com/plexsystems/konstraint/internal/commands.version=$(version)'"
-	GOOS=windows GOARCH=amd64 go build -o build/konstraint-windows-amd64 -ldflags="-X 'github.com/plexsystems/konstraint/internal/commands.version=$(version)'"
+	GOOS=windows GOARCH=amd64 go build -o build/konstraint-windows-amd64.exe -ldflags="-X 'github.com/plexsystems/konstraint/internal/commands.version=$(version)'"
 	GOOS=linux GOARCH=amd64 go build -o build/konstraint-linux-amd64 -ldflags="-X 'github.com/plexsystems/konstraint/internal/commands.version=$(version)'"
+	docker run --rm -v $(shell pwd):/konstraint alpine:3 /bin/ash -c 'cd /konstraint/build && find . -name "konstraint-*" -type f -exec sha256sum {} > checksums.txt \;'
