@@ -16,10 +16,16 @@ resource = input {
 }
 
 format(msg, id) = msg_fmt {
+    id != ""
     msg_fmt := {
-        "msg": msg,
+        "msg": sprintf("%s: %s", [id, msg]),
         "details": {"policyID": id}
     }
+}
+
+format(msg, id) = msg_fmt {
+    id == ""
+    msg_fmt := {"msg": msg}
 }
 
 apiVersion = resource.apiVersion
