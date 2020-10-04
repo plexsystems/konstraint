@@ -9,6 +9,8 @@ package container_deny_latest_tag
 import data.lib.core
 import data.lib.pods
 
+policyID := "P2001"
+
 violation[msg] {
     pods.containers[container]
     has_latest_tag(container)

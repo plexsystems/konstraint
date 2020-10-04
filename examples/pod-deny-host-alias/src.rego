@@ -9,6 +9,8 @@ package pod_deny_host_alias
 import data.lib.core
 import data.lib.pods
 
+policyID := "P1004"
+
 violation[msg] {
     pod_host_alias
 

@@ -9,6 +9,8 @@ package pod_deny_host_ipc
 import data.lib.core
 import data.lib.pods
 
+policyID := "P1005"
+
 violation[msg] {
     pod_has_hostipc
 

@@ -10,6 +10,8 @@ package pod_deny_host_pid
 import data.lib.core
 import data.lib.pods
 
+policyID := "P1007"
+
 violation[msg] {
     pod_has_hostpid
 

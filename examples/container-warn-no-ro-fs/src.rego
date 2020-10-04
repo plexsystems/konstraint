@@ -9,6 +9,8 @@ package container_warn_no_ro_fs
 import data.lib.core
 import data.lib.pods
 
+policyID := "P2003"
+
 warn[msg] {
     pods.containers[container]
     no_read_only_filesystem(container)

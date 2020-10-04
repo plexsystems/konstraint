@@ -9,6 +9,8 @@ package pod_deny_without_runasnonroot
 import data.lib.pods
 import data.lib.core
 
+policyID := "P1008"
+
 violation[msg] {
     pods.pod
     not pod_runasnonroot

@@ -11,6 +11,8 @@ import data.lib.core
 import data.lib.psps
 import data.lib.security
 
+policyID := "P1009"
+
 violation[msg] {
     not psp_dropped_all_capabilities
 

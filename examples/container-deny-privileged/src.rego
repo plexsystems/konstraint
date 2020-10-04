@@ -11,6 +11,8 @@ import data.lib.core
 import data.lib.pods
 import data.lib.security
 
+policyID := "P1003"
+
 violation[msg] {
     pods.containers[container]
     container_is_privileged(container)

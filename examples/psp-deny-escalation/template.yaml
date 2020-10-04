@@ -28,12 +28,11 @@ spec:
           not is_gatekeeper
       }
 
-      format(msg) = msg {
-          not is_gatekeeper
-      }
-
-      format(msg) = {"msg": msg} {
-          is_gatekeeper
+      format(msg, id) = msg_fmt {
+          msg_fmt := {
+              "msg": msg,
+              "details": {"policyID": id}
+          }
       }
 
       apiVersion = resource.apiVersion
@@ -82,11 +81,13 @@ spec:
       import data.lib.core
       import data.lib.psps
 
+      policyID := "P1010"
+
       violation[msg] {
           psps.psps[psp]
           allows_escalation(psp)
 
-          msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]))
+          msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]), policyID)
       }
 
       allows_escalation(p) {

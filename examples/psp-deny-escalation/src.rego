@@ -9,6 +9,8 @@ package psp_deny_escalation
 import data.lib.core
 import data.lib.psps
 
+policyID := "P1010"
+
 violation[msg] {
     psps.psps[psp]
     allows_escalation(psp)

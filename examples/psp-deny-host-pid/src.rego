@@ -10,6 +10,8 @@ package psp_deny_host_pid
 import data.lib.core
 import data.lib.psps
 
+policyID := "P1014"
+
 violation[msg] {
     psp_allows_hostpid
 

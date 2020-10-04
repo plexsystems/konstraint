@@ -9,6 +9,8 @@ import data.lib.core
 import data.lib.rbac
 import data.lib.security
 
+policyID := "P2005"
+
 violation[msg] {
     role_uses_privileged_psp
 

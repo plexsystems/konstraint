@@ -9,6 +9,8 @@ package container_deny_without_resource_constraints
 import data.lib.core
 import data.lib.pods
 
+policyID := "P2002"
+
 violation[msg] {
     pods.containers[container]
     not container_resources_provided(container)

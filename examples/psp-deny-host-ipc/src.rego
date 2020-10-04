@@ -9,6 +9,8 @@ package psp_deny_host_ipc
 import data.lib.core
 import data.lib.psps
 
+policyID := "P1012"
+
 violation[msg] {
     psp_allows_hostipc
 

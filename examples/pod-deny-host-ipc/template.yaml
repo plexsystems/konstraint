@@ -28,12 +28,11 @@ spec:
           not is_gatekeeper
       }
 
-      format(msg) = msg {
-          not is_gatekeeper
-      }
-
-      format(msg) = {"msg": msg} {
-          is_gatekeeper
+      format(msg, id) = msg_fmt {
+          msg_fmt := {
+              "msg": msg,
+              "details": {"policyID": id}
+          }
       }
 
       apiVersion = resource.apiVersion
@@ -88,10 +87,12 @@ spec:
       import data.lib.core
       import data.lib.pods
 
+      policyID := "P1005"
+
       violation[msg] {
           pod_has_hostipc
 
-          msg := core.format(sprintf("%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name]))
+          msg := core.format(sprintf("%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name]), policyID)
       }
 
       pod_has_hostipc {

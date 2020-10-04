@@ -2,32 +2,32 @@
 
 ## Violations
 
-* [Containers must drop all capabilities](#containers-must-drop-all-capabilities)
-* [Containers must not allow for privilege escalation](#containers-must-not-allow-for-privilege-escalation)
-* [Images must not use the latest tag](#images-must-not-use-the-latest-tag)
-* [Containers must not run as privileged](#containers-must-not-run-as-privileged)
-* [Containers must define resource constraints](#containers-must-define-resource-constraints)
-* [Pods must not have access to the host aliases](#pods-must-not-have-access-to-the-host-aliases)
-* [Pods must not run with access to the host IPC](#pods-must-not-run-with-access-to-the-host-ipc)
-* [Pods must not run with access to the host networking](#pods-must-not-run-with-access-to-the-host-networking)
-* [Pods must not run with access to the host PID namespace](#pods-must-not-run-with-access-to-the-host-pid-namespace)
-* [Pods must run as non-root](#pods-must-run-as-non-root)
-* [PodSecurityPolicies must require all capabilities are dropped](#podsecuritypolicies-must-require-all-capabilities-are-dropped)
-* [PodSecurityPolicies must not allow privileged escalation](#podsecuritypolicies-must-not-allow-privileged-escalation)
-* [PodSecurityPolicies must not allow access to the host aliases](#podsecuritypolicies-must-not-allow-access-to-the-host-aliases)
-* [PodSecurityPolicies must not allow access to the host IPC](#podsecuritypolicies-must-not-allow-access-to-the-host-ipc)
-* [PodSecurityPolicies must not allow access to the host network](#podsecuritypolicies-must-not-allow-access-to-the-host-network)
-* [PodSecurityPolicies must not allow access to the host PID namespace](#podsecuritypolicies-must-not-allow-access-to-the-host-pid-namespace)
-* [PodSecurityPolicies must require containers to not run as privileged](#podsecuritypolicies-must-require-containers-to-not-run-as-privileged)
-* [Roles must not allow use of privileged PodSecurityPolicies](#roles-must-not-allow-use-of-privileged-podsecuritypolicies)
+* [P1001: Containers must drop all capabilities](#p1001:-containers-must-drop-all-capabilities)
+* [P1002: Containers must not allow for privilege escalation](#p1002:-containers-must-not-allow-for-privilege-escalation)
+* [P2001: Images must not use the latest tag](#p2001:-images-must-not-use-the-latest-tag)
+* [P1003: Containers must not run as privileged](#p1003:-containers-must-not-run-as-privileged)
+* [P2002: Containers must define resource constraints](#p2002:-containers-must-define-resource-constraints)
+* [P1004: Pods must not have access to the host aliases](#p1004:-pods-must-not-have-access-to-the-host-aliases)
+* [P1005: Pods must not run with access to the host IPC](#p1005:-pods-must-not-run-with-access-to-the-host-ipc)
+* [P1006: Pods must not run with access to the host networking](#p1006:-pods-must-not-run-with-access-to-the-host-networking)
+* [P1007: Pods must not run with access to the host PID namespace](#p1007:-pods-must-not-run-with-access-to-the-host-pid-namespace)
+* [P1008: Pods must run as non-root](#p1008:-pods-must-run-as-non-root)
+* [P1009: PodSecurityPolicies must require all capabilities are dropped](#p1009:-podsecuritypolicies-must-require-all-capabilities-are-dropped)
+* [P1010: PodSecurityPolicies must not allow privileged escalation](#p1010:-podsecuritypolicies-must-not-allow-privileged-escalation)
+* [P1011: PodSecurityPolicies must not allow access to the host aliases](#p1011:-podsecuritypolicies-must-not-allow-access-to-the-host-aliases)
+* [P1012: PodSecurityPolicies must not allow access to the host IPC](#p1012:-podsecuritypolicies-must-not-allow-access-to-the-host-ipc)
+* [P1013: PodSecurityPolicies must not allow access to the host network](#p1013:-podsecuritypolicies-must-not-allow-access-to-the-host-network)
+* [P1014: PodSecurityPolicies must not allow access to the host PID namespace](#p1014:-podsecuritypolicies-must-not-allow-access-to-the-host-pid-namespace)
+* [P1015: PodSecurityPolicies must require containers to not run as privileged](#p1015:-podsecuritypolicies-must-require-containers-to-not-run-as-privileged)
+* [P2005: Roles must not allow use of privileged PodSecurityPolicies](#p2005:-roles-must-not-allow-use-of-privileged-podsecuritypolicies)
 
 ## Warnings
 
-* [Deprecated Deployment and DaemonSet API](#deprecated-deployment-and-daemonset-api)
-* [Containers should not have a writable root filesystem](#containers-should-not-have-a-writable-root-filesystem)
-* [PodSecurityPolicies should require that a read-only root filesystem is set](#podsecuritypolicies-should-require-that-a-read-only-root-filesystem-is-set)
+* [P0001: Deprecated Deployment and DaemonSet API](#p0001:-deprecated-deployment-and-daemonset-api)
+* [P2003: Containers should not have a writable root filesystem](#p2003:-containers-should-not-have-a-writable-root-filesystem)
+* [P2004: PodSecurityPolicies should require that a read-only root filesystem is set](#p2004:-podsecuritypolicies-should-require-that-a-read-only-root-filesystem-is-set)
 
-## Containers must drop all capabilities
+## P1001: Containers must drop all capabilities
 
 **Severity:** Violation
 
@@ -46,11 +46,13 @@ import data.lib.core
 import data.lib.pods
 import data.lib.security
 
+policyID := "P1001"
+
 violation[msg] {
     pods.containers[container]
     not container_dropped_all_capabilities(container)
 
-    msg := core.format(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]))
+    msg := core.format(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]), policyID)
 }
 
 container_dropped_all_capabilities(container) {
@@ -60,7 +62,7 @@ container_dropped_all_capabilities(container) {
 
 _source: [container-deny-added-caps](container-deny-added-caps)_
 
-## Containers must not allow for privilege escalation
+## P1002: Containers must not allow for privilege escalation
 
 **Severity:** Violation
 
@@ -77,11 +79,13 @@ package container_deny_escalation
 import data.lib.core
 import data.lib.pods
 
+policyID := "P1002"
+
 violation[msg] {
     pods.containers[container]
     container_allows_escalation(container)
 
-    msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]), policyID)
 }
 
 container_allows_escalation(c) {
@@ -95,7 +99,7 @@ container_allows_escalation(c) {
 
 _source: [container-deny-escalation](container-deny-escalation)_
 
-## Images must not use the latest tag
+## P2001: Images must not use the latest tag
 
 **Severity:** Violation
 
@@ -112,11 +116,13 @@ package container_deny_latest_tag
 import data.lib.core
 import data.lib.pods
 
+policyID := "P2001"
+
 violation[msg] {
     pods.containers[container]
     has_latest_tag(container)
 
-    msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]))
+    msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]), policyID)
 }
 
 has_latest_tag(c) {
@@ -130,7 +136,7 @@ has_latest_tag(c) {
 
 _source: [container-deny-latest-tag](container-deny-latest-tag)_
 
-## Containers must not run as privileged
+## P1003: Containers must not run as privileged
 
 **Severity:** Violation
 
@@ -149,11 +155,13 @@ import data.lib.core
 import data.lib.pods
 import data.lib.security
 
+policyID := "P1003"
+
 violation[msg] {
     pods.containers[container]
     container_is_privileged(container)
 
-    msg = core.format(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]))
+    msg = core.format(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]), policyID)
 }
 
 container_is_privileged(container) {
@@ -167,7 +175,7 @@ container_is_privileged(container) {
 
 _source: [container-deny-privileged](container-deny-privileged)_
 
-## Containers must define resource constraints
+## P2002: Containers must define resource constraints
 
 **Severity:** Violation
 
@@ -184,11 +192,13 @@ package container_deny_without_resource_constraints
 import data.lib.core
 import data.lib.pods
 
+policyID := "P2002"
+
 violation[msg] {
     pods.containers[container]
     not container_resources_provided(container)
 
-    msg := core.format(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]))
+    msg := core.format(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]), policyID)
 }
 
 container_resources_provided(container) {
@@ -201,7 +211,7 @@ container_resources_provided(container) {
 
 _source: [container-deny-without-resource-constraints](container-deny-without-resource-constraints)_
 
-## Pods must not have access to the host aliases
+## P1004: Pods must not have access to the host aliases
 
 **Severity:** Violation
 
@@ -218,10 +228,12 @@ package pod_deny_host_alias
 import data.lib.core
 import data.lib.pods
 
+policyID := "P1004"
+
 violation[msg] {
     pod_host_alias
 
-    msg := core.format(sprintf("%s/%s: Pod has hostAliases defined", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Pod has hostAliases defined", [core.kind, core.name]), policyID)
 }
 
 pod_host_alias {
@@ -231,7 +243,7 @@ pod_host_alias {
 
 _source: [pod-deny-host-alias](pod-deny-host-alias)_
 
-## Pods must not run with access to the host IPC
+## P1005: Pods must not run with access to the host IPC
 
 **Severity:** Violation
 
@@ -248,10 +260,12 @@ package pod_deny_host_ipc
 import data.lib.core
 import data.lib.pods
 
+policyID := "P1005"
+
 violation[msg] {
     pod_has_hostipc
 
-    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name]), policyID)
 }
 
 pod_has_hostipc {
@@ -261,7 +275,7 @@ pod_has_hostipc {
 
 _source: [pod-deny-host-ipc](pod-deny-host-ipc)_
 
-## Pods must not run with access to the host networking
+## P1006: Pods must not run with access to the host networking
 
 **Severity:** Violation
 
@@ -278,10 +292,12 @@ package pod_deny_host_network
 import data.lib.core
 import data.lib.pods
 
+policyID := "P1006"
+
 violation[msg] {
     pod_has_hostnetwork
 
-    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host network", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host network", [core.kind, core.name]), policyID)
 }
 
 pod_has_hostnetwork {
@@ -291,7 +307,7 @@ pod_has_hostnetwork {
 
 _source: [pod-deny-host-network](pod-deny-host-network)_
 
-## Pods must not run with access to the host PID namespace
+## P1007: Pods must not run with access to the host PID namespace
 
 **Severity:** Violation
 
@@ -309,10 +325,12 @@ package pod_deny_host_pid
 import data.lib.core
 import data.lib.pods
 
+policyID := "P1007"
+
 violation[msg] {
     pod_has_hostpid
 
-    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name]), policyID)
 }
 
 pod_has_hostpid {
@@ -322,7 +340,7 @@ pod_has_hostpid {
 
 _source: [pod-deny-host-pid](pod-deny-host-pid)_
 
-## Pods must run as non-root
+## P1008: Pods must run as non-root
 
 **Severity:** Violation
 
@@ -339,11 +357,13 @@ package pod_deny_without_runasnonroot
 import data.lib.pods
 import data.lib.core
 
+policyID := "P1008"
+
 violation[msg] {
     pods.pod
     not pod_runasnonroot
 
-    msg := core.format(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]), policyID)
 }
 
 pod_runasnonroot {
@@ -353,7 +373,7 @@ pod_runasnonroot {
 
 _source: [pod-deny-without-runasnonroot](pod-deny-without-runasnonroot)_
 
-## PodSecurityPolicies must require all capabilities are dropped
+## P1009: PodSecurityPolicies must require all capabilities are dropped
 
 **Severity:** Violation
 
@@ -372,10 +392,12 @@ import data.lib.core
 import data.lib.psps
 import data.lib.security
 
+policyID := "P1009"
+
 violation[msg] {
     not psp_dropped_all_capabilities
 
-    msg := core.format(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]), policyID)
 }
 
 psp_dropped_all_capabilities {
@@ -386,7 +408,7 @@ psp_dropped_all_capabilities {
 
 _source: [psp-deny-added-caps](psp-deny-added-caps)_
 
-## PodSecurityPolicies must not allow privileged escalation
+## P1010: PodSecurityPolicies must not allow privileged escalation
 
 **Severity:** Violation
 
@@ -403,11 +425,13 @@ package psp_deny_escalation
 import data.lib.core
 import data.lib.psps
 
+policyID := "P1010"
+
 violation[msg] {
     psps.psps[psp]
     allows_escalation(psp)
 
-    msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]), policyID)
 }
 
 allows_escalation(p) {
@@ -421,7 +445,7 @@ allows_escalation(p) {
 
 _source: [psp-deny-escalation](psp-deny-escalation)_
 
-## PodSecurityPolicies must not allow access to the host aliases
+## P1011: PodSecurityPolicies must not allow access to the host aliases
 
 **Severity:** Violation
 
@@ -438,10 +462,12 @@ package psp_deny_host_alias
 import data.lib.core
 import data.lib.psps
 
+policyID := "P1011"
+
 violation[msg] {
     psp_allows_hostaliases
 
-    msg := core.format(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostaliases {
@@ -451,7 +477,7 @@ psp_allows_hostaliases {
 
 _source: [psp-deny-host-alias](psp-deny-host-alias)_
 
-## PodSecurityPolicies must not allow access to the host IPC
+## P1012: PodSecurityPolicies must not allow access to the host IPC
 
 **Severity:** Violation
 
@@ -468,10 +494,12 @@ package psp_deny_host_ipc
 import data.lib.core
 import data.lib.psps
 
+policyID := "P1012"
+
 violation[msg] {
     psp_allows_hostipc
 
-    msg := core.format(sprintf("%s/%s: Allows for sharing the host IPC namespace", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows for sharing the host IPC namespace", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostipc {
@@ -481,7 +509,7 @@ psp_allows_hostipc {
 
 _source: [psp-deny-host-ipc](psp-deny-host-ipc)_
 
-## PodSecurityPolicies must not allow access to the host network
+## P1013: PodSecurityPolicies must not allow access to the host network
 
 **Severity:** Violation
 
@@ -499,10 +527,12 @@ package psp_deny_host_network
 import data.lib.core
 import data.lib.psps
 
+policyID := "P1013"
+
 violation[msg] {
     psp_allows_hostnetwork
 
-    msg := core.format(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostnetwork {
@@ -512,7 +542,7 @@ psp_allows_hostnetwork {
 
 _source: [psp-deny-host-network](psp-deny-host-network)_
 
-## PodSecurityPolicies must not allow access to the host PID namespace
+## P1014: PodSecurityPolicies must not allow access to the host PID namespace
 
 **Severity:** Violation
 
@@ -530,10 +560,12 @@ package psp_deny_host_pid
 import data.lib.core
 import data.lib.psps
 
+policyID := "P1014"
+
 violation[msg] {
     psp_allows_hostpid
 
-    msg = core.format(sprintf("%s/%s: Allows for sharing the host PID namespace", [core.kind, core.name]))
+    msg = core.format(sprintf("%s/%s: Allows for sharing the host PID namespace", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostpid {
@@ -543,7 +575,7 @@ psp_allows_hostpid {
 
 _source: [psp-deny-host-pid](psp-deny-host-pid)_
 
-## PodSecurityPolicies must require containers to not run as privileged
+## P1015: PodSecurityPolicies must require containers to not run as privileged
 
 **Severity:** Violation
 
@@ -560,10 +592,12 @@ package psp_deny_privileged
 import data.lib.core
 import data.lib.psps
 
+policyID := "P1015"
+
 violation[msg] {
     psp_allows_privileged
 
-    msg := core.format(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]), policyID)
 }
 
 psp_allows_privileged {
@@ -573,7 +607,7 @@ psp_allows_privileged {
 
 _source: [psp-deny-privileged](psp-deny-privileged)_
 
-## Roles must not allow use of privileged PodSecurityPolicies
+## P2005: Roles must not allow use of privileged PodSecurityPolicies
 
 **Severity:** Violation
 
@@ -590,10 +624,12 @@ import data.lib.core
 import data.lib.rbac
 import data.lib.security
 
+policyID := "P2005"
+
 violation[msg] {
     role_uses_privileged_psp
 
-    msg := core.format(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]), policyID)
 }
 
 role_uses_privileged_psp {
@@ -619,7 +655,7 @@ psp_is_privileged(psp) {
 
 _source: [role-deny-use-privileged-psp](role-deny-use-privileged-psp)_
 
-## Deprecated Deployment and DaemonSet API
+## P0001: Deprecated Deployment and DaemonSet API
 
 **Severity:** Warning
 
@@ -634,6 +670,8 @@ the version for both of these resources must be `apps/v1`.
 ```rego
 package any_warn_deprecated_api_versions
 
+policyID := "P0001"
+
 import data.lib.core
 
 warn[msg] {
@@ -641,13 +679,13 @@ warn[msg] {
     core.apiVersion == "extensions/v1beta1"
     core.kind == resources[_]
 
-    msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]))
+    msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]), policyID)
 }
 ```
 
 _source: [any-warn-deprecated-api-versions](any-warn-deprecated-api-versions)_
 
-## Containers should not have a writable root filesystem
+## P2003: Containers should not have a writable root filesystem
 
 **Severity:** Warning
 
@@ -664,11 +702,13 @@ package container_warn_no_ro_fs
 import data.lib.core
 import data.lib.pods
 
+policyID := "P2003"
+
 warn[msg] {
     pods.containers[container]
     no_read_only_filesystem(container)
 
-    msg := core.format(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]))
+    msg := core.format(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]), policyID)
 }
 
 no_read_only_filesystem(container) {
@@ -683,7 +723,7 @@ no_read_only_filesystem(container) {
 
 _source: [container-warn-no-ro-fs](container-warn-no-ro-fs)_
 
-## PodSecurityPolicies should require that a read-only root filesystem is set
+## P2004: PodSecurityPolicies should require that a read-only root filesystem is set
 
 **Severity:** Warning
 
@@ -700,11 +740,13 @@ package psp_warn_no_ro_fs
 import data.lib.core
 import data.lib.psps
 
+policyID := "P2004"
+
 warn[msg] {
     psps.psps[psp]
     no_read_only_filesystem(psp)
 
-    msg := core.format(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]), policyID)
 }
 
 no_read_only_filesystem(psp) {

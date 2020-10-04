@@ -9,6 +9,8 @@ package psp_warn_no_ro_fs
 import data.lib.core
 import data.lib.psps
 
+policyID := "P2004"
+
 warn[msg] {
     psps.psps[psp]
     no_read_only_filesystem(psp)

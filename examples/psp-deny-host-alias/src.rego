@@ -9,6 +9,8 @@ package psp_deny_host_alias
 import data.lib.core
 import data.lib.psps
 
+policyID := "P1011"
+
 violation[msg] {
     psp_allows_hostaliases
 

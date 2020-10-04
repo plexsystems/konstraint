@@ -9,6 +9,8 @@ package container_deny_escalation
 import data.lib.core
 import data.lib.pods
 
+policyID := "P1002"
+
 violation[msg] {
     pods.containers[container]
     container_allows_escalation(container)

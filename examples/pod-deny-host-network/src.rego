@@ -9,6 +9,8 @@ package pod_deny_host_network
 import data.lib.core
 import data.lib.pods
 
+policyID := "P1006"
+
 violation[msg] {
     pod_has_hostnetwork
 
