@@ -13,7 +13,7 @@ import data.lib.pods
 violation[msg] {
     pod_has_hostpid
 
-    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name]), policyID)
 }
 
 pod_has_hostpid {

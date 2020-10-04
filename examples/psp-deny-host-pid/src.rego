@@ -13,7 +13,7 @@ import data.lib.psps
 violation[msg] {
     psp_allows_hostpid
 
-    msg = core.format(sprintf("%s/%s: Allows for sharing the host PID namespace", [core.kind, core.name]))
+    msg = core.format(sprintf("%s/%s: Allows for sharing the host PID namespace", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostpid {

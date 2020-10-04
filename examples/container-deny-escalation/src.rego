@@ -13,7 +13,7 @@ violation[msg] {
     pods.containers[container]
     container_allows_escalation(container)
 
-    msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]), policyID)
 }
 
 container_allows_escalation(c) {

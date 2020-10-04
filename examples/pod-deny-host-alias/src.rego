@@ -12,7 +12,7 @@ import data.lib.pods
 violation[msg] {
     pod_host_alias
 
-    msg := core.format(sprintf("%s/%s: Pod has hostAliases defined", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Pod has hostAliases defined", [core.kind, core.name]), policyID)
 }
 
 pod_host_alias {

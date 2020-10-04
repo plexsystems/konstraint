@@ -15,7 +15,7 @@ violation[msg] {
     pods.containers[container]
     container_is_privileged(container)
 
-    msg = core.format(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]))
+    msg = core.format(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]), policyID)
 }
 
 container_is_privileged(container) {

@@ -12,7 +12,7 @@ import data.lib.psps
 violation[msg] {
     psp_allows_hostaliases
 
-    msg := core.format(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostaliases {

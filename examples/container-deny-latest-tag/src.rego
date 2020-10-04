@@ -13,7 +13,7 @@ violation[msg] {
     pods.containers[container]
     has_latest_tag(container)
 
-    msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]))
+    msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]), policyID)
 }
 
 has_latest_tag(c) {

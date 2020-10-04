@@ -14,7 +14,7 @@ import data.lib.security
 violation[msg] {
     not psp_dropped_all_capabilities
 
-    msg := core.format(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]), policyID)
 }
 
 psp_dropped_all_capabilities {

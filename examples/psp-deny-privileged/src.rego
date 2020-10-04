@@ -12,7 +12,7 @@ import data.lib.psps
 violation[msg] {
     psp_allows_privileged
 
-    msg := core.format(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]), policyID)
 }
 
 psp_allows_privileged {

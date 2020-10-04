@@ -12,7 +12,7 @@ import data.lib.security
 violation[msg] {
     role_uses_privileged_psp
 
-    msg := core.format(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]), policyID)
 }
 
 role_uses_privileged_psp {

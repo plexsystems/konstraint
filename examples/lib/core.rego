@@ -15,12 +15,11 @@ resource = input {
     not is_gatekeeper
 }
 
-format(msg) = msg {
-    not is_gatekeeper
-}
-
-format(msg) = {"msg": msg} {
-    is_gatekeeper
+format(msg, id) = msg_fmt {
+    msg_fmt := {
+        "msg": msg,
+        "details": {"policyID": id}
+    }
 }
 
 apiVersion = resource.apiVersion

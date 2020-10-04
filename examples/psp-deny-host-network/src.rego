@@ -13,7 +13,7 @@ import data.lib.psps
 violation[msg] {
     psp_allows_hostnetwork
 
-    msg := core.format(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]))
+    msg := core.format(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostnetwork {

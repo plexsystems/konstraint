@@ -2,6 +2,8 @@ package rego
 
 import (
 	"testing"
+
+	"github.com/open-policy-agent/opa/ast"
 )
 
 func TestKind(t *testing.T) {
@@ -127,5 +129,34 @@ func TestEnforcement(t *testing.T) {
 	const expectedDefault = "deny"
 	if actualDefault != expectedDefault {
 		t.Errorf("unexpected Enforcement. expected %v, actual %v", expectedDefault, actualDefault)
+	}
+}
+
+func TestGetPolicyID(t *testing.T) {
+	rules := []*ast.Rule{
+		{
+			Head: &ast.Head{
+				Name: "policyID",
+				Value: &ast.Term{
+					Value: ast.MustInterfaceToValue("P123456"),
+				},
+			},
+		},
+	}
+
+	const expected = "P123456"
+	actual := getPolicyID(rules)
+	if actual != expected {
+		t.Errorf("unexpected policyID. expected %v, actual %v", expected, actual)
+	}
+}
+
+func TestGetPolicyID_Null(t *testing.T) {
+	rules := []*ast.Rule{}
+
+	const expected = ""
+	actual := getPolicyID(rules)
+	if actual != expected {
+		t.Errorf("unexpected policyID. expected %v, actual %v", expected, actual)
 	}
 }

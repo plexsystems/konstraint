@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/loader"
 )
 
@@ -18,10 +19,14 @@ type Severity string
 const (
 	Violation Severity = "Violation"
 	Warning   Severity = "Warning"
+
+	// PolicyIDVariable is the name of the variable that contains the policy identifier
+	PolicyIDVariable = "policyID"
 )
 
 // Rego represents a parsed rego file.
 type Rego struct {
+	id           string
 	path         string
 	raw          string
 	comments     []string
@@ -145,6 +150,12 @@ func (r Rego) Enforcement() string {
 	return trimString(enforcement)
 }
 
+// PolicyID returns the identifier of the policy
+// The returned value will be a blank string if an id was not specified in the policy body
+func (r Rego) PolicyID() string {
+	return r.id
+}
+
 // Description returns the entire description
 // found in the header comment of the rego file.
 func (r Rego) Description() string {
@@ -235,6 +246,7 @@ func parseDirectory(directory string) ([]Rego, error) {
 		raw := strings.ReplaceAll(string(file.Raw), "\r", "")
 
 		rego := Rego{
+			id:           getPolicyID(file.Parsed.Rules),
 			path:         file.Name,
 			dependencies: dependencies,
 			rules:        rules,
@@ -264,6 +276,18 @@ func removeComments(raw string) string {
 	}
 
 	return trimString(regoWithoutComments)
+}
+
+func getPolicyID(rules []*ast.Rule) string {
+	var policyID string
+	for _, rule := range rules {
+		if rule.Head.Name.String() == PolicyIDVariable {
+			policyID = strings.ReplaceAll(rule.Head.Value.Value.String(), `"`, "")
+			break
+		}
+	}
+
+	return policyID
 }
 
 func trimString(text string) string {
