@@ -15,7 +15,7 @@ violation[msg] {
     pods.pod
     not pod_runasnonroot
 
-    msg := core.format(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]), policyID)
 }
 
 pod_runasnonroot {

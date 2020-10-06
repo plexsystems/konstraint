@@ -14,7 +14,7 @@ policyID := "P2005"
 violation[msg] {
     role_uses_privileged_psp
 
-    msg := core.format(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]), policyID)
 }
 
 role_uses_privileged_psp {

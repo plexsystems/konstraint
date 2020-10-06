@@ -14,7 +14,7 @@ policyID := "P1004"
 violation[msg] {
     pod_host_alias
 
-    msg := core.format(sprintf("%s/%s: Pod has hostAliases defined", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Pod has hostAliases defined", [core.kind, core.name]), policyID)
 }
 
 pod_host_alias {

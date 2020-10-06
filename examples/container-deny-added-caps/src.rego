@@ -17,7 +17,7 @@ violation[msg] {
     pods.containers[container]
     not container_dropped_all_capabilities(container)
 
-    msg := core.format(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]), policyID)
 }
 
 container_dropped_all_capabilities(container) {

@@ -15,17 +15,15 @@ resource = input {
     not is_gatekeeper
 }
 
-format(msg, id) = msg_fmt {
-    id != ""
+format(msg) = {"msg": msg} {
+    true
+}
+
+format_with_id(msg, id) = msg_fmt {
     msg_fmt := {
         "msg": sprintf("%s: %s", [id, msg]),
         "details": {"policyID": id}
     }
-}
-
-format(msg, id) = msg_fmt {
-    id == ""
-    msg_fmt := {"msg": msg}
 }
 
 apiVersion = resource.apiVersion

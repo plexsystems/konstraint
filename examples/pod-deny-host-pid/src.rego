@@ -15,7 +15,7 @@ policyID := "P1007"
 violation[msg] {
     pod_has_hostpid
 
-    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name]), policyID)
 }
 
 pod_has_hostpid {

@@ -15,7 +15,7 @@ violation[msg] {
     psps.psps[psp]
     allows_escalation(psp)
 
-    msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]), policyID)
 }
 
 allows_escalation(p) {

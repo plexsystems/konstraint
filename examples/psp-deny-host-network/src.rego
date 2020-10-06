@@ -15,7 +15,7 @@ policyID := "P1013"
 violation[msg] {
     psp_allows_hostnetwork
 
-    msg := core.format(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostnetwork {

@@ -15,7 +15,7 @@ warn[msg] {
     psps.psps[psp]
     no_read_only_filesystem(psp)
 
-    msg := core.format(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]), policyID)
 }
 
 no_read_only_filesystem(psp) {
