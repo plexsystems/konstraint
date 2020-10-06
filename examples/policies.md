@@ -52,7 +52,7 @@ violation[msg] {
     pods.containers[container]
     not container_dropped_all_capabilities(container)
 
-    msg := core.format(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s/%s: Does not drop all capabilities", [core.kind, core.name, container.name]), policyID)
 }
 
 container_dropped_all_capabilities(container) {
@@ -85,7 +85,7 @@ violation[msg] {
     pods.containers[container]
     container_allows_escalation(container)
 
-    msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]), policyID)
 }
 
 container_allows_escalation(c) {
@@ -122,7 +122,7 @@ violation[msg] {
     pods.containers[container]
     has_latest_tag(container)
 
-    msg := core.format(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]), policyID)
 }
 
 has_latest_tag(c) {
@@ -161,7 +161,7 @@ violation[msg] {
     pods.containers[container]
     container_is_privileged(container)
 
-    msg = core.format(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]), policyID)
+    msg = core.format_with_id(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]), policyID)
 }
 
 container_is_privileged(container) {
@@ -198,7 +198,7 @@ violation[msg] {
     pods.containers[container]
     not container_resources_provided(container)
 
-    msg := core.format(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]), policyID)
 }
 
 container_resources_provided(container) {
@@ -233,7 +233,7 @@ policyID := "P1004"
 violation[msg] {
     pod_host_alias
 
-    msg := core.format(sprintf("%s/%s: Pod has hostAliases defined", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Pod has hostAliases defined", [core.kind, core.name]), policyID)
 }
 
 pod_host_alias {
@@ -265,7 +265,7 @@ policyID := "P1005"
 violation[msg] {
     pod_has_hostipc
 
-    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name]), policyID)
 }
 
 pod_has_hostipc {
@@ -297,7 +297,7 @@ policyID := "P1006"
 violation[msg] {
     pod_has_hostnetwork
 
-    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host network", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Pod allows for accessing the host network", [core.kind, core.name]), policyID)
 }
 
 pod_has_hostnetwork {
@@ -330,7 +330,7 @@ policyID := "P1007"
 violation[msg] {
     pod_has_hostpid
 
-    msg := core.format(sprintf("%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Pod allows for accessing the host PID namespace", [core.kind, core.name]), policyID)
 }
 
 pod_has_hostpid {
@@ -363,7 +363,7 @@ violation[msg] {
     pods.pod
     not pod_runasnonroot
 
-    msg := core.format(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]), policyID)
 }
 
 pod_runasnonroot {
@@ -397,7 +397,7 @@ policyID := "P1009"
 violation[msg] {
     not psp_dropped_all_capabilities
 
-    msg := core.format(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]), policyID)
 }
 
 psp_dropped_all_capabilities {
@@ -431,7 +431,7 @@ violation[msg] {
     psps.psps[psp]
     allows_escalation(psp)
 
-    msg := core.format(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]), policyID)
 }
 
 allows_escalation(p) {
@@ -467,7 +467,7 @@ policyID := "P1011"
 violation[msg] {
     psp_allows_hostaliases
 
-    msg := core.format(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostaliases {
@@ -499,7 +499,7 @@ policyID := "P1012"
 violation[msg] {
     psp_allows_hostipc
 
-    msg := core.format(sprintf("%s/%s: Allows for sharing the host IPC namespace", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Allows for sharing the host IPC namespace", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostipc {
@@ -532,7 +532,7 @@ policyID := "P1013"
 violation[msg] {
     psp_allows_hostnetwork
 
-    msg := core.format(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostnetwork {
@@ -565,7 +565,7 @@ policyID := "P1014"
 violation[msg] {
     psp_allows_hostpid
 
-    msg = core.format(sprintf("%s/%s: Allows for sharing the host PID namespace", [core.kind, core.name]), policyID)
+    msg = core.format_with_id(sprintf("%s/%s: Allows for sharing the host PID namespace", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostpid {
@@ -597,7 +597,7 @@ policyID := "P1015"
 violation[msg] {
     psp_allows_privileged
 
-    msg := core.format(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]), policyID)
 }
 
 psp_allows_privileged {
@@ -629,7 +629,7 @@ policyID := "P2005"
 violation[msg] {
     role_uses_privileged_psp
 
-    msg := core.format(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]), policyID)
 }
 
 role_uses_privileged_psp {
@@ -679,7 +679,7 @@ warn[msg] {
     core.apiVersion == "extensions/v1beta1"
     core.kind == resources[_]
 
-    msg := core.format(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]), policyID)
+    msg := core.format_with_id(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]), policyID)
 }
 ```
 
@@ -708,7 +708,7 @@ warn[msg] {
     pods.containers[container]
     no_read_only_filesystem(container)
 
-    msg := core.format(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]), policyID)
 }
 
 no_read_only_filesystem(container) {
@@ -746,7 +746,7 @@ warn[msg] {
     psps.psps[psp]
     no_read_only_filesystem(psp)
 
-    msg := core.format(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]), policyID)
 }
 
 no_read_only_filesystem(psp) {

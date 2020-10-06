@@ -28,17 +28,15 @@ spec:
           not is_gatekeeper
       }
 
-      format(msg, id) = msg_fmt {
-          id != ""
+      format(msg) = {"msg": msg} {
+          true
+      }
+
+      format_with_id(msg, id) = msg_fmt {
           msg_fmt := {
               "msg": sprintf("%s: %s", [id, msg]),
               "details": {"policyID": id}
           }
-      }
-
-      format(msg, id) = msg_fmt {
-          id == ""
-          msg_fmt := {"msg": msg}
       }
 
       apiVersion = resource.apiVersion
@@ -115,7 +113,7 @@ spec:
       violation[msg] {
           not psp_dropped_all_capabilities
 
-          msg := core.format(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]), policyID)
+          msg := core.format_with_id(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]), policyID)
       }
 
       psp_dropped_all_capabilities {

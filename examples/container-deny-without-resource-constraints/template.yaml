@@ -28,17 +28,15 @@ spec:
           not is_gatekeeper
       }
 
-      format(msg, id) = msg_fmt {
-          id != ""
+      format(msg) = {"msg": msg} {
+          true
+      }
+
+      format_with_id(msg, id) = msg_fmt {
           msg_fmt := {
               "msg": sprintf("%s: %s", [id, msg]),
               "details": {"policyID": id}
           }
-      }
-
-      format(msg, id) = msg_fmt {
-          id == ""
-          msg_fmt := {"msg": msg}
       }
 
       apiVersion = resource.apiVersion
@@ -99,7 +97,7 @@ spec:
           pods.containers[container]
           not container_resources_provided(container)
 
-          msg := core.format(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]), policyID)
+          msg := core.format_with_id(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]), policyID)
       }
 
       container_resources_provided(container) {
