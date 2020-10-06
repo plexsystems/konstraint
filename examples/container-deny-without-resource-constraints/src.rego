@@ -9,11 +9,13 @@ package container_deny_without_resource_constraints
 import data.lib.core
 import data.lib.pods
 
+policyID := "P2002"
+
 violation[msg] {
     pods.containers[container]
     not container_resources_provided(container)
 
-    msg := core.format(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]))
+    msg := core.format_with_id(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]), policyID)
 }
 
 container_resources_provided(container) {

@@ -28,12 +28,15 @@ spec:
           not is_gatekeeper
       }
 
-      format(msg) = msg {
-          not is_gatekeeper
+      format(msg) = {"msg": msg} {
+          true
       }
 
-      format(msg) = {"msg": msg} {
-          is_gatekeeper
+      format_with_id(msg, id) = msg_fmt {
+          msg_fmt := {
+              "msg": sprintf("%s: %s", [id, msg]),
+              "details": {"policyID": id}
+          }
       }
 
       apiVersion = resource.apiVersion
@@ -104,10 +107,12 @@ spec:
       import data.lib.rbac
       import data.lib.security
 
+      policyID := "P2005"
+
       violation[msg] {
           role_uses_privileged_psp
 
-          msg := core.format(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]))
+          msg := core.format_with_id(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]), policyID)
       }
 
       role_uses_privileged_psp {

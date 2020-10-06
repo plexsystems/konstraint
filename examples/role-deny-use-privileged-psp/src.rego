@@ -9,10 +9,12 @@ import data.lib.core
 import data.lib.rbac
 import data.lib.security
 
+policyID := "P2005"
+
 violation[msg] {
     role_uses_privileged_psp
 
-    msg := core.format(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]))
+    msg := core.format_with_id(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]), policyID)
 }
 
 role_uses_privileged_psp {

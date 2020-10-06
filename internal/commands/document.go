@@ -120,11 +120,19 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 			url = strings.ReplaceAll(relDir, string(os.PathSeparator), "/")
 		}
 
+		documentTitle := policy.Title()
+		if policy.PolicyID() != "" {
+			documentTitle = fmt.Sprintf("%s: %s", policy.PolicyID(), documentTitle)
+		}
+
+		anchor := strings.ToLower(strings.ReplaceAll(documentTitle, " ", "-"))
+		anchor = strings.ReplaceAll(anchor, ":", "")
+
 		header := Header{
-			Title:       policy.Title(),
+			Title:       documentTitle,
 			Description: policy.Description(),
 			Resources:   policy.Matchers().String(),
-			Anchor:      strings.ToLower(strings.ReplaceAll(policy.Title(), " ", "-")),
+			Anchor:      anchor,
 		}
 
 		document := Document{

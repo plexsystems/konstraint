@@ -11,11 +11,13 @@ import data.lib.core
 import data.lib.pods
 import data.lib.security
 
+policyID := "P1003"
+
 violation[msg] {
     pods.containers[container]
     container_is_privileged(container)
 
-    msg = core.format(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]))
+    msg = core.format_with_id(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]), policyID)
 }
 
 container_is_privileged(container) {

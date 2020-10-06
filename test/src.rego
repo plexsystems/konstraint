@@ -7,6 +7,8 @@ package test
 
 import data.lib.libraryA
 
+policyID := "P123456"
+
 violation["msg"] {
     true
 }

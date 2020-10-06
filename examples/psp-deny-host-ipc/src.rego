@@ -9,10 +9,12 @@ package psp_deny_host_ipc
 import data.lib.core
 import data.lib.psps
 
+policyID := "P1012"
+
 violation[msg] {
     psp_allows_hostipc
 
-    msg := core.format(sprintf("%s/%s: Allows for sharing the host IPC namespace", [core.kind, core.name]))
+    msg := core.format_with_id(sprintf("%s/%s: Allows for sharing the host IPC namespace", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostipc {

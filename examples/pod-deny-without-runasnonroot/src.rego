@@ -9,11 +9,13 @@ package pod_deny_without_runasnonroot
 import data.lib.pods
 import data.lib.core
 
+policyID := "P1008"
+
 violation[msg] {
     pods.pod
     not pod_runasnonroot
 
-    msg := core.format(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]))
+    msg := core.format_with_id(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]), policyID)
 }
 
 pod_runasnonroot {

@@ -9,10 +9,12 @@ package psp_deny_privileged
 import data.lib.core
 import data.lib.psps
 
+policyID := "P1015"
+
 violation[msg] {
     psp_allows_privileged
 
-    msg := core.format(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]))
+    msg := core.format_with_id(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]), policyID)
 }
 
 psp_allows_privileged {

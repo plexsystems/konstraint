@@ -9,11 +9,13 @@ package container_warn_no_ro_fs
 import data.lib.core
 import data.lib.pods
 
+policyID := "P2003"
+
 warn[msg] {
     pods.containers[container]
     no_read_only_filesystem(container)
 
-    msg := core.format(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]))
+    msg := core.format_with_id(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]), policyID)
 }
 
 no_read_only_filesystem(container) {

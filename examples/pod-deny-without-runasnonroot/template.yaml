@@ -57,12 +57,15 @@ spec:
           not is_gatekeeper
       }
 
-      format(msg) = msg {
-          not is_gatekeeper
+      format(msg) = {"msg": msg} {
+          true
       }
 
-      format(msg) = {"msg": msg} {
-          is_gatekeeper
+      format_with_id(msg, id) = msg_fmt {
+          msg_fmt := {
+              "msg": sprintf("%s: %s", [id, msg]),
+              "details": {"policyID": id}
+          }
       }
 
       apiVersion = resource.apiVersion
@@ -88,11 +91,13 @@ spec:
       import data.lib.pods
       import data.lib.core
 
+      policyID := "P1008"
+
       violation[msg] {
           pods.pod
           not pod_runasnonroot
 
-          msg := core.format(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]))
+          msg := core.format_with_id(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]), policyID)
       }
 
       pod_runasnonroot {
