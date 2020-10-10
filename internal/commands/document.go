@@ -67,6 +67,10 @@ Set the URL where the policies are hosted at
 
 func runDocCommand(path string) error {
 	outputDirectory := filepath.Dir(viper.GetString("output"))
+	if err := os.MkdirAll(outputDirectory, os.ModePerm); err != nil {
+		return fmt.Errorf("create output dir: %w", err)
+	}
+
 	docs, err := getDocumentation(path, outputDirectory)
 	if err != nil {
 		return fmt.Errorf("get documentation: %w", err)

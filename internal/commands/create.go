@@ -70,6 +70,10 @@ func runCreateCommand(path string) error {
 			constraintFileName = fmt.Sprintf("constraint_%s.yaml", violation.Kind())
 		}
 
+		if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+			return fmt.Errorf("create output dir: %w", err)
+		}
+
 		constraintTemplate := getConstraintTemplate(violation)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
 		if err != nil {
