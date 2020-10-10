@@ -71,7 +71,7 @@ func runCreateCommand(path string) error {
 		}
 
 		if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
-			return fmt.Errorf("unable to create output directory: %w", err)
+			return fmt.Errorf("create output dir: %w", err)
 		}
 
 		constraintTemplate := getConstraintTemplate(violation)
