@@ -30,3 +30,20 @@ release:
 	GOOS=windows GOARCH=amd64 go build -o build/konstraint-windows-amd64.exe -ldflags="-X 'github.com/plexsystems/konstraint/internal/commands.version=$(version)'"
 	GOOS=linux GOARCH=amd64 go build -o build/konstraint-linux-amd64 -ldflags="-X 'github.com/plexsystems/konstraint/internal/commands.version=$(version)'"
 	docker run --rm -v $(shell pwd):/konstraint alpine:3 /bin/ash -c 'cd /konstraint/build && find . -name "konstraint-*" -type f -exec sha256sum {} > checksums.txt \;'
+
+.PHONY: docker
+docker:
+ifeq ($(version),) # this can't be indented because makefiles are picky
+	docker build -t konstraint:latest .
+else
+	docker build -t konstraint:latest -t konstraint:$(version) --build-arg KONSTRAINT_VER=$(version) .
+endif
+
+# The version and the docker repository are required to use the docker-push target
+.PHONY: docker-push
+docker-push: docker-tag
+	@test $(version)
+	@test $(docker-repo)
+	docker tag -t $(docker-repo)/konstraint:$(version) -t $(docker-repo)/konstraint:latest konstraint:$(version)
+	docker push $(docker-repo)/konstraint:$(version)
+	docker push $(docker-repo)/konstraint:latest
