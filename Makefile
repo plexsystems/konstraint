@@ -41,9 +41,11 @@ endif
 
 # The version and the docker repository are required to use the docker-push target
 .PHONY: docker-push
-docker-push: docker-tag
+docker-push:
 	@test $(version)
 	@test $(docker-repo)
-	docker tag -t $(docker-repo)/konstraint:$(version) -t $(docker-repo)/konstraint:latest konstraint:$(version)
-	docker push $(docker-repo)/konstraint:$(version)
-	docker push $(docker-repo)/konstraint:latest
+	@test $(registry-path)
+	docker tag konstraint:latest $(docker-repo)/$(registry-path)/konstraint:$(version)
+	docker tag konstraint:latest $(docker-repo)/$(registry-path)/konstraint:latest
+	docker push $(docker-repo)/$(registry-path)/konstraint:$(version)
+	docker push $(docker-repo)/$(registry-path)/konstraint:latest

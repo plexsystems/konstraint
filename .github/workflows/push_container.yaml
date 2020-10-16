@@ -26,6 +26,7 @@ jobs:
     needs: [unit-test]
     env:
       DOCKER_REPO: docker.pkg.github.com
+      REGISTRY_PATH: plexsystems/konstraint
     steps:
     - name: checkout
       uses: actions/checkout@v2
@@ -35,6 +36,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: echo "${GITHUB_TOKEN}" | docker login https://${DOCKER_REPO} -u ${GITHUB_ACTOR} --password-stdin
-    - name: docker build and push
+    - name: docker build
       run: make docker version=${TAG_NAME}
-      #run: make docker-push version=${TAG_NAME} docker-repo=${DOCKER_REPO}
+    - name: docker push
+      run: make docker-push version=${TAG_NAME} docker-repo=${DOCKER_REPO} registry-path=${REGISTRY_PATH}
