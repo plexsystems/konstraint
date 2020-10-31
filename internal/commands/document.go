@@ -19,6 +19,7 @@ type Header struct {
 	Description string
 	Resources   string
 	Anchor      string
+	Parameters  []rego.Parameter
 }
 
 // Document is a single policy document.
@@ -132,11 +133,17 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		anchor := strings.ToLower(strings.ReplaceAll(documentTitle, " ", "-"))
 		anchor = strings.ReplaceAll(anchor, ":", "")
 
+		matchers := policy.Matchers().String()
+		if matchers == "" {
+			matchers = "Any Resource"
+		}
+
 		header := Header{
 			Title:       documentTitle,
 			Description: policy.Description(),
-			Resources:   policy.Matchers().String(),
+			Resources:   matchers,
 			Anchor:      anchor,
+			Parameters:  policy.Parameters(),
 		}
 
 		document := Document{

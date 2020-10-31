@@ -17,6 +17,14 @@ const docTemplate = `# Policies
 
 **Resources:** {{ .Header.Resources }}
 
+{{- if .Header.Parameters }}
+
+**Parameters:**
+
+{{ range .Header.Parameters }}* {{ .Name }}: {{ if .IsArray }}array of {{ end }}{{ .Type }}
+{{ end }}
+{{- end }}
+
 {{ .Header.Description }}
 
 ### Rego
