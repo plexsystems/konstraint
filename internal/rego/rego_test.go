@@ -1,6 +1,7 @@
 package rego
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/open-policy-agent/opa/ast"
@@ -158,5 +159,56 @@ func TestGetPolicyID_Null(t *testing.T) {
 	actual := getPolicyID(rules)
 	if actual != expected {
 		t.Errorf("unexpected policyID. expected %v, actual %v", expected, actual)
+	}
+}
+
+func TestGetBodyParamNames(t *testing.T) {
+	ruleString := `violation[msg] {
+	foo := "bar"
+	bar := input.parameters.baz
+	baz := input.parameters.foobars[_]
+	box := input.parameters.baz
+}`
+
+	rule, err := ast.ParseRule(ruleString)
+	if err != nil {
+		t.Fatalf("parse rule: %s", err)
+	}
+
+	expected := []string{"baz", "foobars"}
+	actual := getBodyParamNames([]*ast.Rule{rule})
+	if !(reflect.DeepEqual(expected, actual)) {
+		t.Errorf("unexpected bodyParams. expected %+v, actual %+v", expected, actual)
+	}
+}
+
+func TestGetHeaderParams(t *testing.T) {
+	comments := []string{
+		"@title Title",
+		"Description",
+		"@parameter foo string",
+		"@parameter bar array string",
+		"@kinds another/thing",
+	}
+
+	expected := []Parameter{
+		{
+			Name: "foo",
+			Type: "string",
+		},
+		{
+			Name:    "bar",
+			Type:    "string",
+			IsArray: true,
+		},
+	}
+
+	actual, err := getHeaderParams(comments)
+	if err != nil {
+		t.Fatalf("get header params: %s", err)
+	}
+
+	if !(reflect.DeepEqual(expected, actual)) {
+		t.Errorf("unexpected headerParams. expected %+v, actual %+v", expected, actual)
 	}
 }
