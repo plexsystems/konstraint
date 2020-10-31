@@ -302,14 +302,12 @@ func parseDirectory(directory string) ([]Rego, error) {
 }
 
 func getBodyParamNames(rules []*ast.Rule) []string {
+	r := regexp.MustCompile(`input\.parameters\.([a-zA-Z0-9_-]+)`)
 	var bodyParams []string
 	for _, rule := range rules {
-		if strings.Contains(rule.Body.String(), "input.parameters.") {
-			r := regexp.MustCompile(`input\.parameters\.([a-zA-Z0-9_-]+)`)
-			matches := r.FindAllStringSubmatch(rule.Body.String(), -1)
-			for _, match := range matches {
-				bodyParams = append(bodyParams, match[1]) // the 0 index is the full match, we only care about the first group
-			}
+		matches := r.FindAllStringSubmatch(rule.Body.String(), -1)
+		for _, match := range matches {
+			bodyParams = append(bodyParams, match[1]) // the 0 index is the full match, we only care about the first group
 		}
 	}
 	bodyParams = dedupe(bodyParams) // possible a param is referenced more than once
@@ -332,6 +330,9 @@ func getHeaderParams(comments []string) ([]Parameter, error) {
 
 			p := Parameter{Name: paramsSplit[0]}
 			if paramsSplit[1] == "array" {
+				if len(paramsSplit) == 2 {
+					return nil, fmt.Errorf("array type must be supplied with parameter name: %s", paramsSplit[0])
+				}
 				p.IsArray = true
 				p.Type = paramsSplit[2]
 			} else {
