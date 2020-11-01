@@ -12,6 +12,7 @@ import (
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -84,6 +85,11 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("writing template: %w", err)
 		}
 
+		// skip Constraint generation if there are parameters on the template
+		if len(violation.Parameters()) > 0 {
+			continue
+		}
+
 		constraint, err := getConstraint(violation)
 		if err != nil {
 			return fmt.Errorf("get constraint: %w", err)
@@ -129,7 +135,33 @@ func getConstraintTemplate(violation rego.Rego) v1beta1.ConstraintTemplate {
 		},
 	}
 
+	if len(violation.Parameters()) > 0 {
+		constraintTemplate.Spec.CRD.Spec.Validation = &v1beta1.Validation{
+			OpenAPIV3Schema: &apiextensionsv1beta1.JSONSchemaProps{
+				Properties: getOpenAPISchemaProperties(violation),
+			},
+		}
+	}
+
 	return constraintTemplate
+}
+
+func getOpenAPISchemaProperties(r rego.Rego) map[string]apiextensionsv1beta1.JSONSchemaProps {
+	properties := make(map[string]apiextensionsv1beta1.JSONSchemaProps)
+	for _, p := range r.Parameters() {
+		if p.IsArray {
+			properties[p.Name] = apiextensionsv1beta1.JSONSchemaProps{
+				Type: "array",
+				Items: &apiextensionsv1beta1.JSONSchemaPropsOrArray{
+					Schema: &apiextensionsv1beta1.JSONSchemaProps{Type: p.Type},
+				},
+			}
+		} else {
+			properties[p.Name] = apiextensionsv1beta1.JSONSchemaProps{Type: p.Type}
+		}
+	}
+
+	return properties
 }
 
 func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {

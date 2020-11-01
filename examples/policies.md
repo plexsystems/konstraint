@@ -19,6 +19,7 @@
 * [P1013: PodSecurityPolicies must not allow access to the host network](#p1013-podsecuritypolicies-must-not-allow-access-to-the-host-network)
 * [P1014: PodSecurityPolicies must not allow access to the host PID namespace](#p1014-podsecuritypolicies-must-not-allow-access-to-the-host-pid-namespace)
 * [P1015: PodSecurityPolicies must require containers to not run as privileged](#p1015-podsecuritypolicies-must-require-containers-to-not-run-as-privileged)
+* [P0002: Required Labels](#p0002-required-labels)
 * [P2005: Roles must not allow use of privileged PodSecurityPolicies](#p2005-roles-must-not-allow-use-of-privileged-podsecuritypolicies)
 
 ## Warnings
@@ -606,6 +607,45 @@ psp_allows_privileged {
 ```
 
 _source: [psp-deny-privileged](psp-deny-privileged)_
+
+## P0002: Required Labels
+
+**Severity:** Violation
+
+**Resources:** Any Resource
+
+**Parameters:**
+
+* labels: array of string
+
+
+This policy allows you to require certain labels are set on a resource.
+Adapted from https://github.com/open-policy-agent/gatekeeper/blob/master/example/templates/k8srequiredlabels_template.yaml
+
+### Rego
+
+```rego
+package required_labels
+
+import data.lib.core
+
+policyID := "P0002"
+
+violation[msg] {
+    missing := missing_labels
+    count(missing) > 0
+
+    msg := core.format_with_id(sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing]), policyID)
+}
+
+missing_labels = missing {
+    provided := {label | core.labels[label]}
+    required := {label | label := input.parameters.labels[_]}
+    missing := required - provided
+}
+```
+
+_source: [required-labels](required-labels)_
 
 ## P2005: Roles must not allow use of privileged PodSecurityPolicies
 

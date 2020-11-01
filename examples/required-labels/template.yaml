@@ -1,0 +1,86 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  creationTimestamp: null
+  name: requiredlabels
+spec:
+  crd:
+    spec:
+      names:
+        kind: RequiredLabels
+      validation:
+        openAPIV3Schema:
+          properties:
+            labels:
+              items:
+                type: string
+              type: array
+  targets:
+  - libs:
+    - |-
+      package lib.core
+
+      default is_gatekeeper = false
+
+      is_gatekeeper {
+          has_field(input, "review")
+          has_field(input.review, "object")
+      }
+
+      resource = input.review.object {
+          is_gatekeeper
+      }
+
+      resource = input {
+          not is_gatekeeper
+      }
+
+      format(msg) = {"msg": msg} {
+          true
+      }
+
+      format_with_id(msg, id) = msg_fmt {
+          msg_fmt := {
+              "msg": sprintf("%s: %s", [id, msg]),
+              "details": {"policyID": id}
+          }
+      }
+
+      apiVersion = resource.apiVersion
+      name = resource.metadata.name
+      kind = resource.kind
+      labels = resource.metadata.labels
+      annotations = resource.metadata.annotations
+
+      has_field(obj, field) {
+          not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
+      }
+
+      missing_field(obj, field) = true {
+          obj[field] == ""
+      }
+
+      missing_field(obj, field) = true {
+          not has_field(obj, field)
+      }
+    rego: |-
+      package required_labels
+
+      import data.lib.core
+
+      policyID := "P0002"
+
+      violation[msg] {
+          missing := missing_labels
+          count(missing) > 0
+
+          msg := core.format_with_id(sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing]), policyID)
+      }
+
+      missing_labels = missing {
+          provided := {label | core.labels[label]}
+          required := {label | label := input.parameters.labels[_]}
+          missing := required - provided
+      }
+    target: admission.k8s.gatekeeper.sh
+status: {}

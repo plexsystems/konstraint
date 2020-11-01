@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -32,6 +33,14 @@ type Rego struct {
 	comments     []string
 	rules        []string
 	dependencies []string
+	parameters   []Parameter
+}
+
+// Parameter represents a parameter that the policy uses
+type Parameter struct {
+	Name    string
+	Type    string
+	IsArray bool
 }
 
 // GetAllSeverities gets all of the rego files found in the given
@@ -79,6 +88,11 @@ func GetViolations(directory string) ([]Rego, error) {
 // Path returns the original path of the rego file.
 func (r Rego) Path() string {
 	return r.path
+}
+
+// Parameters returns the list of parsed parameters
+func (r Rego) Parameters() []Parameter {
+	return r.parameters
 }
 
 // Severity returns the severity of the rego file.
@@ -240,6 +254,28 @@ func parseDirectory(directory string) ([]Rego, error) {
 			comments = append(comments, trimString(string(file.Parsed.Comments[c].Text)))
 		}
 
+		bodyParams := getBodyParamNames(file.Parsed.Rules)
+		headerParams, err := getHeaderParams(comments)
+		if err != nil {
+			return nil, fmt.Errorf("parse header parameters: %w", err)
+		}
+		if len(bodyParams) != len(headerParams) {
+			return nil, fmt.Errorf("count of @parameter tags does not match parameter count")
+		}
+		for _, bodyParam := range bodyParams {
+			var seen bool
+			for _, headerParam := range headerParams {
+				if headerParam.Name == bodyParam {
+					seen = true
+					break
+				}
+			}
+
+			if !seen {
+				return nil, fmt.Errorf("missing @parameter tag for parameter: %s", bodyParam)
+			}
+		}
+
 		// Many YAML parsers do not like rendering out CRLF when writing the YAML to disk.
 		// This causes ConstraintTemplates to be rendered with the line breaks as text,
 		// rather than the actual line break.
@@ -250,6 +286,7 @@ func parseDirectory(directory string) ([]Rego, error) {
 			path:         file.Name,
 			dependencies: dependencies,
 			rules:        rules,
+			parameters:   headerParams,
 			comments:     comments,
 			raw:          raw,
 		}
@@ -262,6 +299,51 @@ func parseDirectory(directory string) ([]Rego, error) {
 	})
 
 	return regos, nil
+}
+
+func getBodyParamNames(rules []*ast.Rule) []string {
+	r := regexp.MustCompile(`input\.parameters\.([a-zA-Z0-9_-]+)`)
+	var bodyParams []string
+	for _, rule := range rules {
+		matches := r.FindAllStringSubmatch(rule.Body.String(), -1)
+		for _, match := range matches {
+			bodyParams = append(bodyParams, match[1]) // the 0 index is the full match, we only care about the first group
+		}
+	}
+	bodyParams = dedupe(bodyParams) // possible a param is referenced more than once
+
+	return bodyParams
+}
+
+func getHeaderParams(comments []string) ([]Parameter, error) {
+	var parameters []Parameter
+	for _, comment := range comments {
+		if strings.HasPrefix(comment, "@parameter") {
+			params := strings.SplitAfter(comment, "@parameter ")[1]
+			paramsSplit := strings.Split(params, " ")
+			if len(paramsSplit) == 0 {
+				return nil, fmt.Errorf("parameter name and type must be specified")
+			}
+			if len(paramsSplit) == 1 {
+				return nil, fmt.Errorf("type must be supplied with parameter name: %s", paramsSplit[0])
+			}
+
+			p := Parameter{Name: paramsSplit[0]}
+			if paramsSplit[1] == "array" {
+				if len(paramsSplit) == 2 {
+					return nil, fmt.Errorf("array type must be supplied with parameter name: %s", paramsSplit[0])
+				}
+				p.IsArray = true
+				p.Type = paramsSplit[2]
+			} else {
+				p.Type = paramsSplit[1]
+			}
+
+			parameters = append(parameters, p)
+		}
+	}
+
+	return parameters, nil
 }
 
 func removeComments(raw string) string {

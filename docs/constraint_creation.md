@@ -75,3 +75,33 @@ pod_has_hostipc {
 ```
 
 The comment block is also what is used when generating documentation via the `doc` command.
+
+## Using Input Parameters
+
+Gatekeeper has the ability for a single `ConstraintTemplate` resource to be used by multiple `Constraint`s. One of the reasons for this is that it allows for passing input parameters to the policy so a single policy to avoid duplication. Konstraint supports these input parameters via `@parameter` tags in the header comment block. **NOTE:** When input parameters are specified, Konstraint skips the generation of the `Constraint` resource.
+
+To use parameters, add one or more `@parameter <name> <type>` statements where `<name>` is the name of the parameter and `<type>` is the OpenAPI v3 type of the parameter (string, integer, etc.). Arrays are supported via `@parameter <name> array <type>`. Each parameter tag must be on its own line. Each parameter in the rule body must have a `@parameter` tag in the comment block header.
+
+```rego
+# @title Required Labels
+#
+# This policy allows you to require certain labels are set on a resource.
+#
+# @parameter labels array string
+package required_labels
+
+import data.lib.core
+
+violation[msg] {
+    missing := missing_labels
+    count(missing) > 0
+
+    msg := core.format(sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing]))
+}
+
+missing_labels = missing {
+    provided := {label | core.labels[label]}
+    required := {label | label := input.parameters.labels[_]}
+    missing := required - provided
+}
+```

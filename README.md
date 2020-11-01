@@ -58,3 +58,9 @@ By first validating the Kubernetes manifests with `Conftest` on a local machine,
 This typically means no policies were found, or the policies did not have any `violation[]` rules, so they are not compatible with Gatekeeper.
 
 For more information, see [How Constraints are Created](docs/constraint_creation.md).
+
+**My ConstraintTemplates are missing the input parameters**
+
+Input parameters can be specified by using one or more `@parameter <name> <type>` tags in the comment header block. If you use input parameters, Konstraint will skip generating the `Constraint` resource for that policy.
+
+For more information, see [Using Input Parameters](docs/constraint_creation.md#using-input-parameters).
