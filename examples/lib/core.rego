@@ -15,6 +15,14 @@ resource = input {
     not is_gatekeeper
 }
 
+review = input.review {
+	is_gatekeeper
+}
+
+review = {"object":input, "kind":{"group":group, "kind":kind, "version": version}} {
+	not is_gatekeeper
+}
+
 format(msg) = {"msg": msg} {
     true
 }
@@ -28,10 +36,14 @@ format_with_id(msg, id) = msg_fmt {
 
 apiVersion = resource.apiVersion
 name = resource.metadata.name
+gkv := split(apiVersion, "/")
+group := gkv[0] {
+	contains(apiVersion, "/")
+}
+version := gkv[count(gkv) - 1]
 kind = resource.kind
 labels = resource.metadata.labels
 annotations = resource.metadata.annotations
-
 has_field(obj, field) {
     not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
 }
