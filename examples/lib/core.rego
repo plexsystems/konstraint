@@ -16,11 +16,11 @@ resource = input {
 }
 
 review = input.review {
-	is_gatekeeper
+    is_gatekeeper
 }
 
 review = {"object": resource, "kind": {"group": group, "kind": kind, "version": version}} {
-	not is_gatekeeper
+    not is_gatekeeper
 }
 
 format(msg) = {"msg": msg} {
@@ -38,7 +38,7 @@ apiVersion = resource.apiVersion
 name = resource.metadata.name
 gkv := split(apiVersion, "/")
 group := gkv[0] {
-	contains(apiVersion, "/")
+    contains(apiVersion, "/")
 }
 version := gkv[count(gkv) - 1]
 kind = resource.kind
