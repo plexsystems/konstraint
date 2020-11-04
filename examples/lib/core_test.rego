@@ -19,3 +19,8 @@ test_missing_field {
     input := {"kind": "test"}
     not has_field(input, "abc")
 }
+
+test_review_object {
+    input := {"kind": {"group": "test", "version": "test", "kind": "test"} }
+    has_field(review.kind, "kind")  with input as input
+}

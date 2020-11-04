@@ -19,7 +19,7 @@ review = input.review {
 	is_gatekeeper
 }
 
-review = {"object":input, "kind":{"group":group, "kind":kind, "version": version}} {
+review = {"object":input, "kind": {"group": group, "kind": kind, "version": version}} {
 	not is_gatekeeper
 }
 
