@@ -31,7 +31,14 @@ name = resource.metadata.name
 kind = resource.kind
 labels = resource.metadata.labels
 annotations = resource.metadata.annotations
-
+gv := split(apiVersion, "/")
+group = gv[0] {
+    contains(apiVersion, "/")
+}
+group = "core" {
+    not contains(apiVersion, "/")
+}
+version := gv[count(gv) - 1]
 has_field(obj, field) {
     not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
 }
