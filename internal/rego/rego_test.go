@@ -162,12 +162,32 @@ func TestGetPolicyID_Null(t *testing.T) {
 	}
 }
 
-func TestGetBodyParamNames(t *testing.T) {
+func TestGetBodyParamNamesFromInput(t *testing.T) {
 	ruleString := `violation[msg] {
 	foo := "bar"
 	bar := input.parameters.baz
 	baz := input.parameters.foobars[_]
 	box := input.parameters.baz
+}`
+
+	rule, err := ast.ParseRule(ruleString)
+	if err != nil {
+		t.Fatalf("parse rule: %s", err)
+	}
+
+	expected := []string{"baz", "foobars"}
+	actual := getBodyParamNames([]*ast.Rule{rule})
+	if !(reflect.DeepEqual(expected, actual)) {
+		t.Errorf("unexpected bodyParams. expected %+v, actual %+v", expected, actual)
+	}
+}
+
+func TestGetBodyParamNamesFromCore(t *testing.T) {
+	ruleString := `violation[msg] {
+	foo := "bar"
+	bar := core.parameters.baz
+	baz := core.parameters.foobars[_]
+	box := core.parameters.baz
 }`
 
 	rule, err := ast.ParseRule(ruleString)

@@ -302,12 +302,12 @@ func parseDirectory(directory string) ([]Rego, error) {
 }
 
 func getBodyParamNames(rules []*ast.Rule) []string {
-	r := regexp.MustCompile(`input\.parameters\.([a-zA-Z0-9_-]+)`)
+	r := regexp.MustCompile(`(core|input)\.parameters\.([a-zA-Z0-9_-]+)`)
 	var bodyParams []string
 	for _, rule := range rules {
 		matches := r.FindAllStringSubmatch(rule.Body.String(), -1)
 		for _, match := range matches {
-			bodyParams = append(bodyParams, match[1]) // the 0 index is the full match, we only care about the first group
+			bodyParams = append(bodyParams, match[2]) // the 0 index is the full match, we only care about the second group
 		}
 	}
 	bodyParams = dedupe(bodyParams) // possible a param is referenced more than once

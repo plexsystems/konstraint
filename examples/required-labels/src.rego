@@ -20,6 +20,6 @@ violation[msg] {
 
 missing_labels = missing {
     provided := {label | core.labels[label]}
-    required := {label | label := input.parameters.labels[_]}
+    required := {label | label := core.parameters.labels[_]}
     missing := required - provided
 }
