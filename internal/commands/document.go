@@ -149,11 +149,11 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		}
 
 		if policy.Severity() == "" {
-			documents["Others"] = append(documents["Others"], document)
+			documents["Other"] = append(documents["Other"], document)
 		} else if policy.Enforcement() == "dryrun" {
 			documents["Not Enforced"] = append(documents["Not Enforced"], document)
 		} else {
-			documents[policy.Severity()+"s"] = append(documents[policy.Severity()+"s"], document)
+			documents[policy.Severity()] = append(documents[policy.Severity()], document)
 		}
 	}
 
