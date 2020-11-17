@@ -2,7 +2,7 @@ package commands
 
 const docTemplate = `# Policies
 {{ range $severity, $value := . }}
-## {{ $severity }}s
+## {{ $severity }}{{- if ne $severity "Not Enforced" }}s{{ end }}
 
 {{ range . }}* [{{ .Header.Title }}](#{{ .Header.Anchor }})
 {{ end }}
