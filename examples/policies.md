@@ -1,6 +1,6 @@
 # Policies
 
-## Violation
+## Violations
 
 * [P1001: Containers must drop all capabilities](#p1001-containers-must-drop-all-capabilities)
 * [P1002: Containers must not allow for privilege escalation](#p1002-containers-must-not-allow-for-privilege-escalation)
@@ -22,7 +22,7 @@
 * [P0002: Required Labels](#p0002-required-labels)
 * [P2005: Roles must not allow use of privileged PodSecurityPolicies](#p2005-roles-must-not-allow-use-of-privileged-podsecuritypolicies)
 
-## Warning
+## Warnings
 
 * [P0001: Deprecated Deployment and DaemonSet API](#p0001-deprecated-deployment-and-daemonset-api)
 * [P2003: Containers should not have a writable root filesystem](#p2003-containers-should-not-have-a-writable-root-filesystem)
