@@ -21,6 +21,4 @@ is_exception(policyID) = true  {
   annotations_object[annotations.ignoreAnnotationField] != null
   ignoreList := split(annotations_object[annotations.ignoreAnnotationField],",")
   ignoreList[_] == policyID
-} {
-  not parameters.parameters(policyID).enabled
 }
