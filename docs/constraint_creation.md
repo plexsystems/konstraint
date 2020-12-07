@@ -2,7 +2,7 @@
 
 ## Policy File Parsing
 
-When using `konstraint generate`, Konstraint will only generate templates and constraints for policy files with at least one `violation[]` rule. The `violation` rule is required by Gatekeeper when evaluating policies on a Kubernetes cluster.
+When using `konstraint create`, Konstraint will only generate templates and constraints for policy files with at least one `violation[]` rule. The `violation` rule is required by Gatekeeper when evaluating policies on a Kubernetes cluster.
 
 When using `konstraint doc`, Konstraint will create documentation for each policy file and assign a severity based on the rule names found in the policy.
 
