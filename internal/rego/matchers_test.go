@@ -24,3 +24,23 @@ func TestGetKindMatchers(t *testing.T) {
 		t.Errorf("Unexpected KindMatchers. expected %v, actual %v.", expected, actual)
 	}
 }
+
+func TestGetMatchLabelsMatcher(t *testing.T) {
+	comments := []string{
+		"@matchlabels team=a app.kubernetes.io/name=test",
+	}
+	rego := Rego{
+		comments: comments,
+	}
+
+	expected := MatchLabelsMatcher{
+		"team":                   "a",
+		"app.kubernetes.io/name": "test",
+	}
+
+	actual := rego.Matchers().MatchLabelsMatcher
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Errorf("Unexpected MatchLabelMatcher. expected %v, actual %v.", expected, actual)
+	}
+}

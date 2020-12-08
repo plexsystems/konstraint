@@ -189,13 +189,30 @@ func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 		return constraint, nil
 	}
 
+	if len(matchers.KindMatchers) != 0 {
+		err := setKindMatcher(&constraint, matchers.KindMatchers)
+		if err != nil {
+			return constraint, err
+		}
+	}
+	if len(matchers.MatchLabelsMatcher) != 0 {
+		err := setMatchLabelsMatcher(&constraint, matchers.MatchLabelsMatcher)
+		if err != nil {
+			return constraint, err
+		}
+	}
+
+	return constraint, nil
+}
+
+func setKindMatcher(constraint *unstructured.Unstructured, kindMatchers []rego.KindMatcher) error {
 	var kinds []interface{}
 	var apiGroups []interface{}
-	for _, kindMatcher := range matchers.KindMatchers {
+	for _, kindMatcher := range kindMatchers {
 		kinds = append(kinds, kindMatcher.Kind)
 	}
 
-	for _, kindMatcher := range matchers.KindMatchers {
+	for _, kindMatcher := range kindMatchers {
 		apiGroup := kindMatcher.APIGroup
 		if kindMatcher.APIGroup == "core" {
 			apiGroup = ""
@@ -218,8 +235,14 @@ func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 	}
 
 	if err := unstructured.SetNestedSlice(constraint.Object, []interface{}{constraintMatcher}, "spec", "match", "kinds"); err != nil {
-		return unstructured.Unstructured{}, fmt.Errorf("set constraint matchers: %w", err)
+		return fmt.Errorf("set constraint kinds matchers: %w", err)
 	}
+	return nil
+}
 
-	return constraint, nil
+func setMatchLabelsMatcher(constraint *unstructured.Unstructured, matcher rego.MatchLabelsMatcher) error {
+	if err := unstructured.SetNestedStringMap(constraint.Object, matcher, "spec", "match", "labelSelector", "matchLabels"); err != nil {
+		return fmt.Errorf("set constraint labelSelector.matchLabels matchers: %w", err)
+	}
+	return nil
 }
