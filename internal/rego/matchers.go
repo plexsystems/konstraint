@@ -2,7 +2,6 @@ package rego
 
 import (
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -43,7 +42,7 @@ func (m MatchLabelsMatcher) String() string {
 }
 
 // Matchers returns all of the matchers found in the rego file.
-func (r Rego) Matchers() Matchers {
+func (r Rego) Matchers() (Matchers, error) {
 	var matchers Matchers
 	for _, comment := range r.comments {
 		if strings.HasPrefix(comment, "@kinds") {
@@ -53,12 +52,12 @@ func (r Rego) Matchers() Matchers {
 			var err error
 			matchers.MatchLabelsMatcher, err = getMatchLabelsMatcher(comment)
 			if err != nil {
-				log.Fatal(err)
+				return matchers, err
 			}
 		}
 	}
 
-	return matchers
+	return matchers, nil
 }
 
 func getKindMatchers(comment string) []KindMatcher {

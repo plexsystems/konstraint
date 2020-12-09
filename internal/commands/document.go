@@ -131,7 +131,10 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		anchor := strings.ToLower(strings.ReplaceAll(documentTitle, " ", "-"))
 		anchor = strings.ReplaceAll(anchor, ":", "")
 
-		matchers := policy.Matchers()
+		matchers, err := policy.Matchers()
+		if err != nil {
+			return nil, err
+		}
 		resources := matchers.KindMatchers.String()
 		if resources == "" {
 			resources = "Any Resource"

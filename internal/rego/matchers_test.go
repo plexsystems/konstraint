@@ -18,7 +18,11 @@ func TestGetKindMatchers(t *testing.T) {
 		{APIGroup: "apps", Kind: "Deployment"},
 	}
 
-	actual := rego.Matchers().KindMatchers
+	matchers, err := rego.Matchers()
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := matchers.KindMatchers
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("Unexpected KindMatchers. expected %v, actual %v.", expected, actual)
@@ -38,7 +42,11 @@ func TestGetMatchLabelsMatcher(t *testing.T) {
 		"app.kubernetes.io/name": "test",
 	}
 
-	actual := rego.Matchers().MatchLabelsMatcher
+	matchers, err := rego.Matchers()
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := matchers.MatchLabelsMatcher
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("Unexpected MatchLabelMatcher. expected %v, actual %v.", expected, actual)

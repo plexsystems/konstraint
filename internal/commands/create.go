@@ -184,7 +184,10 @@ func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 		}
 	}
 
-	matchers := violation.Matchers()
+	matchers, err := violation.Matchers()
+	if err != nil {
+		return constraint, err
+	}
 	if len(matchers.KindMatchers) == 0 {
 		return constraint, nil
 	}
