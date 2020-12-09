@@ -158,11 +158,11 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		}
 	}
 
-	sortPoliciesByTItle(documents)
+	sortPoliciesByTitle(documents)
 	return documents, nil
 }
 
-func sortPoliciesByTItle(policyMap map[rego.Severity][]Document) {
+func sortPoliciesByTitle(policyMap map[rego.Severity][]Document) {
 	for _, documents := range policyMap {
 		sort.Slice(documents, func(i, j int) bool {
 			return documents[i].Header.Title < documents[j].Header.Title
