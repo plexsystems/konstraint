@@ -17,7 +17,7 @@ const docTemplate = `# Policies
 
 **Resources:** {{ .Header.Resources }}
 
-**MatchLabels** {{ .Header.MatchLabels }}
+**MatchLabels:** {{ .Header.MatchLabels }}
 
 {{- if .Header.Parameters }}
 
