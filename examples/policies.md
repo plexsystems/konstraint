@@ -2,11 +2,10 @@
 
 ## Violations
 
+* [P0002: Required Labels](#p0002-required-labels)
 * [P1001: Containers must drop all capabilities](#p1001-containers-must-drop-all-capabilities)
 * [P1002: Containers must not allow for privilege escalation](#p1002-containers-must-not-allow-for-privilege-escalation)
-* [P2001: Images must not use the latest tag](#p2001-images-must-not-use-the-latest-tag)
 * [P1003: Containers must not run as privileged](#p1003-containers-must-not-run-as-privileged)
-* [P2002: Containers must define resource constraints](#p2002-containers-must-define-resource-constraints)
 * [P1004: Pods must not have access to the host aliases](#p1004-pods-must-not-have-access-to-the-host-aliases)
 * [P1005: Pods must not run with access to the host IPC](#p1005-pods-must-not-run-with-access-to-the-host-ipc)
 * [P1006: Pods must not run with access to the host networking](#p1006-pods-must-not-run-with-access-to-the-host-networking)
@@ -19,7 +18,8 @@
 * [P1013: PodSecurityPolicies must not allow access to the host network](#p1013-podsecuritypolicies-must-not-allow-access-to-the-host-network)
 * [P1014: PodSecurityPolicies must not allow access to the host PID namespace](#p1014-podsecuritypolicies-must-not-allow-access-to-the-host-pid-namespace)
 * [P1015: PodSecurityPolicies must require containers to not run as privileged](#p1015-podsecuritypolicies-must-require-containers-to-not-run-as-privileged)
-* [P0002: Required Labels](#p0002-required-labels)
+* [P2001: Images must not use the latest tag](#p2001-images-must-not-use-the-latest-tag)
+* [P2002: Containers must define resource constraints](#p2002-containers-must-define-resource-constraints)
 * [P2005: Roles must not allow use of privileged PodSecurityPolicies](#p2005-roles-must-not-allow-use-of-privileged-podsecuritypolicies)
 
 ## Warnings
@@ -27,6 +27,45 @@
 * [P0001: Deprecated Deployment and DaemonSet API](#p0001-deprecated-deployment-and-daemonset-api)
 * [P2003: Containers should not have a writable root filesystem](#p2003-containers-should-not-have-a-writable-root-filesystem)
 * [P2004: PodSecurityPolicies should require that a read-only root filesystem is set](#p2004-podsecuritypolicies-should-require-that-a-read-only-root-filesystem-is-set)
+
+## P0002: Required Labels
+
+**Severity:** Violation
+
+**Resources:** Any Resource
+
+**Parameters:**
+
+* labels: array of string
+
+
+This policy allows you to require certain labels are set on a resource.
+Adapted from https://github.com/open-policy-agent/gatekeeper/blob/master/example/templates/k8srequiredlabels_template.yaml
+
+### Rego
+
+```rego
+package required_labels
+
+import data.lib.core
+
+policyID := "P0002"
+
+violation[msg] {
+    missing := missing_labels
+    count(missing) > 0
+
+    msg := core.format_with_id(sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing]), policyID)
+}
+
+missing_labels = missing {
+    provided := {label | core.labels[label]}
+    required := {label | label := core.parameters.labels[_]}
+    missing := required - provided
+}
+```
+
+_source: [required-labels](required-labels)_
 
 ## P1001: Containers must drop all capabilities
 
@@ -100,43 +139,6 @@ container_allows_escalation(c) {
 
 _source: [container-deny-escalation](container-deny-escalation)_
 
-## P2001: Images must not use the latest tag
-
-**Severity:** Violation
-
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-
-Using the latest tag on images can cause unexpected problems in production. By specifying a pinned version
-we can have higher confidence that our applications are immutable and do not change unexpectedly.
-
-### Rego
-
-```rego
-package container_deny_latest_tag
-
-import data.lib.core
-import data.lib.pods
-
-policyID := "P2001"
-
-violation[msg] {
-    pods.containers[container]
-    has_latest_tag(container)
-
-    msg := core.format_with_id(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]), policyID)
-}
-
-has_latest_tag(c) {
-    endswith(c.image, ":latest")
-}
-
-has_latest_tag(c) {
-    contains(c.image, ":") == false
-}
-```
-
-_source: [container-deny-latest-tag](container-deny-latest-tag)_
-
 ## P1003: Containers must not run as privileged
 
 **Severity:** Violation
@@ -175,42 +177,6 @@ container_is_privileged(container) {
 ```
 
 _source: [container-deny-privileged](container-deny-privileged)_
-
-## P2002: Containers must define resource constraints
-
-**Severity:** Violation
-
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-
-Resource constraints on containers ensure that a given workload does not take up more resources than it requires
-and potentially starve other applications that need to run.
-
-### Rego
-
-```rego
-package container_deny_without_resource_constraints
-
-import data.lib.core
-import data.lib.pods
-
-policyID := "P2002"
-
-violation[msg] {
-    pods.containers[container]
-    not container_resources_provided(container)
-
-    msg := core.format_with_id(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]), policyID)
-}
-
-container_resources_provided(container) {
-    container.resources.requests.cpu
-    container.resources.requests.memory
-    container.resources.limits.cpu
-    container.resources.limits.memory
-}
-```
-
-_source: [container-deny-without-resource-constraints](container-deny-without-resource-constraints)_
 
 ## P1004: Pods must not have access to the host aliases
 
@@ -608,44 +574,78 @@ psp_allows_privileged {
 
 _source: [psp-deny-privileged](psp-deny-privileged)_
 
-## P0002: Required Labels
+## P2001: Images must not use the latest tag
 
 **Severity:** Violation
 
-**Resources:** Any Resource
+**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 
-**Parameters:**
-
-* labels: array of string
-
-
-This policy allows you to require certain labels are set on a resource.
-Adapted from https://github.com/open-policy-agent/gatekeeper/blob/master/example/templates/k8srequiredlabels_template.yaml
+Using the latest tag on images can cause unexpected problems in production. By specifying a pinned version
+we can have higher confidence that our applications are immutable and do not change unexpectedly.
 
 ### Rego
 
 ```rego
-package required_labels
+package container_deny_latest_tag
 
 import data.lib.core
+import data.lib.pods
 
-policyID := "P0002"
+policyID := "P2001"
 
 violation[msg] {
-    missing := missing_labels
-    count(missing) > 0
+    pods.containers[container]
+    has_latest_tag(container)
 
-    msg := core.format_with_id(sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing]), policyID)
+    msg := core.format_with_id(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]), policyID)
 }
 
-missing_labels = missing {
-    provided := {label | core.labels[label]}
-    required := {label | label := core.parameters.labels[_]}
-    missing := required - provided
+has_latest_tag(c) {
+    endswith(c.image, ":latest")
+}
+
+has_latest_tag(c) {
+    contains(c.image, ":") == false
 }
 ```
 
-_source: [required-labels](required-labels)_
+_source: [container-deny-latest-tag](container-deny-latest-tag)_
+
+## P2002: Containers must define resource constraints
+
+**Severity:** Violation
+
+**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+
+Resource constraints on containers ensure that a given workload does not take up more resources than it requires
+and potentially starve other applications that need to run.
+
+### Rego
+
+```rego
+package container_deny_without_resource_constraints
+
+import data.lib.core
+import data.lib.pods
+
+policyID := "P2002"
+
+violation[msg] {
+    pods.containers[container]
+    not container_resources_provided(container)
+
+    msg := core.format_with_id(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]), policyID)
+}
+
+container_resources_provided(container) {
+    container.resources.requests.cpu
+    container.resources.requests.memory
+    container.resources.limits.cpu
+    container.resources.limits.memory
+}
+```
+
+_source: [container-deny-without-resource-constraints](container-deny-without-resource-constraints)_
 
 ## P2005: Roles must not allow use of privileged PodSecurityPolicies
 
