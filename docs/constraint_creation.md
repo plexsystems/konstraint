@@ -78,11 +78,11 @@ The comment block is also what is used when generating documentation via the `do
 
 ### Annotating rules for matchers
 
-- `@kinds` generates `constraint.spec.match.kinds`. The allowed format is whitespace-separated `<group>/<kind>` list.
+- `@kinds` generates `constraint.spec.match.kinds`. The allowed format is space-separated `<group>/<kind>` list.
     ```
     # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
     ```
-- `@matchlabels` generates `constraint.spec.match.labelSelector.matchLabels`. The allowed format is whitespace-separated `<label-key>=<label-val>` list.
+- `@matchlabels` generates `constraint.spec.match.labelSelector.matchLabels`. The allowed format is space-separated `<label-key>=<label-val>` list.
     ```
     # @matchlabels app.kubernetes.io/name=mysql app.kubernetes.io/version=5.8
     ```
