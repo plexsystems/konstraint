@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -157,5 +158,14 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		}
 	}
 
+	sortPoliciesByTItle(documents)
 	return documents, nil
+}
+
+func sortPoliciesByTItle(policyMap map[rego.Severity][]Document) {
+	for _, documents := range policyMap {
+		sort.Slice(documents, func(i, j int) bool {
+			return documents[i].Header.Title < documents[j].Header.Title
+		})
+	}
 }
