@@ -8,13 +8,16 @@ import (
 
 // Matchers are all of the matchers that can be applied to constraints.
 type Matchers struct {
-	KindMatchers       []KindMatcher
+	KindMatchers       KindMatchers
 	MatchLabelsMatcher MatchLabelsMatcher
 }
 
-func (m Matchers) String() string {
+// KindMatchers is the slice of KindMatcher
+type KindMatchers []KindMatcher
+
+func (k KindMatchers) String() string {
 	var result string
-	for _, kindMatcher := range m.KindMatchers {
+	for _, kindMatcher := range k {
 		result += kindMatcher.APIGroup + "/" + kindMatcher.Kind + " "
 	}
 	result = strings.TrimSpace(result)
@@ -30,6 +33,14 @@ type KindMatcher struct {
 
 // MatchLabelsMatcher is the matcher to generate `constraints.spec.match.labelSelector.matchLabels`.
 type MatchLabelsMatcher map[string]string
+
+func (m MatchLabelsMatcher) String() string {
+	var result string
+	for k, v := range m {
+		result += fmt.Sprintf("%s=%s ", k, v)
+	}
+	return strings.TrimSpace(result)
+}
 
 // Matchers returns all of the matchers found in the rego file.
 func (r Rego) Matchers() Matchers {

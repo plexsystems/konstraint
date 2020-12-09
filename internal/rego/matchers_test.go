@@ -13,7 +13,7 @@ func TestGetKindMatchers(t *testing.T) {
 		comments: comments,
 	}
 
-	expected := []KindMatcher{
+	expected := KindMatchers{
 		{APIGroup: "core", Kind: "Pod"},
 		{APIGroup: "apps", Kind: "Deployment"},
 	}
