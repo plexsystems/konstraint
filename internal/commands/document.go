@@ -140,9 +140,6 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 			resources = "Any Resource"
 		}
 		matchLabels := matchers.MatchLabelsMatcher.String()
-		if matchLabels == "" {
-			matchLabels = "*"
-		}
 
 		header := Header{
 			Title:       documentTitle,
