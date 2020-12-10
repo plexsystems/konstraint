@@ -19,6 +19,7 @@ type Header struct {
 	Title       string
 	Description string
 	Resources   string
+	MatchLabels string
 	Anchor      string
 	Parameters  []rego.Parameter
 }
@@ -130,15 +131,21 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		anchor := strings.ToLower(strings.ReplaceAll(documentTitle, " ", "-"))
 		anchor = strings.ReplaceAll(anchor, ":", "")
 
-		matchers := policy.Matchers().String()
-		if matchers == "" {
-			matchers = "Any Resource"
+		matchers, err := policy.Matchers()
+		if err != nil {
+			return nil, err
 		}
+		resources := matchers.KindMatchers.String()
+		if resources == "" {
+			resources = "Any Resource"
+		}
+		matchLabels := matchers.MatchLabelsMatcher.String()
 
 		header := Header{
 			Title:       documentTitle,
 			Description: policy.Description(),
-			Resources:   matchers,
+			Resources:   resources,
+			MatchLabels: matchLabels,
 			Anchor:      anchor,
 			Parameters:  policy.Parameters(),
 		}

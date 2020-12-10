@@ -21,6 +21,7 @@
 * [P2001: Images must not use the latest tag](#p2001-images-must-not-use-the-latest-tag)
 * [P2002: Containers must define resource constraints](#p2002-containers-must-define-resource-constraints)
 * [P2005: Roles must not allow use of privileged PodSecurityPolicies](#p2005-roles-must-not-allow-use-of-privileged-podsecuritypolicies)
+* [P2006: Tenants' containers must not run as privileged](#p2006-tenants'-containers-must-not-run-as-privileged)
 
 ## Warnings
 
@@ -694,6 +695,50 @@ psp_is_privileged(psp) {
 ```
 
 _source: [role-deny-use-privileged-psp](role-deny-use-privileged-psp)_
+
+## P2006: Tenants' containers must not run as privileged
+
+**Severity:** Violation
+
+**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+
+**MatchLabels:** is-tenant=true
+
+Privileged containers can easily escalate to root privileges on the node. As
+such containers running as privileged or with sufficient capabilities granted
+to obtain the same effect are not allowed if they are labeled as tenant.
+To take advantage of this policy, it must be combined with another policy
+that enforces the 'is-tenant' label.
+This is the example for @matchlabels.
+
+### Rego
+
+```rego
+package container_deny_privileged_if_tenant
+
+import data.lib.core
+import data.lib.pods
+import data.lib.security
+
+policyID := "P2006"
+
+violation[msg] {
+    pods.containers[container]
+    container_is_privileged(container)
+
+    msg = core.format_with_id(sprintf("%s/%s/%s: Tenants' containers must not run as privileged", [core.kind, core.name, container.name]), policyID)
+}
+
+container_is_privileged(container) {
+    container.securityContext.privileged
+}
+
+container_is_privileged(container) {
+    security.added_capability(container, "CAP_SYS_ADMIN")
+}
+```
+
+_source: [container-deny-privileged-if-tenant](container-deny-privileged-if-tenant)_
 
 ## P0001: Deprecated Deployment and DaemonSet API
 

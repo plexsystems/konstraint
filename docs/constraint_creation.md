@@ -48,7 +48,7 @@ This comment block should:
 - Include a human readable description of what the policy does.
 - Set the matchers used when generating the Constraints.
 
-It may also specify the enforcment action (either `deny` or `dryrun`) that Gatekeeper should take when a resource violates the constraint. If no enforcement action is specified, Konstraint defaults to using `deny` to align with Gatekeeper's default action. If the enforcement is set to `dryrun`, the policy will be skipped in the documentation generation.
+It may also specify the enforcement action (either `deny` or `dryrun`) that Gatekeeper should take when a resource violates the constraint. If no enforcement action is specified, Konstraint defaults to using `deny` to align with Gatekeeper's default action. If the enforcement is set to `dryrun`, the policy will be skipped in the documentation generation.
 
 ```rego
 # @title Pods must not run with access to the host IPC
@@ -75,6 +75,17 @@ pod_has_hostipc {
 ```
 
 The comment block is also what is used when generating documentation via the `doc` command.
+
+### Annotating rules for matchers
+
+- `@kinds` generates `constraint.spec.match.kinds`. The allowed format is space-separated `<group>/<kind>` list.
+    ```
+    # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+    ```
+- `@matchlabels` generates `constraint.spec.match.labelSelector.matchLabels`. The allowed format is space-separated `<label-key>=<label-val>` list.
+    ```
+    # @matchlabels app.kubernetes.io/name=mysql app.kubernetes.io/version=5.8
+    ```
 
 ## Using Input Parameters
 

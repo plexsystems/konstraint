@@ -1,0 +1,18 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: ContainerDenyPrivilegedIfTenant
+metadata:
+  name: containerdenyprivilegediftenant
+spec:
+  match:
+    kinds:
+    - apiGroups:
+      - apps
+      - ""
+      kinds:
+      - DaemonSet
+      - Deployment
+      - StatefulSet
+      - Pod
+    labelSelector:
+      matchLabels:
+        is-tenant: "true"
