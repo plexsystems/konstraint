@@ -40,6 +40,10 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 				return fmt.Errorf("bind ouput flag: %w", err)
 			}
 
+			if err := viper.BindPFlag("skip-constraints", cmd.PersistentFlags().Lookup("skip-constraints")); err != nil {
+				return fmt.Errorf("bind skip-constraints flag: %w", err)
+			}
+
 			path := "."
 			if len(args) > 0 {
 				path = args[0]
@@ -51,6 +55,7 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 
 	cmd.PersistentFlags().StringP("output", "o", "", "Specify an output directory for the Gatekeeper resources")
 	cmd.PersistentFlags().BoolP("dryrun", "d", false, "Sets the enforcement action of the constraints to dryrun, overriding the @enforcement tag")
+	cmd.PersistentFlags().Bool("skip-constraints", false, "Skip generation of constraints")
 
 	return &cmd
 }
@@ -83,6 +88,10 @@ func runCreateCommand(path string) error {
 
 		if err := ioutil.WriteFile(filepath.Join(outputDir, templateFileName), constraintTemplateBytes, os.ModePerm); err != nil {
 			return fmt.Errorf("writing template: %w", err)
+		}
+
+		if viper.GetBool("skip-constraints") {
+			continue
 		}
 
 		// skip Constraint generation if there are parameters on the template
