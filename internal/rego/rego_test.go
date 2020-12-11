@@ -39,7 +39,7 @@ func TestTitle(t *testing.T) {
 	}
 
 	rego := Rego{
-		comments: comments,
+		headerComments: comments,
 	}
 
 	actual := rego.Title()
@@ -59,7 +59,7 @@ func TestDescription(t *testing.T) {
 	}
 
 	rego := Rego{
-		comments: comments,
+		headerComments: comments,
 	}
 
 	actual := rego.Description()
@@ -117,7 +117,7 @@ func TestEnforcement(t *testing.T) {
 		"@kinds apps/Deployment",
 	}
 	rego := Rego{
-		comments: comments,
+		headerComments: comments,
 	}
 
 	actual := rego.Enforcement()
