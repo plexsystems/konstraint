@@ -44,7 +44,7 @@ func (m MatchLabelsMatcher) String() string {
 // Matchers returns all of the matchers found in the rego file.
 func (r Rego) Matchers() (Matchers, error) {
 	var matchers Matchers
-	for _, comment := range r.comments {
+	for _, comment := range r.headerComments {
 		if strings.HasPrefix(comment, "@kinds") {
 			matchers.KindMatchers = getKindMatchers(comment)
 		}
