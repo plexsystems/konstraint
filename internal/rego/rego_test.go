@@ -64,7 +64,7 @@ func TestDescription(t *testing.T) {
 
 	actual := rego.Description()
 
-	const expected = "The description"
+	const expected = "The description\nExtra comment"
 	if actual != expected {
 		t.Errorf("unexpected Description. expected %v, actual %v", expected, actual)
 	}

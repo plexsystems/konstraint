@@ -176,13 +176,6 @@ func (r Rego) PolicyID() string {
 func (r Rego) Description() string {
 	var description string
 	for _, comment := range r.headerComments {
-
-		// When the  token appears, we consider this point to
-		// be the end of the description.
-		if strings.HasPrefix(comment, "@kinds") {
-			break
-		}
-
 		if strings.HasPrefix(comment, "@") {
 			continue
 		}
