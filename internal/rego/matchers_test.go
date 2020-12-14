@@ -10,7 +10,7 @@ func TestGetKindMatchers(t *testing.T) {
 		"@kinds core/Pod apps/Deployment",
 	}
 	rego := Rego{
-		comments: comments,
+		headerComments: comments,
 	}
 
 	expected := KindMatchers{
@@ -34,7 +34,7 @@ func TestGetMatchLabelsMatcher(t *testing.T) {
 		"@matchlabels team=a app.kubernetes.io/name=test",
 	}
 	rego := Rego{
-		comments: comments,
+		headerComments: comments,
 	}
 
 	expected := MatchLabelsMatcher{

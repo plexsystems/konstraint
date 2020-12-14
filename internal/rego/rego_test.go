@@ -39,7 +39,7 @@ func TestTitle(t *testing.T) {
 	}
 
 	rego := Rego{
-		comments: comments,
+		headerComments: comments,
 	}
 
 	actual := rego.Title()
@@ -59,12 +59,12 @@ func TestDescription(t *testing.T) {
 	}
 
 	rego := Rego{
-		comments: comments,
+		headerComments: comments,
 	}
 
 	actual := rego.Description()
 
-	const expected = "The description"
+	const expected = "The description\nExtra comment"
 	if actual != expected {
 		t.Errorf("unexpected Description. expected %v, actual %v", expected, actual)
 	}
@@ -117,7 +117,7 @@ func TestEnforcement(t *testing.T) {
 		"@kinds apps/Deployment",
 	}
 	rego := Rego{
-		comments: comments,
+		headerComments: comments,
 	}
 
 	actual := rego.Enforcement()

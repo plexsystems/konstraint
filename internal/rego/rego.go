@@ -27,13 +27,14 @@ const (
 
 // Rego represents a parsed rego file.
 type Rego struct {
-	id           string
-	path         string
-	raw          string
-	comments     []string
-	rules        []string
-	dependencies []string
-	parameters   []Parameter
+	id             string
+	path           string
+	raw            string
+	comments       []string
+	headerComments []string
+	rules          []string
+	dependencies   []string
+	parameters     []Parameter
 }
 
 // Parameter represents a parameter that the policy uses
@@ -136,7 +137,7 @@ func (r Rego) Name() string {
 // Title returns the title found in the header comment of the rego file.
 func (r Rego) Title() string {
 	var title string
-	for _, comment := range r.comments {
+	for _, comment := range r.headerComments {
 		if !strings.Contains(comment, "@title") {
 			continue
 		}
@@ -152,7 +153,7 @@ func (r Rego) Title() string {
 // Defaults to deny if no enforcement action is specified
 func (r Rego) Enforcement() string {
 	enforcement := "deny"
-	for _, comment := range r.comments {
+	for _, comment := range r.headerComments {
 		if !strings.Contains(comment, "@enforcement") {
 			continue
 		}
@@ -174,14 +175,7 @@ func (r Rego) PolicyID() string {
 // found in the header comment of the rego file.
 func (r Rego) Description() string {
 	var description string
-	for _, comment := range r.comments {
-
-		// When the  token appears, we consider this point to
-		// be the end of the description.
-		if strings.HasPrefix(comment, "@kinds") {
-			break
-		}
-
+	for _, comment := range r.headerComments {
 		if strings.HasPrefix(comment, "@") {
 			continue
 		}
@@ -249,13 +243,17 @@ func parseDirectory(directory string) ([]Rego, error) {
 			rules = append(rules, file.Parsed.Rules[r].Head.Name.String())
 		}
 
-		var comments []string
-		for c := range file.Parsed.Comments {
-			comments = append(comments, trimString(string(file.Parsed.Comments[c].Text)))
+		var headerComments, comments []string
+		for _, c := range file.Parsed.Comments {
+			if c.Location.Row < file.Parsed.Package.Location.Row {
+				headerComments = append(headerComments, trimString(string(c.Text)))
+			} else {
+				comments = append(comments, trimString(string(c.Text)))
+			}
 		}
 
 		bodyParams := getBodyParamNames(file.Parsed.Rules)
-		headerParams, err := getHeaderParams(comments)
+		headerParams, err := getHeaderParams(headerComments)
 		if err != nil {
 			return nil, fmt.Errorf("parse header parameters: %w", err)
 		}
@@ -282,13 +280,14 @@ func parseDirectory(directory string) ([]Rego, error) {
 		raw := strings.ReplaceAll(string(file.Raw), "\r", "")
 
 		rego := Rego{
-			id:           getPolicyID(file.Parsed.Rules),
-			path:         file.Name,
-			dependencies: dependencies,
-			rules:        rules,
-			parameters:   headerParams,
-			comments:     comments,
-			raw:          raw,
+			id:             getPolicyID(file.Parsed.Rules),
+			path:           file.Name,
+			dependencies:   dependencies,
+			rules:          rules,
+			parameters:     headerParams,
+			headerComments: headerComments,
+			comments:       comments,
+			raw:            raw,
 		}
 
 		regos = append(regos, rego)
