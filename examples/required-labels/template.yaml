@@ -60,14 +60,6 @@ spec:
       }
       version := gv[count(gv) - 1]
 
-      parameters = input.parameters {
-          is_gatekeeper
-      }
-
-      parameters = data.parameters {
-         not is_gatekeeper
-      }
-
       has_field(obj, field) {
           not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
       }
@@ -95,7 +87,7 @@ spec:
 
       missing_labels = missing {
           provided := {label | core.labels[label]}
-          required := {label | label := core.parameters.labels[_]}
+          required := {label | label := input.parameters.labels[_]}
           missing := required - provided
       }
     target: admission.k8s.gatekeeper.sh
