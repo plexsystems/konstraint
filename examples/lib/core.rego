@@ -40,14 +40,6 @@ group = "core" {
 }
 version := gv[count(gv) - 1]
 
-parameters = input.parameters {
-    is_gatekeeper
-}
-
-parameters = data.parameters {
-   not is_gatekeeper
-}
-
 has_field(obj, field) {
     not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
 }
