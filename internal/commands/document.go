@@ -21,6 +21,7 @@ type Header struct {
 	Resources   string
 	MatchLabels string
 	Namespaces string
+	ExcludedNamespaces string
 	Anchor      string
 	Parameters  []rego.Parameter
 }
@@ -144,12 +145,15 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 
 		namespaces := matchers.NamespaceMatchers.String()
 
+		excludedNamespaces := matchers.ExcludedNamespacesMatchers.String()
+
 		header := Header{
 			Title:       documentTitle,
 			Description: policy.Description(),
 			Resources:   resources,
 			MatchLabels: matchLabels,
 			Namespaces: namespaces,
+			ExcludedNamespaces: excludedNamespaces,
 			Anchor:      anchor,
 			Parameters:  policy.Parameters(),
 		}

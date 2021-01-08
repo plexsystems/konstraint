@@ -10,6 +10,7 @@ type Matchers struct {
 	KindMatchers       KindMatchers
 	MatchLabelsMatcher MatchLabelsMatcher
 	NamespaceMatchers NamespaceMatchers
+	ExcludedNamespacesMatchers ExcludedNamespacesMatchers
 }
 
 // KindMatchers is the slice of KindMatcher
@@ -53,6 +54,17 @@ func (n NamespaceMatchers) String() string {
 	return strings.TrimSpace(result)
 }
 
+type ExcludedNamespacesMatchers []string
+
+func (n ExcludedNamespacesMatchers) String() string {
+	var result string
+	for _, v := range n {
+		result += fmt.Sprintf("%s ", v)
+	}
+
+	return strings.TrimSpace(result)
+}
+
 // Matchers returns all of the matchers found in the rego file.
 func (r Rego) Matchers() (Matchers, error) {
 	var matchers Matchers
@@ -69,6 +81,10 @@ func (r Rego) Matchers() (Matchers, error) {
 		}
 		if strings.HasPrefix(comment, "@namespaces") {
 			matchers.NamespaceMatchers = getNamespacesMatchers(comment)
+		}
+
+		if strings.HasPrefix(comment, "@excludednamespaces") {
+			matchers.ExcludedNamespacesMatchers = getExcludedNamespacesMatchers(comment)
 		}
 	}
 
@@ -119,4 +135,16 @@ func getNamespacesMatchers(comment string) NamespaceMatchers {
 	}
 
 	return namespaceMatchers
+}
+
+func getExcludedNamespacesMatchers(comment string) ExcludedNamespacesMatchers {
+	var excludedNamespacesMatchers ExcludedNamespacesMatchers
+	matcherText := strings.TrimSpace(strings.SplitAfter(comment, "@excludednamespaces")[1])
+	excludedNamespacesMatcherGroups := strings.Split(matcherText, " ")
+
+	for _, matcher := range excludedNamespacesMatcherGroups {
+		excludedNamespacesMatchers = append(excludedNamespacesMatchers, matcher)
+	}
+
+	return excludedNamespacesMatchers
 }

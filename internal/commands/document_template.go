@@ -27,6 +27,11 @@ const docTemplate = `# Policies
 **Namespaces:** {{ .Header.Namespaces }}
 {{- end }}
 
+{{- if .Header.ExcludedNamespaces }}
+
+**Excluded Namespaces:** {{ .Header.ExcludedNamespaces }}
+{{- end }}
+
 {{- if .Header.Parameters }}
 
 **Parameters:**

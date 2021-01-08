@@ -76,3 +76,27 @@ func TestGetNamespacesMatcher(t *testing.T) {
 		t.Errorf("Unexpected NamespaceMatchers. expected %v, actual %v.", expected, actual)
 	}
 }
+
+func TestGetExcludedNamespacesMatcher(t *testing.T) {
+	comments := []string{
+		"@excludednamespaces kube-system gatekeeper-system",
+	}
+
+	rego := Rego{
+		headerComments: comments,
+	}
+
+	expected := ExcludedNamespacesMatchers{
+		"kube-system", "gatekeeper-system",
+	}
+
+	matchers, err := rego.Matchers()
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := matchers.ExcludedNamespacesMatchers
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Errorf("Unexpected ExcludedNamespacesMatchers. expected %v, actual %v.", expected, actual)
+	}
+}
