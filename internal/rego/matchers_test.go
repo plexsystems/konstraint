@@ -52,3 +52,27 @@ func TestGetMatchLabelsMatcher(t *testing.T) {
 		t.Errorf("Unexpected MatchLabelMatcher. expected %v, actual %v.", expected, actual)
 	}
 }
+
+func TestGetNamespacesMatcher(t *testing.T) {
+	comments := []string{
+		"@namespaces kube-system gatekeeper-system",
+	}
+
+	rego := Rego{
+		headerComments: comments,
+	}
+
+	expected := NamespaceMatchers{
+		"kube-system", "gatekeeper-system",
+	}
+
+	matchers, err := rego.Matchers()
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := matchers.NamespaceMatchers
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Errorf("Unexpected NamespaceMatchers. expected %v, actual %v.", expected, actual)
+	}
+}

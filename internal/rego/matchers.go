@@ -9,6 +9,7 @@ import (
 type Matchers struct {
 	KindMatchers       KindMatchers
 	MatchLabelsMatcher MatchLabelsMatcher
+	NamespaceMatchers NamespaceMatchers
 }
 
 // KindMatchers is the slice of KindMatcher
@@ -41,6 +42,17 @@ func (m MatchLabelsMatcher) String() string {
 	return strings.TrimSpace(result)
 }
 
+type NamespaceMatchers []string
+
+func (n NamespaceMatchers) String() string {
+	var result string
+	for _, v := range n {
+		result += fmt.Sprintf("%s ", v)
+	}
+
+	return strings.TrimSpace(result)
+}
+
 // Matchers returns all of the matchers found in the rego file.
 func (r Rego) Matchers() (Matchers, error) {
 	var matchers Matchers
@@ -54,6 +66,9 @@ func (r Rego) Matchers() (Matchers, error) {
 			if err != nil {
 				return matchers, err
 			}
+		}
+		if strings.HasPrefix(comment, "@namespaces") {
+			matchers.NamespaceMatchers = getNamespacesMatchers(comment)
 		}
 	}
 
@@ -74,8 +89,7 @@ func getKindMatchers(comment string) []KindMatcher {
 			Kind:     kindMatcherSegments[1],
 		}
 
-		kindMatchers = append(kindMatchers, kindMatcher)
-	}
+		kindMatchers = append(kindMatchers, kindMatcher) }
 
 	return kindMatchers
 }
@@ -93,4 +107,16 @@ func getMatchLabelsMatcher(comment string) (MatchLabelsMatcher, error) {
 		matcher[split[0]] = split[1]
 	}
 	return matcher, nil
+}
+
+func getNamespacesMatchers(comment string) NamespaceMatchers {
+	var namespaceMatchers NamespaceMatchers
+	matcherText := strings.TrimSpace(strings.SplitAfter(comment, "@namespaces")[1])
+	namespaceMatcherGroups := strings.Split(matcherText, " ")
+
+	for _, matcher := range namespaceMatcherGroups {
+		namespaceMatchers = append(namespaceMatchers, matcher)
+	}
+
+	return namespaceMatchers
 }

@@ -214,6 +214,13 @@ func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 		}
 	}
 
+	if len(matchers.NamespaceMatchers) != 0 {
+		err := setNamespaceMatcher(&constraint, matchers.NamespaceMatchers)
+		if err != nil {
+			return constraint, err
+		}
+	}
+
 	return constraint, nil
 }
 
@@ -255,6 +262,13 @@ func setKindMatcher(constraint *unstructured.Unstructured, kindMatchers []rego.K
 func setMatchLabelsMatcher(constraint *unstructured.Unstructured, matcher rego.MatchLabelsMatcher) error {
 	if err := unstructured.SetNestedStringMap(constraint.Object, matcher, "spec", "match", "labelSelector", "matchLabels"); err != nil {
 		return fmt.Errorf("set constraint labelSelector.matchLabels matchers: %w", err)
+	}
+	return nil
+}
+
+func setNamespaceMatcher(constraint *unstructured.Unstructured, matcher rego.NamespaceMatchers) error {
+	if err := unstructured.SetNestedStringSlice(constraint.Object, matcher, "spec", "match", "namespaces"); err != nil {
+		return fmt.Errorf("set constraint namespace matchers: %w", err)
 	}
 	return nil
 }

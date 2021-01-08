@@ -22,6 +22,11 @@ const docTemplate = `# Policies
 **MatchLabels:** {{ .Header.MatchLabels }}
 {{- end }}
 
+{{- if .Header.Namespaces }}
+
+**Namespaces:** {{ .Header.Namespaces }}
+{{- end }}
+
 {{- if .Header.Parameters }}
 
 **Parameters:**
