@@ -62,7 +62,7 @@ func TestGetNamespacesMatcher(t *testing.T) {
 		headerComments: comments,
 	}
 
-	expected := NamespaceMatchers{
+	expected := NamespacesMatchers{
 		"kube-system", "gatekeeper-system",
 	}
 
@@ -70,10 +70,10 @@ func TestGetNamespacesMatcher(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	actual := matchers.NamespaceMatchers
+	actual := matchers.NamespacesMatchers
 
 	if !reflect.DeepEqual(expected, actual) {
-		t.Errorf("Unexpected NamespaceMatchers. expected %v, actual %v.", expected, actual)
+		t.Errorf("Unexpected NamespacesMatchers. expected %v, actual %v.", expected, actual)
 	}
 }
 

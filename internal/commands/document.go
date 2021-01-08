@@ -143,7 +143,7 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		}
 		matchLabels := matchers.MatchLabelsMatcher.String()
 
-		namespaces := matchers.NamespaceMatchers.String()
+		namespaces := matchers.NamespacesMatchers.String()
 
 		excludedNamespaces := matchers.ExcludedNamespacesMatchers.String()
 

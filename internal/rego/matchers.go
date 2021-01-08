@@ -9,7 +9,7 @@ import (
 type Matchers struct {
 	KindMatchers       KindMatchers
 	MatchLabelsMatcher MatchLabelsMatcher
-	NamespaceMatchers NamespaceMatchers
+	NamespacesMatchers NamespacesMatchers
 	ExcludedNamespacesMatchers ExcludedNamespacesMatchers
 }
 
@@ -43,9 +43,9 @@ func (m MatchLabelsMatcher) String() string {
 	return strings.TrimSpace(result)
 }
 
-type NamespaceMatchers []string
+type NamespacesMatchers []string
 
-func (n NamespaceMatchers) String() string {
+func (n NamespacesMatchers) String() string {
 	var result string
 	for _, v := range n {
 		result += fmt.Sprintf("%s ", v)
@@ -80,7 +80,7 @@ func (r Rego) Matchers() (Matchers, error) {
 			}
 		}
 		if strings.HasPrefix(comment, "@namespaces") {
-			matchers.NamespaceMatchers = getNamespacesMatchers(comment)
+			matchers.NamespacesMatchers = getNamespacesMatchers(comment)
 		}
 
 		if strings.HasPrefix(comment, "@excludednamespaces") {
@@ -125,16 +125,16 @@ func getMatchLabelsMatcher(comment string) (MatchLabelsMatcher, error) {
 	return matcher, nil
 }
 
-func getNamespacesMatchers(comment string) NamespaceMatchers {
-	var namespaceMatchers NamespaceMatchers
+func getNamespacesMatchers(comment string) NamespacesMatchers {
+	var namespacesMatchers NamespacesMatchers
 	matcherText := strings.TrimSpace(strings.SplitAfter(comment, "@namespaces")[1])
-	namespaceMatcherGroups := strings.Split(matcherText, " ")
+	namespacesMatcherGroups := strings.Split(matcherText, " ")
 
-	for _, matcher := range namespaceMatcherGroups {
-		namespaceMatchers = append(namespaceMatchers, matcher)
+	for _, matcher := range namespacesMatcherGroups {
+		namespacesMatchers = append(namespacesMatchers, matcher)
 	}
 
-	return namespaceMatchers
+	return namespacesMatchers
 }
 
 func getExcludedNamespacesMatchers(comment string) ExcludedNamespacesMatchers {
