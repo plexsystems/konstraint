@@ -221,7 +221,7 @@ func setKindMatcher(constraint *unstructured.Unstructured, kindMatchers []rego.K
 	var kinds []interface{}
 	var apiGroups []interface{}
 	for _, kindMatcher := range kindMatchers {
-		kinds = append(kinds, kindMatcher.Kind)
+		kinds = appendIfNotExists(kinds, kindMatcher.Kind)
 	}
 
 	for _, kindMatcher := range kindMatchers {
@@ -229,16 +229,7 @@ func setKindMatcher(constraint *unstructured.Unstructured, kindMatchers []rego.K
 		if kindMatcher.APIGroup == "core" {
 			apiGroup = ""
 		}
-
-		var exists bool
-		for _, addedGroup := range apiGroups {
-			if apiGroup == addedGroup {
-				exists = true
-			}
-		}
-		if !exists {
-			apiGroups = append(apiGroups, apiGroup)
-		}
+		apiGroups = appendIfNotExists(apiGroups, apiGroup)
 	}
 
 	constraintMatcher := map[string]interface{}{
@@ -250,6 +241,15 @@ func setKindMatcher(constraint *unstructured.Unstructured, kindMatchers []rego.K
 		return fmt.Errorf("set constraint kinds matchers: %w", err)
 	}
 	return nil
+}
+
+func appendIfNotExists(currentItems []interface{}, newItem string) []interface{} {
+	for _, item := range currentItems {
+		if newItem == fmt.Sprintf("%v", item) {
+			return currentItems
+		}
+	}
+	return append(currentItems, newItem)
 }
 
 func setMatchLabelsMatcher(constraint *unstructured.Unstructured, matcher rego.MatchLabelsMatcher) error {
