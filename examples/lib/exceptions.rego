@@ -15,10 +15,10 @@ import data.lib.core
 import data.lib.parameters
 import data.lib.annotations
 
-is_exception(policyID) = true  {
-  annotations_object := annotations.policy_annotations()
+is_exception(policyID) = true {
+  annotations_object := annotations.all_annotations()
   core.has_field(annotations_object, annotations.ignoreAnnotationField)
   annotations_object[annotations.ignoreAnnotationField] != null
-  ignoreList := split(annotations_object[annotations.ignoreAnnotationField],",")
+  ignoreList := split(annotations_object[annotations.ignoreAnnotationField], ",")
   ignoreList[_] == policyID
 }
