@@ -12,7 +12,6 @@ package lib.exceptions
 # 
 
 import data.lib.core
-import data.lib.parameters
 import data.lib.annotations
 
 is_exception(policyID) = true {
