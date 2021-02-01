@@ -401,8 +401,8 @@ github.com/open-policy-agent/frameworks/constraint v0.0.0-20200609232535-dd99544
 github.com/open-policy-agent/frameworks/constraint v0.0.0-20200609232535-dd99544a3119/go.mod h1:Dr3QxvH+NTQcPPZWSt1ueNOsxW4VwgUltaLL7Ttnrac=
 github.com/open-policy-agent/opa v0.19.1 h1:jVopQC3LRwQTstVME8LDCNf6PZkShmmozDsvyp+DYZY=
 github.com/open-policy-agent/opa v0.19.1/go.mod h1:rrwxoT/b011T0cyj+gg2VvxqTtn6N3gp/jzmr3fjW44=
-github.com/open-policy-agent/opa v0.25.2 h1:zTQuUMvB5xkYixKB9LFVbUd7DcUt1jfS0QKTo+/Vfyc=
-github.com/open-policy-agent/opa v0.25.2/go.mod h1:iGThTRECCfKQKICueOZkXUi0opN7BR3qiAnIrNHCmlI=
+github.com/open-policy-agent/opa v0.26.0 h1:FI0woFdGA73reU8OzSMzgHLFK+XeDMxKIlBpvvpRqDQ=
+github.com/open-policy-agent/opa v0.26.0/go.mod h1:iGThTRECCfKQKICueOZkXUi0opN7BR3qiAnIrNHCmlI=
 github.com/opentracing-contrib/go-observer v0.0.0-20170622124052-a52f23424492/go.mod h1:Ngi6UdF0k5OKD5t5wlmGhe/EDKPoUM3BXZSSfIuJbis=
 github.com/opentracing/basictracer-go v1.0.0/go.mod h1:QfBfYuafItcjQuMwinw9GhYKwFXS9KnPs5lxoYwgW74=
 github.com/opentracing/opentracing-go v1.0.2/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
