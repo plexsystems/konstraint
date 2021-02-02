@@ -26,6 +26,15 @@ jobs:
       - name: acceptance tests
         run: make acceptance
 
+  docker-tests:
+    name: Docker Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: docker build
+        run: make docker
+
   policy-tests:
     name: Policy Tests
     runs-on: ubuntu-latest
