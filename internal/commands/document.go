@@ -112,7 +112,15 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		if viper.GetString("url") != "" {
 			url = viper.GetString("url") + "/" + policy.Path()
 		} else {
-			relPath, err := filepath.Rel(outputDirectory, policy.Path())
+			outputDirectory, err := filepath.Abs(outputDirectory)
+			if err != nil {
+				return nil, fmt.Errorf("get abs path of output dir: %w", err)
+			}
+			policyPath, err := filepath.Abs(policy.Path())
+			if err != nil {
+				return nil, fmt.Errorf("get abs path of policy: %w", err)
+			}
+			relPath, err := filepath.Rel(outputDirectory, policyPath)
 			if err != nil {
 				return nil, fmt.Errorf("rel path: %w", err)
 			}
