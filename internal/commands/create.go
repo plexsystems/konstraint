@@ -100,6 +100,10 @@ func runCreateCommand(path string) error {
 			continue
 		}
 
+		if violation.SkipConstraint() {
+			continue
+		}
+
 		constraint, err := getConstraint(violation)
 		if err != nil {
 			return fmt.Errorf("get constraint: %w", err)

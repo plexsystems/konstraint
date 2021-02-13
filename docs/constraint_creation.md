@@ -87,6 +87,10 @@ The comment block is also what is used when generating documentation via the `do
     # @matchlabels app.kubernetes.io/name=mysql app.kubernetes.io/version=5.8
     ```
 
+### Skipping generation of the Constraint resource
+
+In some scenarios, you may wish for Konstraint to skip the generation of the `Constraint` resource for a policy and manage that externally. To do so, add the `@skip-constraint` tag in the header comment block.
+
 ## Using Input Parameters
 
 Gatekeeper has the ability for a single `ConstraintTemplate` resource to be used by multiple `Constraint`s. One of the reasons for this is that it allows for passing input parameters to the policy so a single policy to avoid duplication. Konstraint supports these input parameters via `@parameter` tags in the header comment block. **NOTE:** When input parameters are specified, Konstraint skips the generation of the `Constraint` resource.
