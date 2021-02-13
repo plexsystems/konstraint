@@ -38,7 +38,7 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 			}
 
 			if err := viper.BindPFlag("output", cmd.PersistentFlags().Lookup("output")); err != nil {
-				return fmt.Errorf("bind ouput flag: %w", err)
+				return fmt.Errorf("bind output flag: %w", err)
 			}
 
 			if err := viper.BindPFlag("skip-constraints", cmd.PersistentFlags().Lookup("skip-constraints")); err != nil {

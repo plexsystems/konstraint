@@ -200,7 +200,7 @@ func (r Rego) Dependencies() []string {
 	return r.dependencies
 }
 
-// SkipConstraint returns whether or not the generatin of the Constraint should be skipped
+// SkipConstraint returns whether or not the generation of the Constraint should be skipped
 // It is only set to true when the @skip-constraint tag is present in the comment header block
 func (r Rego) SkipConstraint() bool {
 	return r.skipConstraint
