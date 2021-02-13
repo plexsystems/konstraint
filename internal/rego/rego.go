@@ -35,6 +35,7 @@ type Rego struct {
 	rules          []string
 	dependencies   []string
 	parameters     []Parameter
+	skipConstraint bool
 }
 
 // Parameter represents a parameter that the policy uses
@@ -199,6 +200,12 @@ func (r Rego) Dependencies() []string {
 	return r.dependencies
 }
 
+// SkipConstraint returns whether or not the generatin of the Constraint should be skipped
+// It is only set to true when the @skip-constraint tag is present in the comment header block
+func (r Rego) SkipConstraint() bool {
+	return r.skipConstraint
+}
+
 func parseDirectory(directory string) ([]Rego, error) {
 
 	// Recursively find all rego files (ignoring test files), starting at the given directory.
@@ -291,6 +298,7 @@ func parseDirectory(directory string) ([]Rego, error) {
 			headerComments: headerComments,
 			comments:       comments,
 			raw:            raw,
+			skipConstraint: hasSkipConstraintTag(headerComments),
 		}
 
 		regos = append(regos, rego)
@@ -346,6 +354,16 @@ func getHeaderParams(comments []string) ([]Parameter, error) {
 	}
 
 	return parameters, nil
+}
+
+func hasSkipConstraintTag(comments []string) bool {
+	for _, comment := range comments {
+		if strings.HasPrefix(comment, "@skip-constraint") {
+			return true
+		}
+	}
+
+	return false
 }
 
 func removeComments(raw string) string {

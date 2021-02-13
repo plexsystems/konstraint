@@ -232,3 +232,17 @@ func TestGetHeaderParams(t *testing.T) {
 		t.Errorf("unexpected headerParams. expected %+v, actual %+v", expected, actual)
 	}
 }
+
+func TestHasSkipConstraintTag(t *testing.T) {
+	comments := []string{
+		"@title Title",
+		"Description",
+		"@kinds another/thing",
+		"@skip-constraint",
+	}
+
+	skip := hasSkipConstraintTag(comments)
+	if !skip {
+		t.Error("SkipConstraint is false when the @skip-constraint comment tag is present")
+	}
+}
