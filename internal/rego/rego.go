@@ -230,7 +230,10 @@ func parseDirectory(directory string) ([]Rego, error) {
 
 	var regos []Rego
 	for _, file := range files {
-		importPaths := getRecursiveImportPaths(file, files)
+		importPaths, err := getRecursiveImportPaths(file, files)
+		if err != nil {
+			return nil, fmt.Errorf("getRecursiveImportPaths: %w", err)
+		}
 		importPaths = dedupe(importPaths)
 
 		var dependencies []string
@@ -377,16 +380,24 @@ func trimString(text string) string {
 	return text
 }
 
-func getRecursiveImportPaths(regoFile *loader.RegoFile, regoFiles map[string]*loader.RegoFile) []string {
+func getRecursiveImportPaths(regoFile *loader.RegoFile, regoFiles map[string]*loader.RegoFile) ([]string, error) {
 	var recursiveImports []string
 	for i := range regoFile.Parsed.Imports {
-		imported := regoFiles[regoFile.Parsed.Imports[i].Path.String()]
+		importPath := regoFile.Parsed.Imports[i].Path.String()
+		imported := regoFiles[importPath]
+		if imported == nil {
+			return nil, fmt.Errorf("import not found: %s", importPath)
+		}
 
 		recursiveImports = append(recursiveImports, imported.Parsed.Package.Path.String())
-		recursiveImports = append(recursiveImports, getRecursiveImportPaths(imported, regoFiles)...)
+		remainingImports, err := getRecursiveImportPaths(imported, regoFiles)
+		if err != nil {
+			return nil, err
+		}
+		recursiveImports = append(recursiveImports, remainingImports...)
 	}
 
-	return recursiveImports
+	return recursiveImports, nil
 }
 
 func dedupe(collection []string) []string {
