@@ -84,7 +84,7 @@ func runDocCommand(path string) error {
 		return fmt.Errorf("parsing template: %w", err)
 	}
 
-	f, err := os.OpenFile(viper.GetString("output"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
+	f, err := os.OpenFile(viper.GetString("output"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("opening file for writing: %w", err)
 	}
