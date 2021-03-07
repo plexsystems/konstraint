@@ -87,7 +87,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
 		}
 
-		if err := ioutil.WriteFile(filepath.Join(outputDir, templateFileName), constraintTemplateBytes, os.ModePerm); err != nil {
+		if err := ioutil.WriteFile(filepath.Join(outputDir, templateFileName), constraintTemplateBytes, 0644); err != nil {
 			return fmt.Errorf("writing template: %w", err)
 		}
 
@@ -114,7 +114,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("marshal constraint: %w", err)
 		}
 
-		if err := ioutil.WriteFile(filepath.Join(outputDir, constraintFileName), constraintBytes, os.ModePerm); err != nil {
+		if err := ioutil.WriteFile(filepath.Join(outputDir, constraintFileName), constraintBytes, 0644); err != nil {
 			return fmt.Errorf("writing constraint: %w", err)
 		}
 	}
