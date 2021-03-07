@@ -267,8 +267,9 @@ func parseDirectory(directory string) ([]Rego, error) {
 		if err != nil {
 			return nil, fmt.Errorf("parse header parameters: %w", err)
 		}
-		if len(bodyParams) != len(headerParams) {
-			return nil, fmt.Errorf("count of @parameter tags does not match parameter count")
+		paramsDiff := paramDiff(bodyParams, headerParams)
+		if len(paramsDiff) > 0 {
+			return nil, fmt.Errorf("missing @parameter tags for parameters %v found in the policy: %v", paramsDiff, file.Name)
 		}
 		for _, bodyParam := range bodyParams {
 			var seen bool
@@ -439,4 +440,20 @@ func contains(collection []string, item string) bool {
 	}
 
 	return false
+}
+
+func paramDiff(bodyParams []string, headerParams []Parameter) []string {
+	var hps []string
+	for _, hp := range headerParams {
+		hps = append(hps, hp.Name)
+	}
+
+	var res []string
+	for _, bp := range bodyParams {
+		if !contains(hps, bp) {
+			res = append(res, bp)
+		}
+	}
+
+	return res
 }
