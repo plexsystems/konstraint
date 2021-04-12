@@ -1,3 +1,5 @@
+IMAGE := docker.pkg.github.com/plexsystems/konstraint
+
 .PHONY: build
 build:
 	go build -o build/konstraint
@@ -31,8 +33,8 @@ release:
 	GOOS=linux GOARCH=amd64 go build -o build/konstraint-linux-amd64 -ldflags="-X 'github.com/plexsystems/konstraint/internal/commands.version=$(version)'"
 	docker run --rm -v $(shell pwd):/konstraint alpine:3 /bin/ash -c 'cd /konstraint/build && sha256sum konstraint-* > checksums.txt'
 
-.PHONY: docker
-docker:
+.PHONY: docker-build
+docker-build:
 ifeq ($(version),) # this can't be indented because makefiles are picky
 	docker build -t konstraint:latest .
 else
@@ -42,10 +44,9 @@ endif
 # The version and the docker repository are required to use the docker-push target
 .PHONY: docker-push
 docker-push:
+	@test $(DOCKER_REPO)
 	@test $(version)
-	@test $(docker-repo)
-	@test $(registry-path)
-	docker tag konstraint:latest $(docker-repo)/$(registry-path)/konstraint:$(version)
-	docker tag konstraint:latest $(docker-repo)/$(registry-path)/konstraint:latest
-	docker push $(docker-repo)/$(registry-path)/konstraint:$(version)
-	docker push $(docker-repo)/$(registry-path)/konstraint:latest
+	docker tag konstraint:latest $(IMAGE):$(version)
+	docker tag konstraint:latest $(IMAGE):latest
+	docker push $(IMAGE):$(version)
+	docker push $(IMAGE):latest

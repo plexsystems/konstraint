@@ -9,7 +9,7 @@ jobs:
       - name: setup go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.15.x'
+          go-version: 1.16.x
 
       - name: checkout source
         uses: actions/checkout@v2
@@ -32,10 +32,13 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+
       - name: docker build
-        run: make docker
+        run: make docker-build
+
       - name: test create command
         run: docker run -v $PWD:/konstraint konstraint create /konstraint/examples
+
       - name: test doc command
         run: docker run -v $PWD:/konstraint konstraint doc /konstraint/examples
 
