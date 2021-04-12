@@ -5,36 +5,40 @@ on:
     - v*.*.*
 
 jobs:
-  unit-test: # sanity checks before pushing the image
+  unit-test:
     runs-on: ubuntu-20.04
     steps:
     - name: setup go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.15.x
+        go-version: 1.16.x
+
     - name: checkout
       uses: actions/checkout@v2
+
     - name: unit test
       run: make test
+
     - name: test build
       run: make build
 
   container-image:
     runs-on: ubuntu-20.04
     needs: [unit-test]
-    env:
-      DOCKER_REPO: docker.pkg.github.com
-      REGISTRY_PATH: plexsystems/konstraint
     steps:
     - name: checkout
       uses: actions/checkout@v2
+
     - name: get version tag
       run: echo TAG_NAME=$(echo ${GITHUB_REF} | rev | cut -d"/" -f1 | rev) >> $GITHUB_ENV
+
     - name: docker login
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: echo "${GITHUB_TOKEN}" | docker login https://${DOCKER_REPO} -u ${GITHUB_ACTOR} --password-stdin
+
     - name: docker build
-      run: make docker version=${TAG_NAME}
+      run: make docker-build version=${TAG_NAME}
+
     - name: docker push
-      run: make docker-push version=${TAG_NAME} docker-repo=${DOCKER_REPO} registry-path=${REGISTRY_PATH}
+      run: make docker-push version=${TAG_NAME}
