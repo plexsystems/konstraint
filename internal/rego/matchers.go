@@ -46,7 +46,11 @@ func (r Rego) Matchers() (Matchers, error) {
 	var matchers Matchers
 	for _, comment := range r.headerComments {
 		if strings.HasPrefix(comment, "@kinds") {
-			matchers.KindMatchers = getKindMatchers(comment)
+			var err error
+			matchers.KindMatchers, err = getKindMatchers(comment)
+			if err != nil {
+				return matchers, err
+			}
 		}
 		if strings.HasPrefix(comment, "@matchlabels") {
 			var err error
@@ -60,7 +64,7 @@ func (r Rego) Matchers() (Matchers, error) {
 	return matchers, nil
 }
 
-func getKindMatchers(comment string) []KindMatcher {
+func getKindMatchers(comment string) ([]KindMatcher, error) {
 	var kindMatchers []KindMatcher
 
 	kindMatcherText := strings.TrimSpace(strings.SplitAfter(comment, "@kinds")[1])
@@ -68,6 +72,9 @@ func getKindMatchers(comment string) []KindMatcher {
 
 	for _, kindMatcherGroup := range kindMatcherGroups {
 		kindMatcherSegments := strings.Split(kindMatcherGroup, "/")
+		if len(kindMatcherSegments) != 2 {
+			return nil, fmt.Errorf("invalid @kinds: %s", kindMatcherGroup)
+		}
 
 		kindMatcher := KindMatcher{
 			APIGroup: kindMatcherSegments[0],
@@ -77,7 +84,7 @@ func getKindMatchers(comment string) []KindMatcher {
 		kindMatchers = append(kindMatchers, kindMatcher)
 	}
 
-	return kindMatchers
+	return kindMatchers, nil
 }
 
 func getMatchLabelsMatcher(comment string) (MatchLabelsMatcher, error) {
