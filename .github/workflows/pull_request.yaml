@@ -23,6 +23,9 @@ jobs:
       - name: build
         run: make build
 
+      - name: setup node
+        uses: actions/setup-node@v2
+
       - name: install bats
         run: npm install bats
         if: ${{ matrix.os != 'macos-latest' }}
