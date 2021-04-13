@@ -1,6 +1,7 @@
 package rego
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -228,11 +229,17 @@ func parseDirectory(directory string) ([]Rego, error) {
 		return nil, fmt.Errorf("compile: %w", err)
 	}
 
-	// Re-key the loaded rego file map based on the package path of the rego file.
-	// This makes finding the source rego file from an import path much easier.
 	files := make(map[string]*loader.RegoFile)
-	for _, regoFile := range result.Modules {
-		files[regoFile.Parsed.Package.Path.String()] = regoFile
+	for m := range result.Modules {
+
+		// Many YAML parsers do not like rendering out CRLF when writing the YAML to disk.
+		// This causes ConstraintTemplates to be rendered with the line breaks as text,
+		// rather than the actual line break.
+		result.Modules[m].Raw = bytes.ReplaceAll(result.Modules[m].Raw, []byte("\r"), []byte(""))
+
+		// Re-key the loaded rego file map based on the package path of the rego file.
+		// This makes finding the source rego file from an import path much easier.
+		files[result.Modules[m].Parsed.Package.Path.String()] = result.Modules[m]
 	}
 
 	var regos []Rego
@@ -285,11 +292,6 @@ func parseDirectory(directory string) ([]Rego, error) {
 			}
 		}
 
-		// Many YAML parsers do not like rendering out CRLF when writing the YAML to disk.
-		// This causes ConstraintTemplates to be rendered with the line breaks as text,
-		// rather than the actual line break.
-		raw := strings.ReplaceAll(string(file.Raw), "\r", "")
-
 		rego := Rego{
 			id:             getPolicyID(file.Parsed.Rules),
 			path:           file.Name,
@@ -298,7 +300,7 @@ func parseDirectory(directory string) ([]Rego, error) {
 			parameters:     headerParams,
 			headerComments: headerComments,
 			comments:       comments,
-			raw:            raw,
+			raw:            string(file.Raw),
 			skipConstraint: hasSkipConstraintTag(headerComments),
 		}
 
