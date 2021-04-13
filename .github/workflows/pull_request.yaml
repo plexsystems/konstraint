@@ -26,9 +26,13 @@ jobs:
       - name: setup node
         uses: actions/setup-node@v2
 
-      - name: install bats
-        run: npm install bats
-        if: ${{ matrix.os != 'macos-latest' }}
+      - name: install bats ubuntu
+        run: sudo npm install -g bats
+        if: ${{ matrix.os == 'macos-latest' }}
+
+      - name: install bats windows
+        run: npm install -g bats
+        if: ${{ matrix.os == 'windows-latest' }}
 
       - name: acceptance tests
         run: make acceptance
