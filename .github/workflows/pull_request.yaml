@@ -28,7 +28,7 @@ jobs:
 
       - name: install bats ubuntu
         run: sudo npm install -g bats
-        if: ${{ matrix.os == 'macos-latest' }}
+        if: ${{ matrix.os == 'ubuntu-latest' }}
 
       - name: install bats windows
         run: npm install -g bats
