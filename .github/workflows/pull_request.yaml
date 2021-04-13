@@ -24,8 +24,8 @@ jobs:
         run: make build
 
       - name: install bats
-        run: sudo npm install -g bats
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: npm install bats
+        if: ${{ matrix.os != 'macos-latest' }}
 
       - name: acceptance tests
         run: make acceptance
