@@ -4,7 +4,10 @@ on: [pull_request]
 jobs:
   go-tests:
     name: Go Tests
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: setup go
         uses: actions/setup-go@v2
@@ -20,11 +23,23 @@ jobs:
       - name: build
         run: make build
 
-      - name: install bats
+      - name: install bats ubuntu
         run: sudo npm install -g bats
+        if: ${{ matrix.os == 'ubuntu-latest' }}
 
-      - name: acceptance tests
+      - name: install bats windows
+        run: npm install -g bats
+        if: ${{ matrix.os == 'windows-latest' }}
+
+      - name: acceptance tests *nix
         run: make acceptance
+        if: ${{ matrix.os != 'windows-latest' }}
+
+      - name: acceptance tests windows
+        run: |
+          $env:Path += ";C:\npm\prefix\node_modules\bats\libexec\bats-core"
+          make acceptance
+        if: ${{ matrix.os == 'windows-latest' }}
 
   docker-tests:
     name: Docker Tests
