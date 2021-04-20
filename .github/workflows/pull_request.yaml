@@ -41,6 +41,7 @@ jobs:
       - name: acceptance tests windows
         run: |
           $env:Path = $env:Path + ";" + $env:AppData + "\npm\node_modules\bats\libexec\bats-core"
+          Get-ChildItem -Recurse C:/npm/prefix/node_modules/bats
           make acceptance
         if: ${{ matrix.os == 'windows-latest' }}
 
