@@ -34,8 +34,15 @@ jobs:
         run: npm install -g bats
         if: ${{ matrix.os == 'windows-latest' }}
 
-      - name: acceptance tests
-        run: bash -c 'bats acceptance.bats'
+      - name: acceptance tests *nix
+        run: make acceptance
+        if: ${{ matrix.os != 'windows-latest' }}
+
+      - name: acceptance tests windows
+        run: |
+          $env:Path = $env:Path + ";" + $env:AppData + "\npm\node_modules\bats\libexec\bats-core"
+          make acceptance
+        if: ${{ matrix.os == 'windows-latest' }}
 
   docker-tests:
     name: Docker Tests
