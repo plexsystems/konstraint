@@ -32,11 +32,12 @@ jobs:
 
       - name: install bats windows
         run: npm install -g bats
-        shell: pwsh
+        shell: bash
         if: ${{ matrix.os == 'windows-latest' }}
 
       - name: acceptance tests
         run: make acceptance
+        shell: bash
 
   docker-tests:
     name: Docker Tests
