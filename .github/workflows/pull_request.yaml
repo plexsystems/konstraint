@@ -23,9 +23,6 @@ jobs:
       - name: build
         run: make build
 
-      - name: setup node
-        uses: actions/setup-node@v2
-
       - name: install bats ubuntu
         run: sudo npm install -g bats
         if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -41,7 +38,6 @@ jobs:
       - name: acceptance tests windows
         run: |
           $env:Path += ";C:\npm\prefix\node_modules\bats\libexec\bats-core"
-          Get-ChildItem -Recurse C:/npm/prefix/node_modules/bats
           make acceptance
         if: ${{ matrix.os == 'windows-latest' }}
 
