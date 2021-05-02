@@ -6,6 +6,12 @@
   git diff --quiet -- examples/policies.md
 }
 
+@test "[DOC] Generated documentation without Rego matches example documentation" {
+  run ./build/konstraint doc --no-rego examples --output examples/policies-no-rego.md
+  [ "$status" -eq 0 ]
+  git diff --quiet -- examples/policies-no-rego.md
+}
+
 @test "[CREATE] Creating constraints and templates matches examples" {
   run ./build/konstraint create examples
   [ "$status" -eq 0 ]

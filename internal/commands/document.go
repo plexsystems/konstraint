@@ -31,6 +31,12 @@ type Document struct {
 	Rego   string
 }
 
+// DocsMeta is the documentation with metadata
+type DocsMeta struct {
+	IncludeRego   bool
+	Documentation map[rego.Severity][]Document
+}
+
 func newDocCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "doc <dir>",
@@ -53,6 +59,10 @@ Set the URL where the policies are hosted at
 				return fmt.Errorf("bind url flag: %w", err)
 			}
 
+			if err := viper.BindPFlag("no-rego", cmd.Flags().Lookup("no-rego")); err != nil {
+				return fmt.Errorf("bind no-rego flag: %w", err)
+			}
+
 			path := "."
 			if len(args) > 0 {
 				path = args[0]
@@ -64,6 +74,7 @@ Set the URL where the policies are hosted at
 
 	cmd.Flags().StringP("output", "o", "policies.md", "Output location (including filename) for the policy documentation")
 	cmd.Flags().String("url", "", "The URL where the policy files are hosted at (e.g. https://github.com/policies)")
+	cmd.Flags().Bool("no-rego", false, "Do not include the Rego in the policy documentation")
 
 	return &cmd
 }
@@ -89,7 +100,11 @@ func runDocCommand(path string) error {
 		return fmt.Errorf("opening file for writing: %w", err)
 	}
 
-	if err := t.Execute(f, docs); err != nil {
+	tmplData := DocsMeta{
+		Documentation: docs,
+		IncludeRego:   !viper.GetBool("no-rego"),
+	}
+	if err := t.Execute(f, tmplData); err != nil {
 		return fmt.Errorf("executing template: %w", err)
 	}
 
