@@ -23,6 +23,7 @@ Set the URL where the policies are hosted at
 
 ```
   -h, --help            help for doc
+      --no-rego         Do not include the Rego in the policy documentation
   -o, --output string   Output location (including filename) for the policy documentation (default "policies.md")
       --url string      The URL where the policy files are hosted at (e.g. https://github.com/policies)
 ```
