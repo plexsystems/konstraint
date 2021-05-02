@@ -1,4 +1,4 @@
-FROM golang:1.16.2-alpine AS build
+FROM golang:1.16.3-alpine AS build
 WORKDIR /go/src/github.com/plexsystems/konstraint
 COPY go.mod .
 COPY go.sum .
