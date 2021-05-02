@@ -8,6 +8,6 @@ require (
 	github.com/open-policy-agent/opa v0.28.0
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.1
-	k8s.io/apiextensions-apiserver v0.17.2
-	k8s.io/apimachinery v0.17.2
+	k8s.io/apiextensions-apiserver v0.21.0
+	k8s.io/apimachinery v0.21.0
 )
