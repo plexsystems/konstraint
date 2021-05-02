@@ -1,7 +1,7 @@
 package commands
 
 const docTemplate = `# Policies
-{{ range $severity, $value := .Documentation }}
+{{ range $severity, $value := . }}
 ## {{ $severity }}{{- if ne $severity "Not Enforced" }}s{{ end }}
 
 {{ range . }}* [{{ .Header.Title }}](#{{ .Header.Anchor }})
@@ -9,7 +9,7 @@ const docTemplate = `# Policies
 
 {{- end }}
 
-{{- range $severity, $value := .Documentation }}
+{{- range $severity, $value := . }}
 {{- range $value }}
 ## {{ .Header.Title }}
 
@@ -31,7 +31,7 @@ const docTemplate = `# Policies
 {{- end }}
 
 {{ .Header.Description }}
-{{ if $.IncludeRego }}
+{{ if ne .Rego "" }}
 ### Rego
 {{ $codeblock := "` + "```" + `" }}
 {{ $codeblock }}rego

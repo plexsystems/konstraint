@@ -31,12 +31,6 @@ type Document struct {
 	Rego   string
 }
 
-// DocsMeta is the documentation with metadata
-type DocsMeta struct {
-	IncludeRego   bool
-	Documentation map[rego.Severity][]Document
-}
-
 func newDocCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "doc <dir>",
@@ -100,11 +94,7 @@ func runDocCommand(path string) error {
 		return fmt.Errorf("opening file for writing: %w", err)
 	}
 
-	tmplData := DocsMeta{
-		Documentation: docs,
-		IncludeRego:   !viper.GetBool("no-rego"),
-	}
-	if err := t.Execute(f, tmplData); err != nil {
+	if err := t.Execute(f, docs); err != nil {
 		return fmt.Errorf("executing template: %w", err)
 	}
 
@@ -173,10 +163,14 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 			Parameters:  policy.Parameters(),
 		}
 
+		rego := policy.Source()
+		if viper.GetBool("no-rego") {
+			rego = ""
+		}
 		document := Document{
 			Header: header,
 			URL:    url,
-			Rego:   policy.Source(),
+			Rego:   rego,
 		}
 
 		if policy.Severity() == "" {
