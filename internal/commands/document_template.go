@@ -31,12 +31,12 @@ const docTemplate = `# Policies
 {{- end }}
 
 {{ .Header.Description }}
-
+{{ if ne .Rego "" }}
 ### Rego
 {{ $codeblock := "` + "```" + `" }}
 {{ $codeblock }}rego
 {{ .Rego }}
-{{ $codeblock }}
+{{ $codeblock }}{{- end }}
 
 _source: [{{ .URL }}]({{ .URL }})_
 {{ end }}
