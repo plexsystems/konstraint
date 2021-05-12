@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"os"
 	"path"
 
@@ -16,8 +17,10 @@ func NewDefaultCommand() *cobra.Command {
 		Use:     path.Base(os.Args[0]),
 		Short:   "Konstraint",
 		Long:    "A tool to create and manage Gatekeeper CRDs from Rego",
-		Version: version,
+		Version: fmt.Sprintf("Version: %s\n", version),
 	}
+
+	cmd.SetVersionTemplate(`{{.Version}}`)
 
 	cmd.AddCommand(newCreateCommand())
 	cmd.AddCommand(newDocCommand())

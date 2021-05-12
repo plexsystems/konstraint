@@ -10,10 +10,14 @@ Konstraint is a CLI tool to assist with the creation and management of templates
 ## Installation
 
 ```text
-GO111MODULE=on go get github.com/plexsystems/konstraint
+go install github.com/plexsystems/konstraint@latest
 ```
 
-Binaries are also available on the [releases](https://github.com/plexsystems/konstraint/releases) page.
+A docker image is also provided for each release:
+
+```text
+docker run -v $PWD:/konstraint ghcr.io/plexsystems/konstraint create /konstraint/examples
+```
 
 ## Usage
 
