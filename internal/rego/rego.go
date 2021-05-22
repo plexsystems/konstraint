@@ -232,10 +232,10 @@ func parseDirectory(directory string) ([]Rego, error) {
 	files := make(map[string]*loader.RegoFile)
 	for m := range result.Modules {
 
-		// Many YAML parsers do not like rendering out CRLF when writing the YAML to disk.
-		// This causes ConstraintTemplates to be rendered with the line breaks as text,
-		// rather than the actual line break.
+		// Many YAML parsers have problems handling carriage returns and tabs so we sanitize the Rego
+		// before storing it so it can be rendered properly.
 		result.Modules[m].Raw = bytes.ReplaceAll(result.Modules[m].Raw, []byte("\r"), []byte(""))
+		result.Modules[m].Raw = bytes.ReplaceAll(result.Modules[m].Raw, []byte("\t"), []byte("  "))
 
 		// Re-key the loaded rego file map based on the package path of the rego file.
 		// This makes finding the source rego file from an import path much easier.
