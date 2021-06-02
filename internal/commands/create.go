@@ -175,14 +175,13 @@ func getOpenAPISchemaProperties(r rego.Rego) map[string]apiextensionsv1beta1.JSO
 }
 
 func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
-	constraint := unstructured.Unstructured{}
-
 	gvk := schema.GroupVersionKind{
 		Group:   "constraints.gatekeeper.sh",
 		Version: "v1beta1",
 		Kind:    violation.Kind(),
 	}
 
+	constraint := unstructured.Unstructured{}
 	constraint.SetGroupVersionKind(gvk)
 	constraint.SetName(violation.Name())
 
@@ -197,9 +196,6 @@ func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 	matchers, err := violation.Matchers()
 	if err != nil {
 		return unstructured.Unstructured{}, fmt.Errorf("matchers: %w", err)
-	}
-	if len(matchers.KindMatchers) == 0 {
-		return unstructured.Unstructured{}, nil
 	}
 
 	if len(matchers.KindMatchers) != 0 {
