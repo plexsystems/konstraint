@@ -196,22 +196,21 @@ func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 
 	matchers, err := violation.Matchers()
 	if err != nil {
-		return constraint, err
+		return unstructured.Unstructured{}, fmt.Errorf("matchers: %w", err)
 	}
 	if len(matchers.KindMatchers) == 0 {
-		return constraint, nil
+		return unstructured.Unstructured{}, nil
 	}
 
 	if len(matchers.KindMatchers) != 0 {
-		err := setKindMatcher(&constraint, matchers.KindMatchers)
-		if err != nil {
-			return constraint, err
+		if err := setKindMatcher(&constraint, matchers.KindMatchers); err != nil {
+			return unstructured.Unstructured{}, fmt.Errorf("set kind matcher: %w", err)
 		}
 	}
+
 	if len(matchers.MatchLabelsMatcher) != 0 {
-		err := setMatchLabelsMatcher(&constraint, matchers.MatchLabelsMatcher)
-		if err != nil {
-			return constraint, err
+		if err := setMatchLabelsMatcher(&constraint, matchers.MatchLabelsMatcher); err != nil {
+			return unstructured.Unstructured{}, fmt.Errorf("set match labels matcher: %w", err)
 		}
 	}
 
@@ -230,6 +229,7 @@ func setKindMatcher(constraint *unstructured.Unstructured, kindMatchers []rego.K
 		if kindMatcher.APIGroup == "core" {
 			apiGroup = ""
 		}
+
 		apiGroups = appendIfNotExists(apiGroups, apiGroup)
 	}
 

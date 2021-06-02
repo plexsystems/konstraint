@@ -31,7 +31,6 @@ type Rego struct {
 	id             string
 	path           string
 	raw            string
-	comments       []string
 	headerComments []string
 	rules          []string
 	dependencies   []string
@@ -140,7 +139,7 @@ func (r Rego) Name() string {
 func (r Rego) Title() string {
 	var title string
 	for _, comment := range r.headerComments {
-		if !strings.Contains(comment, "@title") {
+		if !commentHasKeyword(comment, "@title") {
 			continue
 		}
 
@@ -156,7 +155,7 @@ func (r Rego) Title() string {
 func (r Rego) Enforcement() string {
 	enforcement := "deny"
 	for _, comment := range r.headerComments {
-		if !strings.Contains(comment, "@enforcement") {
+		if !commentHasKeyword(comment, "@enforcement") {
 			continue
 		}
 
@@ -178,7 +177,7 @@ func (r Rego) PolicyID() string {
 func (r Rego) Description() string {
 	var description string
 	for _, comment := range r.headerComments {
-		if strings.HasPrefix(comment, "@") {
+		if strings.HasPrefix(strings.TrimSpace(comment), "@") {
 			continue
 		}
 
@@ -186,7 +185,8 @@ func (r Rego) Description() string {
 		description += "\n"
 	}
 
-	return trimString(description)
+	description = strings.Trim(description, "\n")
+	return description
 }
 
 // Source returns the original source code inside
@@ -260,12 +260,14 @@ func parseDirectory(directory string) ([]Rego, error) {
 			rules = append(rules, file.Parsed.Rules[r].Head.Name.String())
 		}
 
-		var headerComments, comments []string
+		var headerComments []string
 		for _, c := range file.Parsed.Comments {
+
+			// If the line number of the comment comes before the line number
+			// that the package is declared on, we can safely assume that it is
+			// a header comment.
 			if c.Location.Row < file.Parsed.Package.Location.Row {
-				headerComments = append(headerComments, trimString(string(c.Text)))
-			} else {
-				comments = append(comments, trimString(string(c.Text)))
+				headerComments = append(headerComments, string(c.Text))
 			}
 		}
 
@@ -301,7 +303,6 @@ func parseDirectory(directory string) ([]Rego, error) {
 			rules:          rules,
 			parameters:     headerParams,
 			headerComments: headerComments,
-			comments:       comments,
 			raw:            string(file.Raw),
 			skipConstraint: hasSkipConstraintTag(headerComments),
 		}
@@ -336,7 +337,7 @@ func getBodyParamNames(rules []*ast.Rule) []string {
 func getHeaderParams(comments []string) ([]Parameter, error) {
 	var parameters []Parameter
 	for _, comment := range comments {
-		if !strings.HasPrefix(comment, "@parameter") {
+		if !commentHasKeyword(comment, "@parameter") {
 			continue
 		}
 
@@ -368,7 +369,7 @@ func getHeaderParams(comments []string) ([]Parameter, error) {
 
 func hasSkipConstraintTag(comments []string) bool {
 	for _, comment := range comments {
-		if strings.HasPrefix(comment, "@skip-constraint") {
+		if commentHasKeyword(comment, "@skip-constraint") {
 			return true
 		}
 	}
