@@ -91,16 +91,12 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("writing template: %w", err)
 		}
 
-		if viper.GetBool("skip-constraints") {
+		if viper.GetBool("skip-constraints") || violation.SkipConstraint() {
 			continue
 		}
 
-		// skip Constraint generation if there are parameters on the template
+		// Skip Constraint generation if there are parameters on the template.
 		if len(violation.Parameters()) > 0 {
-			continue
-		}
-
-		if violation.SkipConstraint() {
 			continue
 		}
 

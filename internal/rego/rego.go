@@ -274,10 +274,12 @@ func parseDirectory(directory string) ([]Rego, error) {
 		if err != nil {
 			return nil, fmt.Errorf("parse header parameters: %w", err)
 		}
+
 		paramsDiff := paramDiff(bodyParams, headerParams)
 		if len(paramsDiff) > 0 {
 			return nil, fmt.Errorf("missing @parameter tags for parameters %v found in the policy: %v", paramsDiff, file.Name)
 		}
+
 		for _, bodyParam := range bodyParams {
 			var seen bool
 			for _, headerParam := range headerParams {
@@ -307,6 +309,8 @@ func parseDirectory(directory string) ([]Rego, error) {
 		regos = append(regos, rego)
 	}
 
+	// Sort the Rego files by their paths so that they can be rendered consistently
+	// for documentation purposes.
 	sort.Slice(regos, func(i, j int) bool {
 		return regos[i].path < regos[j].path
 	})
@@ -320,10 +324,11 @@ func getBodyParamNames(rules []*ast.Rule) []string {
 	for _, rule := range rules {
 		matches := r.FindAllStringSubmatch(rule.Body.String(), -1)
 		for _, match := range matches {
-			bodyParams = append(bodyParams, match[2]) // the 0 index is the full match, we only care about the second group
+			if !contains(bodyParams, match[2]) {
+				bodyParams = append(bodyParams, match[2])
+			}
 		}
 	}
-	bodyParams = dedupe(bodyParams) // possible a param is referenced more than once
 
 	return bodyParams
 }
@@ -331,29 +336,31 @@ func getBodyParamNames(rules []*ast.Rule) []string {
 func getHeaderParams(comments []string) ([]Parameter, error) {
 	var parameters []Parameter
 	for _, comment := range comments {
-		if strings.HasPrefix(comment, "@parameter") {
-			params := strings.SplitAfter(comment, "@parameter ")[1]
-			paramsSplit := strings.Split(params, " ")
-			if len(paramsSplit) == 0 {
-				return nil, fmt.Errorf("parameter name and type must be specified")
-			}
-			if len(paramsSplit) == 1 {
-				return nil, fmt.Errorf("type must be supplied with parameter name: %s", paramsSplit[0])
-			}
-
-			p := Parameter{Name: paramsSplit[0]}
-			if paramsSplit[1] == "array" {
-				if len(paramsSplit) == 2 {
-					return nil, fmt.Errorf("array type must be supplied with parameter name: %s", paramsSplit[0])
-				}
-				p.IsArray = true
-				p.Type = paramsSplit[2]
-			} else {
-				p.Type = paramsSplit[1]
-			}
-
-			parameters = append(parameters, p)
+		if !strings.HasPrefix(comment, "@parameter") {
+			continue
 		}
+
+		params := strings.SplitAfter(comment, "@parameter ")[1]
+		paramsSplit := strings.Split(params, " ")
+		if len(paramsSplit) == 0 {
+			return nil, fmt.Errorf("parameter name and type must be specified")
+		}
+		if len(paramsSplit) == 1 {
+			return nil, fmt.Errorf("type must be supplied with parameter name: %s", paramsSplit[0])
+		}
+
+		p := Parameter{Name: paramsSplit[0]}
+		if paramsSplit[1] == "array" {
+			if len(paramsSplit) == 2 {
+				return nil, fmt.Errorf("array type must be supplied with parameter name: %s", paramsSplit[0])
+			}
+			p.IsArray = true
+			p.Type = paramsSplit[2]
+		} else {
+			p.Type = paramsSplit[1]
+		}
+
+		parameters = append(parameters, p)
 	}
 
 	return parameters, nil
@@ -413,7 +420,7 @@ func getRecursiveImportPaths(regoFile *loader.RegoFile, regoFiles map[string]*lo
 		recursiveImports = append(recursiveImports, imported.Parsed.Package.Path.String())
 		remainingImports, err := getRecursiveImportPaths(imported, regoFiles)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("get recursive import paths: %w", err)
 		}
 		recursiveImports = append(recursiveImports, remainingImports...)
 	}
