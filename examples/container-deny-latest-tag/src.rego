@@ -3,6 +3,21 @@
 # Using the latest tag on images can cause unexpected problems in production. By specifying a pinned version
 # we can have higher confidence that our applications are immutable and do not change unexpectedly.
 #
+# The following snippet is an example of how to satisfy this requirement:
+#
+# ```
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: redis
+# spec:
+#   template:
+#     spec:
+#       containers:
+#         - name: redis
+#           image: redis:6.2
+# ```
+#
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 package container_deny_latest_tag
 

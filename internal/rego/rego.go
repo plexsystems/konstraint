@@ -147,7 +147,9 @@ func (r Rego) Title() string {
 		break
 	}
 
-	return trimString(title)
+	title = strings.TrimSpace(title)
+	title = strings.Trim(title, "\n")
+	return title
 }
 
 // Enforcement returns the enforcement action in the header comment
@@ -163,7 +165,9 @@ func (r Rego) Enforcement() string {
 		break
 	}
 
-	return trimString(enforcement)
+	enforcement = strings.TrimSpace(enforcement)
+	enforcement = strings.Trim(enforcement, "\n")
+	return enforcement
 }
 
 // PolicyID returns the identifier of the policy
@@ -176,12 +180,31 @@ func (r Rego) PolicyID() string {
 // found in the header comment of the rego file.
 func (r Rego) Description() string {
 	var description string
+	var handlingCodeBlock bool
 	for _, comment := range r.headerComments {
 		if strings.HasPrefix(strings.TrimSpace(comment), "@") {
 			continue
 		}
 
-		description += comment
+		// By default, we trim the comments found in the header to produce better looking documentation.
+		// However, when a comment in the Rego starts with a code block, we do not want to format
+		// any of the text within the code block.
+		if strings.HasPrefix(strings.TrimSpace(comment), "```") {
+
+			// Everytime we see a code block marker, we want to flip the status of whether or
+			// not we are currently handling a code block.
+			//
+			// i.e. The first time we see a codeblock marker we are handling a codeblock.
+			//      The second time we see a codeblock marker, we are no longer handling that codeblock.
+			handlingCodeBlock = !handlingCodeBlock
+		}
+
+		if handlingCodeBlock {
+			description += comment
+		} else {
+			description += strings.TrimSpace(comment)
+		}
+
 		description += "\n"
 	}
 
@@ -388,7 +411,9 @@ func removeComments(raw string) string {
 		regoWithoutComments += line + "\n"
 	}
 
-	return trimString(regoWithoutComments)
+	regoWithoutComments = strings.TrimSpace(regoWithoutComments)
+	regoWithoutComments = strings.Trim(regoWithoutComments, "\n")
+	return regoWithoutComments
 }
 
 func getPolicyID(rules []*ast.Rule) string {
@@ -401,12 +426,6 @@ func getPolicyID(rules []*ast.Rule) string {
 	}
 
 	return policyID
-}
-
-func trimString(text string) string {
-	text = strings.TrimSpace(text)
-	text = strings.Trim(text, "\n")
-	return text
 }
 
 func getRecursiveImportPaths(regoFile *loader.RegoFile, regoFiles map[string]*loader.RegoFile) ([]string, error) {
