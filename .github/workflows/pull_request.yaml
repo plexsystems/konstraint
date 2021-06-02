@@ -2,8 +2,20 @@ name: Pull Request
 on: [pull_request]
 
 jobs:
-  go-tests:
-    name: Go Tests
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: lint go
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.40.1
+          ./bin/golangci-lint run --timeout=5m --color=always --max-same-issues=0 --max-issues-per-linter=0
+
+  acceptance:
+    name: Acceptance
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -17,11 +29,11 @@ jobs:
       - name: checkout source
         uses: actions/checkout@v2
 
-      - name: unit tests
-        run: make test
-
       - name: build
         run: make build
+
+      - name: unit tests
+        run: make test
 
       - name: install bats ubuntu
         run: sudo npm install -g bats

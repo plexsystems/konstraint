@@ -13,6 +13,10 @@ build: ## Builds the binary. It will be placed into the build directory.
 test: ## Runs the unit tests.
 	go test -v ./... -count=1
 
+.PHONY: lint
+lint: ## Runs the unit tests.
+	golangci-lint run
+
 .PHONY: acceptance
 acceptance: build ## Runs the acceptance tests.
 	bats acceptance.bats
