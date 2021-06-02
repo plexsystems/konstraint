@@ -46,7 +46,7 @@ func (m MatchLabelsMatcher) String() string {
 func (r Rego) Matchers() (Matchers, error) {
 	var matchers Matchers
 	for _, comment := range r.headerComments {
-		if commentHasKeyword(comment, "@kinds") {
+		if commentStartsWith(comment, "@kinds") {
 			var err error
 			matchers.KindMatchers, err = getKindMatchers(comment)
 			if err != nil {
@@ -54,7 +54,7 @@ func (r Rego) Matchers() (Matchers, error) {
 			}
 		}
 
-		if commentHasKeyword(comment, "@matchlabels") {
+		if commentStartsWith(comment, "@matchlabels") {
 			var err error
 			matchers.MatchLabelsMatcher, err = getMatchLabelsMatcher(comment)
 			if err != nil {
@@ -103,6 +103,6 @@ func getMatchLabelsMatcher(comment string) (MatchLabelsMatcher, error) {
 	return matcher, nil
 }
 
-func commentHasKeyword(comment string, keyword string) bool {
+func commentStartsWith(comment string, keyword string) bool {
 	return strings.HasPrefix(strings.TrimSpace(comment), keyword)
 }

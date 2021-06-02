@@ -139,7 +139,7 @@ func (r Rego) Name() string {
 func (r Rego) Title() string {
 	var title string
 	for _, comment := range r.headerComments {
-		if !commentHasKeyword(comment, "@title") {
+		if !commentStartsWith(comment, "@title") {
 			continue
 		}
 
@@ -157,7 +157,7 @@ func (r Rego) Title() string {
 func (r Rego) Enforcement() string {
 	enforcement := "deny"
 	for _, comment := range r.headerComments {
-		if !commentHasKeyword(comment, "@enforcement") {
+		if !commentStartsWith(comment, "@enforcement") {
 			continue
 		}
 
@@ -182,14 +182,14 @@ func (r Rego) Description() string {
 	var description string
 	var handlingCodeBlock bool
 	for _, comment := range r.headerComments {
-		if strings.HasPrefix(strings.TrimSpace(comment), "@") {
+		if commentStartsWith(comment, "@") {
 			continue
 		}
 
 		// By default, we trim the comments found in the header to produce better looking documentation.
 		// However, when a comment in the Rego starts with a code block, we do not want to format
 		// any of the text within the code block.
-		if strings.HasPrefix(strings.TrimSpace(comment), "```") {
+		if commentStartsWith(comment, "```") {
 
 			// Everytime we see a code block marker, we want to flip the status of whether or
 			// not we are currently handling a code block.
@@ -360,7 +360,7 @@ func getBodyParamNames(rules []*ast.Rule) []string {
 func getHeaderParams(comments []string) ([]Parameter, error) {
 	var parameters []Parameter
 	for _, comment := range comments {
-		if !commentHasKeyword(comment, "@parameter") {
+		if !commentStartsWith(comment, "@parameter") {
 			continue
 		}
 
@@ -392,7 +392,7 @@ func getHeaderParams(comments []string) ([]Parameter, error) {
 
 func hasSkipConstraintTag(comments []string) bool {
 	for _, comment := range comments {
-		if commentHasKeyword(comment, "@skip-constraint") {
+		if commentStartsWith(comment, "@skip-constraint") {
 			return true
 		}
 	}
