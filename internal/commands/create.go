@@ -91,16 +91,12 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("writing template: %w", err)
 		}
 
-		if viper.GetBool("skip-constraints") {
+		if viper.GetBool("skip-constraints") || violation.SkipConstraint() {
 			continue
 		}
 
-		// skip Constraint generation if there are parameters on the template
+		// Skip Constraint generation if there are parameters on the template.
 		if len(violation.Parameters()) > 0 {
-			continue
-		}
-
-		if violation.SkipConstraint() {
 			continue
 		}
 
@@ -179,14 +175,13 @@ func getOpenAPISchemaProperties(r rego.Rego) map[string]apiextensionsv1beta1.JSO
 }
 
 func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
-	constraint := unstructured.Unstructured{}
-
 	gvk := schema.GroupVersionKind{
 		Group:   "constraints.gatekeeper.sh",
 		Version: "v1beta1",
 		Kind:    violation.Kind(),
 	}
 
+	constraint := unstructured.Unstructured{}
 	constraint.SetGroupVersionKind(gvk)
 	constraint.SetName(violation.Name())
 
@@ -200,22 +195,18 @@ func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 
 	matchers, err := violation.Matchers()
 	if err != nil {
-		return constraint, err
-	}
-	if len(matchers.KindMatchers) == 0 {
-		return constraint, nil
+		return unstructured.Unstructured{}, fmt.Errorf("matchers: %w", err)
 	}
 
 	if len(matchers.KindMatchers) != 0 {
-		err := setKindMatcher(&constraint, matchers.KindMatchers)
-		if err != nil {
-			return constraint, err
+		if err := setKindMatcher(&constraint, matchers.KindMatchers); err != nil {
+			return unstructured.Unstructured{}, fmt.Errorf("set kind matcher: %w", err)
 		}
 	}
+
 	if len(matchers.MatchLabelsMatcher) != 0 {
-		err := setMatchLabelsMatcher(&constraint, matchers.MatchLabelsMatcher)
-		if err != nil {
-			return constraint, err
+		if err := setMatchLabelsMatcher(&constraint, matchers.MatchLabelsMatcher); err != nil {
+			return unstructured.Unstructured{}, fmt.Errorf("set match labels matcher: %w", err)
 		}
 	}
 
@@ -234,6 +225,7 @@ func setKindMatcher(constraint *unstructured.Unstructured, kindMatchers []rego.K
 		if kindMatcher.APIGroup == "core" {
 			apiGroup = ""
 		}
+
 		apiGroups = appendIfNotExists(apiGroups, apiGroup)
 	}
 

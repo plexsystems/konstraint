@@ -31,7 +31,6 @@ type Rego struct {
 	id             string
 	path           string
 	raw            string
-	comments       []string
 	headerComments []string
 	rules          []string
 	dependencies   []string
@@ -140,7 +139,7 @@ func (r Rego) Name() string {
 func (r Rego) Title() string {
 	var title string
 	for _, comment := range r.headerComments {
-		if !strings.Contains(comment, "@title") {
+		if !commentStartsWith(comment, "@title") {
 			continue
 		}
 
@@ -148,7 +147,9 @@ func (r Rego) Title() string {
 		break
 	}
 
-	return trimString(title)
+	title = strings.TrimSpace(title)
+	title = strings.Trim(title, "\n")
+	return title
 }
 
 // Enforcement returns the enforcement action in the header comment
@@ -156,7 +157,7 @@ func (r Rego) Title() string {
 func (r Rego) Enforcement() string {
 	enforcement := "deny"
 	for _, comment := range r.headerComments {
-		if !strings.Contains(comment, "@enforcement") {
+		if !commentStartsWith(comment, "@enforcement") {
 			continue
 		}
 
@@ -164,7 +165,9 @@ func (r Rego) Enforcement() string {
 		break
 	}
 
-	return trimString(enforcement)
+	enforcement = strings.TrimSpace(enforcement)
+	enforcement = strings.Trim(enforcement, "\n")
+	return enforcement
 }
 
 // PolicyID returns the identifier of the policy
@@ -177,16 +180,36 @@ func (r Rego) PolicyID() string {
 // found in the header comment of the rego file.
 func (r Rego) Description() string {
 	var description string
+	var handlingCodeBlock bool
 	for _, comment := range r.headerComments {
-		if strings.HasPrefix(comment, "@") {
+		if commentStartsWith(comment, "@") {
 			continue
 		}
 
-		description += comment
+		// By default, we trim the comments found in the header to produce better looking documentation.
+		// However, when a comment in the Rego starts with a code block, we do not want to format
+		// any of the text within the code block.
+		if commentStartsWith(comment, "```") {
+
+			// Everytime we see a code block marker, we want to flip the status of whether or
+			// not we are currently handling a code block.
+			//
+			// i.e. The first time we see a codeblock marker we are handling a codeblock.
+			//      The second time we see a codeblock marker, we are no longer handling that codeblock.
+			handlingCodeBlock = !handlingCodeBlock
+		}
+
+		if handlingCodeBlock {
+			description += comment
+		} else {
+			description += strings.TrimSpace(comment)
+		}
+
 		description += "\n"
 	}
 
-	return trimString(description)
+	description = strings.Trim(description, "\n")
+	return description
 }
 
 // Source returns the original source code inside
@@ -260,12 +283,14 @@ func parseDirectory(directory string) ([]Rego, error) {
 			rules = append(rules, file.Parsed.Rules[r].Head.Name.String())
 		}
 
-		var headerComments, comments []string
+		var headerComments []string
 		for _, c := range file.Parsed.Comments {
+
+			// If the line number of the comment comes before the line number
+			// that the package is declared on, we can safely assume that it is
+			// a header comment.
 			if c.Location.Row < file.Parsed.Package.Location.Row {
-				headerComments = append(headerComments, trimString(string(c.Text)))
-			} else {
-				comments = append(comments, trimString(string(c.Text)))
+				headerComments = append(headerComments, string(c.Text))
 			}
 		}
 
@@ -274,10 +299,12 @@ func parseDirectory(directory string) ([]Rego, error) {
 		if err != nil {
 			return nil, fmt.Errorf("parse header parameters: %w", err)
 		}
+
 		paramsDiff := paramDiff(bodyParams, headerParams)
 		if len(paramsDiff) > 0 {
 			return nil, fmt.Errorf("missing @parameter tags for parameters %v found in the policy: %v", paramsDiff, file.Name)
 		}
+
 		for _, bodyParam := range bodyParams {
 			var seen bool
 			for _, headerParam := range headerParams {
@@ -299,7 +326,6 @@ func parseDirectory(directory string) ([]Rego, error) {
 			rules:          rules,
 			parameters:     headerParams,
 			headerComments: headerComments,
-			comments:       comments,
 			raw:            string(file.Raw),
 			skipConstraint: hasSkipConstraintTag(headerComments),
 		}
@@ -307,6 +333,8 @@ func parseDirectory(directory string) ([]Rego, error) {
 		regos = append(regos, rego)
 	}
 
+	// Sort the Rego files by their paths so that they can be rendered consistently
+	// for documentation purposes.
 	sort.Slice(regos, func(i, j int) bool {
 		return regos[i].path < regos[j].path
 	})
@@ -320,10 +348,11 @@ func getBodyParamNames(rules []*ast.Rule) []string {
 	for _, rule := range rules {
 		matches := r.FindAllStringSubmatch(rule.Body.String(), -1)
 		for _, match := range matches {
-			bodyParams = append(bodyParams, match[2]) // the 0 index is the full match, we only care about the second group
+			if !contains(bodyParams, match[2]) {
+				bodyParams = append(bodyParams, match[2])
+			}
 		}
 	}
-	bodyParams = dedupe(bodyParams) // possible a param is referenced more than once
 
 	return bodyParams
 }
@@ -331,29 +360,31 @@ func getBodyParamNames(rules []*ast.Rule) []string {
 func getHeaderParams(comments []string) ([]Parameter, error) {
 	var parameters []Parameter
 	for _, comment := range comments {
-		if strings.HasPrefix(comment, "@parameter") {
-			params := strings.SplitAfter(comment, "@parameter ")[1]
-			paramsSplit := strings.Split(params, " ")
-			if len(paramsSplit) == 0 {
-				return nil, fmt.Errorf("parameter name and type must be specified")
-			}
-			if len(paramsSplit) == 1 {
-				return nil, fmt.Errorf("type must be supplied with parameter name: %s", paramsSplit[0])
-			}
-
-			p := Parameter{Name: paramsSplit[0]}
-			if paramsSplit[1] == "array" {
-				if len(paramsSplit) == 2 {
-					return nil, fmt.Errorf("array type must be supplied with parameter name: %s", paramsSplit[0])
-				}
-				p.IsArray = true
-				p.Type = paramsSplit[2]
-			} else {
-				p.Type = paramsSplit[1]
-			}
-
-			parameters = append(parameters, p)
+		if !commentStartsWith(comment, "@parameter") {
+			continue
 		}
+
+		params := strings.SplitAfter(comment, "@parameter ")[1]
+		paramsSplit := strings.Split(params, " ")
+		if len(paramsSplit) == 0 {
+			return nil, fmt.Errorf("parameter name and type must be specified")
+		}
+		if len(paramsSplit) == 1 {
+			return nil, fmt.Errorf("type must be supplied with parameter name: %s", paramsSplit[0])
+		}
+
+		p := Parameter{Name: paramsSplit[0]}
+		if paramsSplit[1] == "array" {
+			if len(paramsSplit) == 2 {
+				return nil, fmt.Errorf("array type must be supplied with parameter name: %s", paramsSplit[0])
+			}
+			p.IsArray = true
+			p.Type = paramsSplit[2]
+		} else {
+			p.Type = paramsSplit[1]
+		}
+
+		parameters = append(parameters, p)
 	}
 
 	return parameters, nil
@@ -361,7 +392,7 @@ func getHeaderParams(comments []string) ([]Parameter, error) {
 
 func hasSkipConstraintTag(comments []string) bool {
 	for _, comment := range comments {
-		if strings.HasPrefix(comment, "@skip-constraint") {
+		if commentStartsWith(comment, "@skip-constraint") {
 			return true
 		}
 	}
@@ -380,7 +411,9 @@ func removeComments(raw string) string {
 		regoWithoutComments += line + "\n"
 	}
 
-	return trimString(regoWithoutComments)
+	regoWithoutComments = strings.TrimSpace(regoWithoutComments)
+	regoWithoutComments = strings.Trim(regoWithoutComments, "\n")
+	return regoWithoutComments
 }
 
 func getPolicyID(rules []*ast.Rule) string {
@@ -395,12 +428,6 @@ func getPolicyID(rules []*ast.Rule) string {
 	return policyID
 }
 
-func trimString(text string) string {
-	text = strings.TrimSpace(text)
-	text = strings.Trim(text, "\n")
-	return text
-}
-
 func getRecursiveImportPaths(regoFile *loader.RegoFile, regoFiles map[string]*loader.RegoFile) ([]string, error) {
 	var recursiveImports []string
 	for i := range regoFile.Parsed.Imports {
@@ -413,7 +440,7 @@ func getRecursiveImportPaths(regoFile *loader.RegoFile, regoFiles map[string]*lo
 		recursiveImports = append(recursiveImports, imported.Parsed.Package.Path.String())
 		remainingImports, err := getRecursiveImportPaths(imported, regoFiles)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("get recursive import paths: %w", err)
 		}
 		recursiveImports = append(recursiveImports, remainingImports...)
 	}

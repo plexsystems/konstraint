@@ -19,8 +19,8 @@ func (k KindMatchers) String() string {
 	for _, kindMatcher := range k {
 		result += kindMatcher.APIGroup + "/" + kindMatcher.Kind + " "
 	}
-	result = strings.TrimSpace(result)
 
+	result = strings.TrimSpace(result)
 	return result
 }
 
@@ -38,6 +38,7 @@ func (m MatchLabelsMatcher) String() string {
 	for k, v := range m {
 		result += fmt.Sprintf("%s=%s ", k, v)
 	}
+
 	return strings.TrimSpace(result)
 }
 
@@ -45,18 +46,19 @@ func (m MatchLabelsMatcher) String() string {
 func (r Rego) Matchers() (Matchers, error) {
 	var matchers Matchers
 	for _, comment := range r.headerComments {
-		if strings.HasPrefix(comment, "@kinds") {
+		if commentStartsWith(comment, "@kinds") {
 			var err error
 			matchers.KindMatchers, err = getKindMatchers(comment)
 			if err != nil {
-				return matchers, err
+				return Matchers{}, fmt.Errorf("get kind matchers: %w", err)
 			}
 		}
-		if strings.HasPrefix(comment, "@matchlabels") {
+
+		if commentStartsWith(comment, "@matchlabels") {
 			var err error
 			matchers.MatchLabelsMatcher, err = getMatchLabelsMatcher(comment)
 			if err != nil {
-				return matchers, err
+				return Matchers{}, fmt.Errorf("get match labels matcher: %w", err)
 			}
 		}
 	}
@@ -65,11 +67,10 @@ func (r Rego) Matchers() (Matchers, error) {
 }
 
 func getKindMatchers(comment string) ([]KindMatcher, error) {
-	var kindMatchers []KindMatcher
-
 	kindMatcherText := strings.TrimSpace(strings.SplitAfter(comment, "@kinds")[1])
 	kindMatcherGroups := strings.Split(kindMatcherText, " ")
 
+	var kindMatchers []KindMatcher
 	for _, kindMatcherGroup := range kindMatcherGroups {
 		kindMatcherSegments := strings.Split(kindMatcherGroup, "/")
 		if len(kindMatcherSegments) != 2 {
@@ -89,15 +90,19 @@ func getKindMatchers(comment string) ([]KindMatcher, error) {
 
 func getMatchLabelsMatcher(comment string) (MatchLabelsMatcher, error) {
 	matcher := make(map[string]string)
-
 	matcherText := strings.TrimSpace(strings.SplitAfter(comment, "@matchlabels")[1])
-
 	for _, token := range strings.Fields(matcherText) {
 		split := strings.Split(token, "=")
 		if len(split) != 2 {
 			return nil, fmt.Errorf("invalid @matchlabels annotation token: %s", token)
 		}
+
 		matcher[split[0]] = split[1]
 	}
+
 	return matcher, nil
+}
+
+func commentStartsWith(comment string, keyword string) bool {
+	return strings.HasPrefix(strings.TrimSpace(comment), keyword)
 }

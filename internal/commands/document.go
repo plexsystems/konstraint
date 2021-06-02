@@ -146,7 +146,7 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 
 		matchers, err := policy.Matchers()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("matchers: %w", err)
 		}
 		resources := matchers.KindMatchers.String()
 		if resources == "" {
