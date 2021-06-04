@@ -40,7 +40,7 @@ func NewDefaultCommand() *cobra.Command {
 
 	cmd.PersistentFlags().String("log-level", "info", "Log level (debug, info, warn, error)")
 	if err := viper.BindPFlag("log-level", cmd.PersistentFlags().Lookup("log-level")); err != nil {
-		log.Fatalf("bind log-level flag: %w", err)
+		log.Fatalf("bind log-level flag: %v", err)
 	}
 
 	cmd.SetVersionTemplate(`{{.Version}}`)
