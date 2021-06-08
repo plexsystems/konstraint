@@ -74,6 +74,10 @@ func runCreateCommand(path string) error {
 			"src":  violation.Path(),
 		})
 
+		if !isValidEnforcementAction(violation.Enforcement()) {
+			return fmt.Errorf("enforcement action (%v) is invalid in policy: %s", violation.Enforcement(), violation.Path())
+		}
+
 		templateFileName := "template.yaml"
 		constraintFileName := "constraint.yaml"
 		outputDir := filepath.Dir(violation.Path())
@@ -195,9 +199,15 @@ func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 	constraint.SetGroupVersionKind(gvk)
 	constraint.SetName(violation.Name())
 
+	if violation.Enforcement() != "deny" {
+		if err := unstructured.SetNestedField(constraint.Object, violation.Enforcement(), "spec", "enforcementAction"); err != nil {
+			return unstructured.Unstructured{}, fmt.Errorf("set constraint enforcement: %w", err)
+		}
+	}
+
 	// the dryrun flag overrides any enforcement action specified in the rego header
 	dryrun := viper.GetBool("dryrun")
-	if dryrun || violation.Enforcement() == "dryrun" {
+	if dryrun {
 		if err := unstructured.SetNestedField(constraint.Object, "dryrun", "spec", "enforcementAction"); err != nil {
 			return unstructured.Unstructured{}, fmt.Errorf("set constraint dryrun: %w", err)
 		}
@@ -272,4 +282,14 @@ func setMatchLabelsMatcher(constraint *unstructured.Unstructured, matcher rego.M
 		return fmt.Errorf("set constraint labelSelector.matchLabels matchers: %w", err)
 	}
 	return nil
+}
+
+func isValidEnforcementAction(action string) bool {
+	for _, a := range []string{"deny", "dryrun", "warn"} {
+		if a == action {
+			return true
+		}
+	}
+
+	return false
 }
