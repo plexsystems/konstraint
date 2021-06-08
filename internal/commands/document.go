@@ -10,6 +10,7 @@ import (
 
 	"github.com/plexsystems/konstraint/internal/rego"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -98,6 +99,12 @@ func runDocCommand(path string) error {
 		return fmt.Errorf("executing template: %w", err)
 	}
 
+	var numPolicies int
+	for _, policies := range docs {
+		numPolicies += len(policies)
+	}
+	log.WithField("num_policies", numPolicies).Info("completed successfully")
+
 	return nil
 }
 
@@ -107,9 +114,19 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		return nil, fmt.Errorf("get all severities: %w", err)
 	}
 
+	if viper.GetBool("no-rego") {
+		log.Info("no-rego flag is set. policy source will not be included in the documentation")
+	}
+
 	documents := make(map[rego.Severity][]Document)
 	for _, policy := range policies {
+		logger := log.WithFields(log.Fields{
+			"name": policy.Kind(),
+			"src":  policy.Path(),
+		})
+
 		if policy.Title() == "" {
+			logger.Warn("no title set, skipping documentation generation")
 			continue
 		}
 
@@ -150,6 +167,7 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		}
 		resources := matchers.KindMatchers.String()
 		if resources == "" {
+			logger.Warn("no kind matchers set, this can lead to poor policy performance")
 			resources = "Any Resource"
 		}
 		matchLabels := matchers.MatchLabelsMatcher.String()

@@ -11,6 +11,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -68,6 +69,11 @@ func runCreateCommand(path string) error {
 	}
 
 	for _, violation := range violations {
+		logger := log.WithFields(log.Fields{
+			"name": violation.Kind(),
+			"src":  violation.Path(),
+		})
+
 		templateFileName := "template.yaml"
 		constraintFileName := "constraint.yaml"
 		outputDir := filepath.Dir(violation.Path())
@@ -92,11 +98,13 @@ func runCreateCommand(path string) error {
 		}
 
 		if viper.GetBool("skip-constraints") || violation.SkipConstraint() {
+			logger.Info("skipping constraint generation due to configuration")
 			continue
 		}
 
 		// Skip Constraint generation if there are parameters on the template.
 		if len(violation.Parameters()) > 0 {
+			logger.Warn("skipping constraint generation due to use of parameters")
 			continue
 		}
 
@@ -114,6 +122,8 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("writing constraint: %w", err)
 		}
 	}
+
+	log.WithField("num_policies", len(violations)).Info("completed successfully")
 
 	return nil
 }
