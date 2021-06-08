@@ -73,7 +73,6 @@ func runCreateCommand(path string) error {
 			"name": violation.Kind(),
 			"src":  violation.Path(),
 		})
-		logger.Debug("starting processing policy")
 
 		templateFileName := "template.yaml"
 		constraintFileName := "constraint.yaml"
@@ -88,14 +87,12 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("create output dir: %w", err)
 		}
 
-		logger.Debug("generating constrainttemplate")
 		constraintTemplate := getConstraintTemplate(violation)
 		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
 		}
 
-		logger.WithField("out_file", filepath.Join(outputDir, templateFileName)).Debug("writing constrainttemplate")
 		if err := ioutil.WriteFile(filepath.Join(outputDir, templateFileName), constraintTemplateBytes, 0644); err != nil {
 			return fmt.Errorf("writing template: %w", err)
 		}
@@ -111,7 +108,6 @@ func runCreateCommand(path string) error {
 			continue
 		}
 
-		logger.Debug("generating constraint")
 		constraint, err := getConstraint(violation)
 		if err != nil {
 			return fmt.Errorf("get constraint: %w", err)
@@ -122,7 +118,6 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("marshal constraint: %w", err)
 		}
 
-		logger.WithField("out_file", filepath.Join(outputDir, constraintFileName)).Debug("writing constraint")
 		if err := ioutil.WriteFile(filepath.Join(outputDir, constraintFileName), constraintBytes, 0644); err != nil {
 			return fmt.Errorf("writing constraint: %w", err)
 		}

@@ -80,7 +80,6 @@ func runDocCommand(path string) error {
 		return fmt.Errorf("create output dir: %w", err)
 	}
 
-	log.Debug("generating documentation")
 	docs, err := getDocumentation(path, outputDirectory)
 	if err != nil {
 		return fmt.Errorf("get documentation: %w", err)
@@ -91,7 +90,6 @@ func runDocCommand(path string) error {
 		return fmt.Errorf("parsing template: %w", err)
 	}
 
-	log.WithField("out_file", viper.GetString("output")).Debug("writing documentation")
 	f, err := os.OpenFile(viper.GetString("output"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("opening file for writing: %w", err)
@@ -126,7 +124,6 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 			"name": policy.Kind(),
 			"src":  policy.Path(),
 		})
-		logger.Debug("starting processing policy")
 
 		if policy.Title() == "" {
 			logger.Warn("no title set, skipping documentation generation")
