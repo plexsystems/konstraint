@@ -23,7 +23,7 @@ spec:
       policyID := "P123456"
 
       violation["msg"] {
-          true
+          true # some comment with a trailing space
       }
     target: admission.k8s.gatekeeper.sh
 status: {}

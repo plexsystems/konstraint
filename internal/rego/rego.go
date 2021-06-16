@@ -254,7 +254,6 @@ func parseDirectory(directory string) ([]Rego, error) {
 
 	files := make(map[string]*loader.RegoFile)
 	for m := range result.Modules {
-
 		// Many YAML parsers have problems handling carriage returns and tabs so we sanitize the Rego
 		// before storing it so it can be rendered properly.
 		result.Modules[m].Raw = bytes.ReplaceAll(result.Modules[m].Raw, []byte("\r"), []byte(""))
@@ -326,7 +325,7 @@ func parseDirectory(directory string) ([]Rego, error) {
 			rules:          rules,
 			parameters:     headerParams,
 			headerComments: headerComments,
-			raw:            string(file.Raw),
+			raw:            trimEachLine(string(file.Raw)),
 			skipConstraint: hasSkipConstraintTag(headerComments),
 		}
 
@@ -388,6 +387,17 @@ func getHeaderParams(comments []string) ([]Parameter, error) {
 	}
 
 	return parameters, nil
+}
+
+func trimEachLine(raw string) string {
+	var result string
+
+	lines := strings.Split(raw, "\n")
+	for _, line := range lines {
+		result += strings.TrimRight(line, "\t ") + "\n"
+	}
+
+	return result
 }
 
 func hasSkipConstraintTag(comments []string) bool {
