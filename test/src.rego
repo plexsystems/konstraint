@@ -10,5 +10,5 @@ import data.lib.libraryA
 policyID := "P123456"
 
 violation["msg"] {
-    true
+    true # some comment with a trailing space 
 }
