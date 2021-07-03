@@ -49,7 +49,18 @@ type Parameter struct {
 // directory as well as any subdirectories.
 // Only rego files that contain a valid severity will be returned.
 func GetAllSeverities(directory string) ([]Rego, error) {
-	regos, err := parseDirectory(directory)
+	return getAllSeverities(directory, true)
+}
+
+// GetAllSeveritiesWithoutImports gets all of the Rego files found
+// in the given directory as well as any subdirectories, but does
+// not attempt to parse the imports.
+func GetAllSeveritiesWithoutImports(directory string) ([]Rego, error) {
+	return getAllSeverities(directory, false)
+}
+
+func getAllSeverities(directory string, parseImports bool) ([]Rego, error) {
+	regos, err := parseDirectory(directory, parseImports)
 	if err != nil {
 		return nil, fmt.Errorf("parse directory: %w", err)
 	}
@@ -70,7 +81,7 @@ func GetAllSeverities(directory string) ([]Rego, error) {
 // directory as well as any subdirectories.
 // Only rego files that have a severity of violation will be returned.
 func GetViolations(directory string) ([]Rego, error) {
-	regos, err := parseDirectory(directory)
+	regos, err := parseDirectory(directory, true)
 	if err != nil {
 		return nil, fmt.Errorf("parse directory: %w", err)
 	}
@@ -230,7 +241,7 @@ func (r Rego) SkipConstraint() bool {
 	return r.skipConstraint
 }
 
-func parseDirectory(directory string) ([]Rego, error) {
+func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 
 	// Recursively find all rego files (ignoring test files), starting at the given directory.
 	result, err := loader.NewFileLoader().Filtered([]string{directory}, func(abspath string, info os.FileInfo, depth int) bool {
@@ -266,11 +277,14 @@ func parseDirectory(directory string) ([]Rego, error) {
 
 	var regos []Rego
 	for _, file := range files {
-		importPaths, err := getRecursiveImportPaths(file, files)
-		if err != nil {
-			return nil, fmt.Errorf("getRecursiveImportPaths: %w", err)
+		var importPaths []string
+		if parseImports {
+			importPaths, err = getRecursiveImportPaths(file, files)
+			if err != nil {
+				return nil, fmt.Errorf("getRecursiveImportPaths: %w", err)
+			}
+			importPaths = dedupe(importPaths)
 		}
-		importPaths = dedupe(importPaths)
 
 		var dependencies []string
 		for _, importPath := range importPaths {
