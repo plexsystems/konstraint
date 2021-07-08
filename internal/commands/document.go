@@ -58,6 +58,10 @@ Set the URL where the policies are hosted at
 				return fmt.Errorf("bind no-rego flag: %w", err)
 			}
 
+			if err := viper.BindPFlag("include-comments", cmd.Flags().Lookup("include-comments")); err != nil {
+				return fmt.Errorf("bind include-comments flag: %w", err)
+			}
+
 			path := "."
 			if len(args) > 0 {
 				path = args[0]
@@ -70,6 +74,7 @@ Set the URL where the policies are hosted at
 	cmd.Flags().StringP("output", "o", "policies.md", "Output location (including filename) for the policy documentation")
 	cmd.Flags().String("url", "", "The URL where the policy files are hosted at (e.g. https://github.com/policies)")
 	cmd.Flags().Bool("no-rego", false, "Do not include the Rego in the policy documentation")
+	cmd.Flags().Bool("include-comments", false, "Include comments from the rego source in the documentation")
 
 	return &cmd
 }
@@ -181,7 +186,12 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 			Parameters:  policy.Parameters(),
 		}
 
-		rego := policy.Source()
+		var rego string
+		if viper.GetBool("include-comments") {
+			rego = policy.FullSource()
+		} else {
+			rego = policy.Source()
+		}
 		if viper.GetBool("no-rego") {
 			rego = ""
 		}
