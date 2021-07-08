@@ -229,6 +229,27 @@ func (r Rego) Source() string {
 	return removeComments(r.raw)
 }
 
+// FullSource returns the original source code inside
+// of the rego file including comments except the header
+func (r Rego) FullSource() string {
+	withoutHeader := removeHeaderComments(r.raw)
+
+	return strings.Trim(withoutHeader, "\n\t ")
+}
+
+func removeHeaderComments(input string) string {
+	var result string
+	split := strings.Split(input, "\n")
+	for i, line := range split {
+		if !strings.HasPrefix(line, "#") {
+			result = strings.Join(split[i:len(split)-1], "\n")
+			break
+		}
+	}
+
+	return result
+}
+
 // Dependencies returns all of the source for the rego files that this
 // rego file depends on.
 func (r Rego) Dependencies() []string {
