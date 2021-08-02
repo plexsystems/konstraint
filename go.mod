@@ -20,5 +20,5 @@ require (
 	golang.org/x/time v0.0.0-20210611083556-38a9dc6acbc6 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	k8s.io/apiextensions-apiserver v0.17.2
-	k8s.io/apimachinery v0.17.2
+	k8s.io/apimachinery v0.21.3
 )
