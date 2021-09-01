@@ -17,5 +17,5 @@ require (
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83 // indirect
 	golang.org/x/time v0.0.0-20210611083556-38a9dc6acbc6 // indirect
 	k8s.io/apiextensions-apiserver v0.17.2
-	k8s.io/apimachinery v0.17.2
+	k8s.io/apimachinery v0.22.1
 )
