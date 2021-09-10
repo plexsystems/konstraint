@@ -37,7 +37,7 @@ When using the `--output` parameter, all templates and constraints will be gener
 - constraint_PodVolumeSizeLimits.yaml
 - template_PodVolumeSizeLimits.yaml
 
-_NOTE: While not technically required, the tool works best with a folder structure similar to how Gatekeeper itself [structures policies and templates](https://github.com/open-policy-agent/gatekeeper/tree/master/library)._
+_NOTE: While not technically required, the tool works best with a folder structure similar to how Gatekeeper itself [structures policies and templates](https://github.com/open-policy-agent/gatekeeper-library/tree/master/library)._
 
 ## Annotating Rules
 
