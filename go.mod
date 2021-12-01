@@ -9,7 +9,7 @@ require (
 	github.com/onsi/ginkgo v1.15.0 // indirect
 	github.com/onsi/gomega v1.10.5 // indirect
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20210317225149-4f80ac172ddf
-	github.com/open-policy-agent/opa v0.34.0
+	github.com/open-policy-agent/opa v0.35.0
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
