@@ -16,5 +16,5 @@ require (
 	github.com/spf13/viper v1.9.0
 	golang.org/x/time v0.0.0-20210611083556-38a9dc6acbc6 // indirect
 	k8s.io/apiextensions-apiserver v0.17.2
-	k8s.io/apimachinery v0.17.2
+	k8s.io/apimachinery v0.22.4
 )
