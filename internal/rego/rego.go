@@ -394,7 +394,7 @@ func getBodyParamNames(rules []*ast.Rule) []string {
 func getHeaderParams(comments []string) ([]Parameter, error) {
 	var parameters []Parameter
 	for _, comment := range comments {
-		if !commentStartsWith(comment, "@parameter") {
+		if !commentStartsWith(comment, "@parameter ") {
 			continue
 		}
 
