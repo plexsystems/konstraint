@@ -10,11 +10,12 @@ import (
 	"github.com/plexsystems/konstraint/internal/rego"
 
 	"github.com/ghodss/yaml"
+	v1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -46,6 +47,10 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 				return fmt.Errorf("bind skip-constraints flag: %w", err)
 			}
 
+			if err := viper.BindPFlag("constraint-template-version", cmd.PersistentFlags().Lookup("constraint-template-version")); err != nil {
+				return fmt.Errorf("bind constraint-template-version flag: %w", err)
+			}
+
 			path := "."
 			if len(args) > 0 {
 				path = args[0]
@@ -58,6 +63,7 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 	cmd.PersistentFlags().StringP("output", "o", "", "Specify an output directory for the Gatekeeper resources")
 	cmd.PersistentFlags().BoolP("dryrun", "d", false, "Sets the enforcement action of the constraints to dryrun, overriding the @enforcement tag")
 	cmd.PersistentFlags().Bool("skip-constraints", false, "Skip generation of constraints")
+	cmd.PersistentFlags().String("constraint-template-version", "v1beta1", "Set the version of ConstraintTemplates")
 
 	return &cmd
 }
@@ -90,9 +96,20 @@ func runCreateCommand(path string) error {
 		if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
 			return fmt.Errorf("create output dir: %w", err)
 		}
+		var constraintTemplateBytes []byte
+		constraintTemplateVersion := viper.GetString("constraint-template-version")
 
-		constraintTemplate := getConstraintTemplate(violation)
-		constraintTemplateBytes, err := yaml.Marshal(&constraintTemplate)
+		switch constraintTemplateVersion {
+		case "v1":
+			constraintTemplate := getConstraintTemplatev1(violation)
+			constraintTemplateBytes, err = yaml.Marshal(&constraintTemplate)
+		case "v1beta1":
+			constraintTemplate := getConstraintTemplatev1beta1(violation)
+			constraintTemplateBytes, err = yaml.Marshal(&constraintTemplate)
+		default:
+			return fmt.Errorf("unsupported API version for constrainttemplate: %s", constraintTemplateVersion)
+		}
+
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
 		}
@@ -132,7 +149,46 @@ func runCreateCommand(path string) error {
 	return nil
 }
 
-func getConstraintTemplate(violation rego.Rego) v1beta1.ConstraintTemplate {
+func getConstraintTemplatev1(violation rego.Rego) v1.ConstraintTemplate {
+	constraintTemplate := v1.ConstraintTemplate{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "templates.gatekeeper.sh/v1",
+			Kind:       "ConstraintTemplate",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: violation.Name(),
+		},
+		Spec: v1.ConstraintTemplateSpec{
+			CRD: v1.CRD{
+				Spec: v1.CRDSpec{
+					Names: v1.Names{
+						Kind: violation.Kind(),
+					},
+				},
+			},
+			Targets: []v1.Target{
+				{
+					Target: "admission.k8s.gatekeeper.sh",
+					Libs:   violation.Dependencies(),
+					Rego:   violation.Source(),
+				},
+			},
+		},
+	}
+
+	if len(violation.Parameters()) > 0 {
+		constraintTemplate.Spec.CRD.Spec.Validation = &v1.Validation{
+			OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+				Properties: getOpenAPISchemaProperties(violation),
+				Type:       "object",
+			},
+		}
+	}
+
+	return constraintTemplate
+}
+
+func getConstraintTemplatev1beta1(violation rego.Rego) v1beta1.ConstraintTemplate {
 	constraintTemplate := v1beta1.ConstraintTemplate{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "templates.gatekeeper.sh/v1beta1",
@@ -161,7 +217,7 @@ func getConstraintTemplate(violation rego.Rego) v1beta1.ConstraintTemplate {
 
 	if len(violation.Parameters()) > 0 {
 		constraintTemplate.Spec.CRD.Spec.Validation = &v1beta1.Validation{
-			OpenAPIV3Schema: &apiextensionsv1beta1.JSONSchemaProps{
+			OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 				Properties: getOpenAPISchemaProperties(violation),
 			},
 		}
@@ -170,18 +226,18 @@ func getConstraintTemplate(violation rego.Rego) v1beta1.ConstraintTemplate {
 	return constraintTemplate
 }
 
-func getOpenAPISchemaProperties(r rego.Rego) map[string]apiextensionsv1beta1.JSONSchemaProps {
-	properties := make(map[string]apiextensionsv1beta1.JSONSchemaProps)
+func getOpenAPISchemaProperties(r rego.Rego) map[string]apiextensionsv1.JSONSchemaProps {
+	properties := make(map[string]apiextensionsv1.JSONSchemaProps)
 	for _, p := range r.Parameters() {
 		if p.IsArray {
-			properties[p.Name] = apiextensionsv1beta1.JSONSchemaProps{
+			properties[p.Name] = apiextensionsv1.JSONSchemaProps{
 				Type: "array",
-				Items: &apiextensionsv1beta1.JSONSchemaPropsOrArray{
-					Schema: &apiextensionsv1beta1.JSONSchemaProps{Type: p.Type},
+				Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+					Schema: &apiextensionsv1.JSONSchemaProps{Type: p.Type},
 				},
 			}
 		} else {
-			properties[p.Name] = apiextensionsv1beta1.JSONSchemaProps{Type: p.Type}
+			properties[p.Name] = apiextensionsv1.JSONSchemaProps{Type: p.Type}
 		}
 	}
 
