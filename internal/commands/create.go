@@ -205,7 +205,7 @@ func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 		}
 	}
 
-	// the dryrun flag overrides any enforcement action specified in the rego header
+	// The dryrun flag overrides any enforcement action specified in the rego header.
 	dryrun := viper.GetBool("dryrun")
 	if dryrun {
 		if err := unstructured.SetNestedField(constraint.Object, "dryrun", "spec", "enforcementAction"); err != nil {
