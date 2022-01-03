@@ -24,13 +24,19 @@ jobs:
       - name: setup go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16.x
+          go-version: 1.17.x
 
       - name: checkout source
         uses: actions/checkout@v2
 
       - name: build
         run: make build
+
+      - name: upload build
+        uses: actions/upload-artifact@v2
+        with:
+          name: konstraint-${{ matrix.os }}
+          path: build/konstraint
 
       - name: unit tests
         run: make test
@@ -59,6 +65,7 @@ jobs:
 
   docker-tests:
     name: Docker Tests
+    needs: [lint]
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -83,3 +90,59 @@ jobs:
 
       - name: verify policies
         run: conftest verify -p examples -d examples/test-data
+
+  e2e-prep:
+    name: Prep for End-to-end Tests
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - acceptance
+    steps:
+      - name: checkout source
+        uses: actions/checkout@v2
+      - name: fetch gatekeeper versions
+        id: fetch-gk-versions
+        working-directory: .github/scripts
+        run: echo "::set-output name=gk-versions::$(./fetch_gk_versions.sh)"
+    outputs:
+      gk-versions: ${{ steps.fetch-gk-versions.outputs.gk-versions }}
+
+  e2e:
+    name: End-to-end Tests
+    runs-on: ubuntu-latest
+    needs:
+      - e2e-prep
+    strategy:
+      matrix:
+        gk-version: ${{ fromJson(needs.e2e-prep.outputs.gk-versions) }}
+    steps:
+      - name: checkout source
+        uses: actions/checkout@v2
+
+      - name: download build
+        uses: actions/download-artifact@v2
+        with:
+          name: konstraint-ubuntu-latest
+
+      - name: generate resources
+        run: |
+          chmod +x ./konstraint
+          ./konstraint create -o e2e-resources examples
+
+      - name: create kind cluster
+        run: kind create cluster
+      
+      - name: install gatekeeper
+        env:
+          GK_VERSION: ${{ matrix.gk-version }}
+        run: |
+          helm repo add gk https://open-policy-agent.github.io/gatekeeper/charts
+          kubectl create ns gatekeeper-system
+          helm install gatekeeper gk/gatekeeper -n gatekeeper-system --set replicas=1 --version ${GK_VERSION}
+
+      - name: apply resources
+        working-directory: e2e-resources
+        run: |
+          for ct in $(ls template*); do kubectl apply -f $ct; done
+          sleep 60 # gatekeeper takes some time to create the CRDs
+          for c in $(ls constraint*); do kubectl apply -f $c; done
