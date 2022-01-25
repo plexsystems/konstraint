@@ -38,17 +38,17 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 			if err := viper.BindPFlag("dryrun", cmd.PersistentFlags().Lookup("dryrun")); err != nil {
 				return fmt.Errorf("bind dryrun flag: %w", err)
 			}
-
 			if err := viper.BindPFlag("output", cmd.PersistentFlags().Lookup("output")); err != nil {
 				return fmt.Errorf("bind output flag: %w", err)
 			}
-
 			if err := viper.BindPFlag("skip-constraints", cmd.PersistentFlags().Lookup("skip-constraints")); err != nil {
 				return fmt.Errorf("bind skip-constraints flag: %w", err)
 			}
-
 			if err := viper.BindPFlag("constraint-template-version", cmd.PersistentFlags().Lookup("constraint-template-version")); err != nil {
 				return fmt.Errorf("bind constraint-template-version flag: %w", err)
+			}
+			if err := viper.BindPFlag("partial-constraints", cmd.PersistentFlags().Lookup("partial-constraints")); err != nil {
+				return fmt.Errorf("bind partial-constraints flag: %w", err)
 			}
 
 			path := "."
@@ -64,6 +64,7 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 	cmd.PersistentFlags().BoolP("dryrun", "d", false, "Sets the enforcement action of the constraints to dryrun, overriding the @enforcement tag")
 	cmd.PersistentFlags().Bool("skip-constraints", false, "Skip generation of constraints")
 	cmd.PersistentFlags().String("constraint-template-version", "v1beta1", "Set the version of ConstraintTemplates")
+	cmd.PersistentFlags().Bool("partial-constraints", false, "Generate partial Constraints for policies with parameters")
 
 	return &cmd
 }
@@ -124,7 +125,7 @@ func runCreateCommand(path string) error {
 		}
 
 		// Skip Constraint generation if there are parameters on the template.
-		if len(violation.Parameters()) > 0 {
+		if len(violation.Parameters()) > 0 && !viper.GetBool("partial-constraints") {
 			logger.Warn("skipping constraint generation due to use of parameters")
 			continue
 		}
@@ -286,7 +287,25 @@ func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 		}
 	}
 
+	if len(violation.Parameters()) > 0 && viper.GetBool("partial-constraints") {
+		if err := addParametersToConstraint(&constraint, violation.Parameters()); err != nil {
+			return unstructured.Unstructured{}, fmt.Errorf("add parameters %v to constraint: %w", violation.Parameters(), err)
+		}
+	}
+
 	return constraint, nil
+}
+
+func addParametersToConstraint(constraint *unstructured.Unstructured, parameters []rego.Parameter) error {
+	params := make(map[string]interface{}, len(parameters))
+	for _, p := range parameters {
+		params[p.Name] = nil
+	}
+	if err := unstructured.SetNestedField(constraint.Object, params, "spec", "parameters"); err != nil {
+		return fmt.Errorf("set parameters map: %w", err)
+	}
+
+	return nil
 }
 
 func setKindMatcher(constraint *unstructured.Unstructured, kindMatchers []rego.KindMatcher) error {
