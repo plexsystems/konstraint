@@ -201,7 +201,6 @@ func (r Rego) Description() string {
 		// However, when a comment in the Rego starts with a code block, we do not want to format
 		// any of the text within the code block.
 		if commentStartsWith(comment, "```") {
-
 			// Everytime we see a code block marker, we want to flip the status of whether or
 			// not we are currently handling a code block.
 			//
@@ -263,7 +262,6 @@ func (r Rego) SkipConstraint() bool {
 }
 
 func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
-
 	// Recursively find all rego files (ignoring test files), starting at the given directory.
 	result, err := loader.NewFileLoader().Filtered([]string{directory}, func(abspath string, info os.FileInfo, depth int) bool {
 		if strings.HasSuffix(info.Name(), "_test.rego") {
@@ -319,7 +317,6 @@ func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 
 		var headerComments []string
 		for _, c := range file.Parsed.Comments {
-
 			// If the line number of the comment comes before the line number
 			// that the package is declared on, we can safely assume that it is
 			// a header comment.
@@ -477,6 +474,14 @@ func getRecursiveImportPaths(regoFile *loader.RegoFile, regoFiles map[string]*lo
 	var recursiveImports []string
 	for i := range regoFile.Parsed.Imports {
 		importPath := regoFile.Parsed.Imports[i].Path.String()
+
+		// future.keywords is a special import in Rego and we should not
+		// attempt to actually import it.
+		// https://www.openpolicyagent.org/docs/latest/policy-language/#operators
+		if strings.HasPrefix(importPath, "future.keywords") {
+			continue
+		}
+
 		imported := regoFiles[importPath]
 		if imported == nil {
 			return nil, fmt.Errorf("import not found: %s", importPath)
