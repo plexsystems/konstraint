@@ -16,53 +16,59 @@ spec:
       default is_gatekeeper = false
 
       is_gatekeeper {
-          has_field(input, "review")
-          has_field(input.review, "object")
+        has_field(input, "review")
+        has_field(input.review, "object")
       }
 
       resource = input.review.object {
-          is_gatekeeper
+        is_gatekeeper
       }
 
       resource = input {
-          not is_gatekeeper
+        not is_gatekeeper
       }
 
-      format(msg) = {"msg": msg} {
-          true
-      }
+      format(msg) = {"msg": msg}
 
       format_with_id(msg, id) = msg_fmt {
-          msg_fmt := {
-              "msg": sprintf("%s: %s", [id, msg]),
-              "details": {"policyID": id}
-          }
+        msg_fmt := {
+          "msg": sprintf("%s: %s", [id, msg]),
+          "details": {"policyID": id},
+        }
       }
 
       apiVersion = resource.apiVersion
+
       name = resource.metadata.name
+
       kind = resource.kind
+
       labels = resource.metadata.labels
+
       annotations = resource.metadata.annotations
+
       gv := split(apiVersion, "/")
+
       group = gv[0] {
-          contains(apiVersion, "/")
+        contains(apiVersion, "/")
       }
+
       group = "core" {
-          not contains(apiVersion, "/")
+        not contains(apiVersion, "/")
       }
+
       version := gv[count(gv) - 1]
 
       has_field(obj, field) {
-          not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
+        not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
       }
 
-      missing_field(obj, field) = true {
-          obj[field] == ""
+      missing_field(obj, field) {
+        obj[field] == ""
       }
 
-      missing_field(obj, field) = true {
-          not has_field(obj, field)
+      missing_field(obj, field) {
+        not has_field(obj, field)
       }
     - |-
       package lib.pods
@@ -72,48 +78,48 @@ spec:
       default pod = false
 
       pod = core.resource.spec.template {
-          pod_templates := ["daemonset","deployment","job","replicaset","replicationcontroller","statefulset"]
-          lower(core.kind) == pod_templates[_]
+        pod_templates := ["daemonset", "deployment", "job", "replicaset", "replicationcontroller", "statefulset"]
+        lower(core.kind) == pod_templates[_]
       }
 
       pod = core.resource {
-          lower(core.kind) == "pod"
+        lower(core.kind) == "pod"
       }
 
       pod = core.resource.spec.jobTemplate.spec.template {
-          lower(core.kind) == "cronjob"
+        lower(core.kind) == "cronjob"
       }
 
       containers[container] {
-          keys = {"containers", "initContainers"}
-          all_containers = [c | keys[k]; c = pod.spec[k][_]]
-          container = all_containers[_]
+        keys = {"containers", "initContainers"}
+        all_containers = [c | keys[k]; c = pod.spec[k][_]]
+        container = all_containers[_]
       }
 
       volumes[volume] {
-          volume = pod.spec.volumes[_]
+        volume = pod.spec.volumes[_]
       }
     - |-
       package lib.security
 
       dropped_capability(container, cap) {
-          lower(container.securityContext.capabilities.drop[_]) == lower(cap)
+        lower(container.securityContext.capabilities.drop[_]) == lower(cap)
       }
 
       dropped_capability(psp, cap) {
-          lower(psp.spec.requiredDropCapabilities[_]) == lower(cap)
+        lower(psp.spec.requiredDropCapabilities[_]) == lower(cap)
       }
 
       added_capability(container, cap) {
-          lower(container.securityContext.capabilities.add[_]) == lower(cap)
+        lower(container.securityContext.capabilities.add[_]) == lower(cap)
       }
 
       added_capability(psp, cap) {
-          lower(psp.spec.allowedCapabilities[_]) == lower(cap)
+        lower(psp.spec.allowedCapabilities[_]) == lower(cap)
       }
 
       added_capability(psp, cap) {
-          lower(psp.spec.defaultAddCapabilities[_]) == lower(cap)
+        lower(psp.spec.defaultAddCapabilities[_]) == lower(cap)
       }
     rego: |-
       package container_deny_privileged_if_tenant
@@ -125,18 +131,18 @@ spec:
       policyID := "P2006"
 
       violation[msg] {
-          pods.containers[container]
-          container_is_privileged(container)
+        pods.containers[container]
+        container_is_privileged(container)
 
-          msg = core.format_with_id(sprintf("%s/%s/%s: Tenants' containers must not run as privileged", [core.kind, core.name, container.name]), policyID)
+        msg = core.format_with_id(sprintf("%s/%s/%s: Tenants' containers must not run as privileged", [core.kind, core.name, container.name]), policyID)
       }
 
       container_is_privileged(container) {
-          container.securityContext.privileged
+        container.securityContext.privileged
       }
 
       container_is_privileged(container) {
-          security.added_capability(container, "CAP_SYS_ADMIN")
+        security.added_capability(container, "CAP_SYS_ADMIN")
       }
     target: admission.k8s.gatekeeper.sh
 status: {}

@@ -11,6 +11,66 @@ spec:
   targets:
   - libs:
     - |-
+      package lib.core
+
+      default is_gatekeeper = false
+
+      is_gatekeeper {
+        has_field(input, "review")
+        has_field(input.review, "object")
+      }
+
+      resource = input.review.object {
+        is_gatekeeper
+      }
+
+      resource = input {
+        not is_gatekeeper
+      }
+
+      format(msg) = {"msg": msg}
+
+      format_with_id(msg, id) = msg_fmt {
+        msg_fmt := {
+          "msg": sprintf("%s: %s", [id, msg]),
+          "details": {"policyID": id},
+        }
+      }
+
+      apiVersion = resource.apiVersion
+
+      name = resource.metadata.name
+
+      kind = resource.kind
+
+      labels = resource.metadata.labels
+
+      annotations = resource.metadata.annotations
+
+      gv := split(apiVersion, "/")
+
+      group = gv[0] {
+        contains(apiVersion, "/")
+      }
+
+      group = "core" {
+        not contains(apiVersion, "/")
+      }
+
+      version := gv[count(gv) - 1]
+
+      has_field(obj, field) {
+        not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
+      }
+
+      missing_field(obj, field) {
+        obj[field] == ""
+      }
+
+      missing_field(obj, field) {
+        not has_field(obj, field)
+      }
+    - |-
       package lib.pods
 
       import data.lib.core
@@ -18,98 +78,44 @@ spec:
       default pod = false
 
       pod = core.resource.spec.template {
-          pod_templates := ["daemonset","deployment","job","replicaset","replicationcontroller","statefulset"]
-          lower(core.kind) == pod_templates[_]
+        pod_templates := ["daemonset", "deployment", "job", "replicaset", "replicationcontroller", "statefulset"]
+        lower(core.kind) == pod_templates[_]
       }
 
       pod = core.resource {
-          lower(core.kind) == "pod"
+        lower(core.kind) == "pod"
       }
 
       pod = core.resource.spec.jobTemplate.spec.template {
-          lower(core.kind) == "cronjob"
+        lower(core.kind) == "cronjob"
       }
 
       containers[container] {
-          keys = {"containers", "initContainers"}
-          all_containers = [c | keys[k]; c = pod.spec[k][_]]
-          container = all_containers[_]
+        keys = {"containers", "initContainers"}
+        all_containers = [c | keys[k]; c = pod.spec[k][_]]
+        container = all_containers[_]
       }
 
       volumes[volume] {
-          volume = pod.spec.volumes[_]
-      }
-    - |-
-      package lib.core
-
-      default is_gatekeeper = false
-
-      is_gatekeeper {
-          has_field(input, "review")
-          has_field(input.review, "object")
-      }
-
-      resource = input.review.object {
-          is_gatekeeper
-      }
-
-      resource = input {
-          not is_gatekeeper
-      }
-
-      format(msg) = {"msg": msg} {
-          true
-      }
-
-      format_with_id(msg, id) = msg_fmt {
-          msg_fmt := {
-              "msg": sprintf("%s: %s", [id, msg]),
-              "details": {"policyID": id}
-          }
-      }
-
-      apiVersion = resource.apiVersion
-      name = resource.metadata.name
-      kind = resource.kind
-      labels = resource.metadata.labels
-      annotations = resource.metadata.annotations
-      gv := split(apiVersion, "/")
-      group = gv[0] {
-          contains(apiVersion, "/")
-      }
-      group = "core" {
-          not contains(apiVersion, "/")
-      }
-      version := gv[count(gv) - 1]
-
-      has_field(obj, field) {
-          not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
-      }
-
-      missing_field(obj, field) = true {
-          obj[field] == ""
-      }
-
-      missing_field(obj, field) = true {
-          not has_field(obj, field)
+        volume = pod.spec.volumes[_]
       }
     rego: |-
       package pod_deny_without_runasnonroot
 
-      import data.lib.pods
       import data.lib.core
+      import data.lib.pods
 
       policyID := "P1008"
 
       violation[msg] {
-          pods.pod
-          not pod_runasnonroot
+        pods.pod
+        not pod_runasnonroot
 
-          msg := core.format_with_id(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]), policyID)
+        msg := core.format_with_id(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]), policyID)
       }
 
       pod_runasnonroot {
-          pods.pod.spec.securityContext.runAsNonRoot
+        pods.pod.spec.securityContext.runAsNonRoot
       }
     target: admission.k8s.gatekeeper.sh
 status: {}

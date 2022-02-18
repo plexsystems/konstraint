@@ -14,16 +14,16 @@ import data.lib.security
 policyID := "P1003"
 
 violation[msg] {
-    pods.containers[container]
-    container_is_privileged(container)
+	pods.containers[container]
+	container_is_privileged(container)
 
-    msg = core.format_with_id(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]), policyID)
+	msg = core.format_with_id(sprintf("%s/%s/%s: Containers must not run as privileged", [core.kind, core.name, container.name]), policyID)
 }
 
 container_is_privileged(container) {
-    container.securityContext.privileged
+	container.securityContext.privileged
 }
 
 container_is_privileged(container) {
-    security.added_capability(container, "CAP_SYS_ADMIN")
+	security.added_capability(container, "CAP_SYS_ADMIN")
 }

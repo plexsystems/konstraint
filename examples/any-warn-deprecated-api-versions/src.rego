@@ -12,9 +12,9 @@ policyID := "P0001"
 import data.lib.core
 
 warn[msg] {
-    resources := ["DaemonSet", "Deployment"]
-    core.apiVersion == "extensions/v1beta1"
-    core.kind == resources[_]
+	resources := ["DaemonSet", "Deployment"]
+	core.apiVersion == "extensions/v1beta1"
+	core.kind == resources[_]
 
-    msg := core.format_with_id(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]), policyID)
+	msg := core.format_with_id(sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]), policyID)
 }

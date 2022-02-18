@@ -13,11 +13,11 @@ import data.lib.psps
 policyID := "P1014"
 
 violation[msg] {
-    psp_allows_hostpid
+	psp_allows_hostpid
 
-    msg = core.format_with_id(sprintf("%s/%s: Allows for sharing the host PID namespace", [core.kind, core.name]), policyID)
+	msg = core.format_with_id(sprintf("%s/%s: Allows for sharing the host PID namespace", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostpid {
-    psps.psps[_].spec.hostPID
+	psps.psps[_].spec.hostPID
 }

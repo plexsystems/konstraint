@@ -12,15 +12,15 @@ import data.lib.pods
 policyID := "P2002"
 
 violation[msg] {
-    pods.containers[container]
-    not container_resources_provided(container)
+	pods.containers[container]
+	not container_resources_provided(container)
 
-    msg := core.format_with_id(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]), policyID)
+	msg := core.format_with_id(sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]), policyID)
 }
 
 container_resources_provided(container) {
-    container.resources.requests.cpu
-    container.resources.requests.memory
-    container.resources.limits.cpu
-    container.resources.limits.memory
+	container.resources.requests.cpu
+	container.resources.requests.memory
+	container.resources.limits.cpu
+	container.resources.limits.memory
 }

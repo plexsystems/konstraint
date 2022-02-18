@@ -12,16 +12,16 @@ import data.lib.pods
 policyID := "P1002"
 
 violation[msg] {
-    pods.containers[container]
-    container_allows_escalation(container)
+	pods.containers[container]
+	container_allows_escalation(container)
 
-    msg := core.format_with_id(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]), policyID)
+	msg := core.format_with_id(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]), policyID)
 }
 
 container_allows_escalation(c) {
-    c.securityContext.allowPrivilegeEscalation == true
+	c.securityContext.allowPrivilegeEscalation == true
 }
 
 container_allows_escalation(c) {
-    core.missing_field(c.securityContext, "allowPrivilegeEscalation")
+	core.missing_field(c.securityContext, "allowPrivilegeEscalation")
 }

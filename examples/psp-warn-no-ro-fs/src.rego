@@ -12,16 +12,16 @@ import data.lib.psps
 policyID := "P2004"
 
 warn[msg] {
-    psps.psps[psp]
-    no_read_only_filesystem(psp)
+	psps.psps[psp]
+	no_read_only_filesystem(psp)
 
-    msg := core.format_with_id(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]), policyID)
+	msg := core.format_with_id(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]), policyID)
 }
 
 no_read_only_filesystem(psp) {
-    core.missing_field(psp.spec, "readOnlyRootFilesystem")
+	core.missing_field(psp.spec, "readOnlyRootFilesystem")
 }
 
 no_read_only_filesystem(psp) {
-    not psp.spec.readOnlyRootFilesystem
+	not psp.spec.readOnlyRootFilesystem
 }

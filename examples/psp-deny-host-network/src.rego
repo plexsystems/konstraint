@@ -13,11 +13,11 @@ import data.lib.psps
 policyID := "P1013"
 
 violation[msg] {
-    psp_allows_hostnetwork
+	psp_allows_hostnetwork
 
-    msg := core.format_with_id(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]), policyID)
+	msg := core.format_with_id(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostnetwork {
-    psps.psps[_].spec.hostNetwork
+	psps.psps[_].spec.hostNetwork
 }

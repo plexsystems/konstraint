@@ -12,11 +12,11 @@ import data.lib.psps
 policyID := "P1015"
 
 violation[msg] {
-    psp_allows_privileged
+	psp_allows_privileged
 
-    msg := core.format_with_id(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]), policyID)
+	msg := core.format_with_id(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]), policyID)
 }
 
 psp_allows_privileged {
-    psps.psps[_].spec.privileged
+	psps.psps[_].spec.privileged
 }

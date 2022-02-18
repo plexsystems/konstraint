@@ -88,6 +88,9 @@ jobs:
       - name: checkout source
         uses: actions/checkout@v2
 
+      - name: verify policy formatting
+        run: conftest fmt --check examples
+
       - name: verify policies
         run: conftest verify -p examples -d examples/test-data
 
