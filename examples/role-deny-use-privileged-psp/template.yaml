@@ -16,53 +16,59 @@ spec:
       default is_gatekeeper = false
 
       is_gatekeeper {
-          has_field(input, "review")
-          has_field(input.review, "object")
+        has_field(input, "review")
+        has_field(input.review, "object")
       }
 
       resource = input.review.object {
-          is_gatekeeper
+        is_gatekeeper
       }
 
       resource = input {
-          not is_gatekeeper
+        not is_gatekeeper
       }
 
-      format(msg) = {"msg": msg} {
-          true
-      }
+      format(msg) = {"msg": msg}
 
       format_with_id(msg, id) = msg_fmt {
-          msg_fmt := {
-              "msg": sprintf("%s: %s", [id, msg]),
-              "details": {"policyID": id}
-          }
+        msg_fmt := {
+          "msg": sprintf("%s: %s", [id, msg]),
+          "details": {"policyID": id},
+        }
       }
 
       apiVersion = resource.apiVersion
+
       name = resource.metadata.name
+
       kind = resource.kind
+
       labels = resource.metadata.labels
+
       annotations = resource.metadata.annotations
+
       gv := split(apiVersion, "/")
+
       group = gv[0] {
-          contains(apiVersion, "/")
+        contains(apiVersion, "/")
       }
+
       group = "core" {
-          not contains(apiVersion, "/")
+        not contains(apiVersion, "/")
       }
+
       version := gv[count(gv) - 1]
 
       has_field(obj, field) {
-          not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
+        not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
       }
 
-      missing_field(obj, field) = true {
-          obj[field] == ""
+      missing_field(obj, field) {
+        obj[field] == ""
       }
 
-      missing_field(obj, field) = true {
-          not has_field(obj, field)
+      missing_field(obj, field) {
+        not has_field(obj, field)
       }
     - |-
       package lib.rbac
@@ -70,43 +76,43 @@ spec:
       import data.lib.core
 
       rule_has_verb(rule, verb) {
-          verbs := ["*", lower(verb)]
-          verbs[_] == lower(rule.verbs[_])
+        verbs := ["*", lower(verb)]
+        verbs[_] == lower(rule.verbs[_])
       }
 
       rule_has_resource_type(rule, type) {
-          types := ["*", lower(type)]
-          types[_] == lower(rule.resources[_])
+        types := ["*", lower(type)]
+        types[_] == lower(rule.resources[_])
       }
 
       rule_has_resource_name(rule, name) {
-          name == rule.resourceNames[_]
+        name == rule.resourceNames[_]
       }
 
       rule_has_resource_name(rule, name) {
-          core.missing_field(rule, "resourceNames")
+        core.missing_field(rule, "resourceNames")
       }
     - |-
       package lib.security
 
       dropped_capability(container, cap) {
-          lower(container.securityContext.capabilities.drop[_]) == lower(cap)
+        lower(container.securityContext.capabilities.drop[_]) == lower(cap)
       }
 
       dropped_capability(psp, cap) {
-          lower(psp.spec.requiredDropCapabilities[_]) == lower(cap)
+        lower(psp.spec.requiredDropCapabilities[_]) == lower(cap)
       }
 
       added_capability(container, cap) {
-          lower(container.securityContext.capabilities.add[_]) == lower(cap)
+        lower(container.securityContext.capabilities.add[_]) == lower(cap)
       }
 
       added_capability(psp, cap) {
-          lower(psp.spec.allowedCapabilities[_]) == lower(cap)
+        lower(psp.spec.allowedCapabilities[_]) == lower(cap)
       }
 
       added_capability(psp, cap) {
-          lower(psp.spec.defaultAddCapabilities[_]) == lower(cap)
+        lower(psp.spec.defaultAddCapabilities[_]) == lower(cap)
       }
     rego: |-
       package role_deny_use_privileged_psps
@@ -118,29 +124,29 @@ spec:
       policyID := "P2005"
 
       violation[msg] {
-          role_uses_privileged_psp
+        role_uses_privileged_psp
 
-          msg := core.format_with_id(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]), policyID)
+        msg := core.format_with_id(sprintf("%s/%s: Allows using PodSecurityPolicies with privileged permissions", [core.kind, core.name]), policyID)
       }
 
       role_uses_privileged_psp {
-          rule := core.resource.rules[_]
-          rbac.rule_has_resource_type(rule, "podsecuritypolicies")
-          rbac.rule_has_verb(rule, "use")
-          rbac.rule_has_resource_name(rule, privileged_psps[_].metadata.name)
+        rule := core.resource.rules[_]
+        rbac.rule_has_resource_type(rule, "podsecuritypolicies")
+        rbac.rule_has_verb(rule, "use")
+        rbac.rule_has_resource_name(rule, privileged_psps[_].metadata.name)
       }
 
       privileged_psps[psp] {
-          psp := data.inventory.cluster["policy/v1beta1"].PodSecurityPolicy[_]
-          psp_is_privileged(psp)
+        psp := data.inventory.cluster["policy/v1beta1"].PodSecurityPolicy[_]
+        psp_is_privileged(psp)
       }
 
       psp_is_privileged(psp) {
-          psp.spec.privileged
+        psp.spec.privileged
       }
 
       psp_is_privileged(psp) {
-          security.added_capability(psp, "SYS_ADMIN")
+        security.added_capability(psp, "SYS_ADMIN")
       }
     target: admission.k8s.gatekeeper.sh
 status: {}

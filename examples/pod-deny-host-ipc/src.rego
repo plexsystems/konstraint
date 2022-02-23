@@ -12,11 +12,11 @@ import data.lib.pods
 policyID := "P1005"
 
 violation[msg] {
-    pod_has_hostipc
+	pod_has_hostipc
 
-    msg := core.format_with_id(sprintf("%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name]), policyID)
+	msg := core.format_with_id(sprintf("%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name]), policyID)
 }
 
 pod_has_hostipc {
-    pods.pod.spec.hostIPC
+	pods.pod.spec.hostIPC
 }

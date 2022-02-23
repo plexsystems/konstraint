@@ -32,6 +32,10 @@ update-static: build ## Updates the static assets in the repository.
 	./build/konstraint doc examples --output examples/policies.md
 	./build/konstraint doc examples --output test/doc/expected.md
 
+.PHONY: fmt
+fmt: ## Ensures consistent formatting on policy tests.
+	conftest fmt examples
+
 #
 ##@ Releases
 #

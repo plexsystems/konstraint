@@ -12,11 +12,11 @@ import data.lib.psps
 policyID := "P1011"
 
 violation[msg] {
-    psp_allows_hostaliases
+	psp_allows_hostaliases
 
-    msg := core.format_with_id(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]), policyID)
+	msg := core.format_with_id(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]), policyID)
 }
 
 psp_allows_hostaliases {
-    psps.psps[_].spec.hostAliases
+	psps.psps[_].spec.hostAliases
 }

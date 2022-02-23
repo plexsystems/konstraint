@@ -23,53 +23,59 @@ spec:
       default is_gatekeeper = false
 
       is_gatekeeper {
-          has_field(input, "review")
-          has_field(input.review, "object")
+        has_field(input, "review")
+        has_field(input.review, "object")
       }
 
       resource = input.review.object {
-          is_gatekeeper
+        is_gatekeeper
       }
 
       resource = input {
-          not is_gatekeeper
+        not is_gatekeeper
       }
 
-      format(msg) = {"msg": msg} {
-          true
-      }
+      format(msg) = {"msg": msg}
 
       format_with_id(msg, id) = msg_fmt {
-          msg_fmt := {
-              "msg": sprintf("%s: %s", [id, msg]),
-              "details": {"policyID": id}
-          }
+        msg_fmt := {
+          "msg": sprintf("%s: %s", [id, msg]),
+          "details": {"policyID": id},
+        }
       }
 
       apiVersion = resource.apiVersion
+
       name = resource.metadata.name
+
       kind = resource.kind
+
       labels = resource.metadata.labels
+
       annotations = resource.metadata.annotations
+
       gv := split(apiVersion, "/")
+
       group = gv[0] {
-          contains(apiVersion, "/")
+        contains(apiVersion, "/")
       }
+
       group = "core" {
-          not contains(apiVersion, "/")
+        not contains(apiVersion, "/")
       }
+
       version := gv[count(gv) - 1]
 
       has_field(obj, field) {
-          not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
+        not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
       }
 
-      missing_field(obj, field) = true {
-          obj[field] == ""
+      missing_field(obj, field) {
+        obj[field] == ""
       }
 
-      missing_field(obj, field) = true {
-          not has_field(obj, field)
+      missing_field(obj, field) {
+        not has_field(obj, field)
       }
     rego: |-
       package required_labels
@@ -79,16 +85,16 @@ spec:
       policyID := "P0002"
 
       violation[msg] {
-          missing := missing_labels
-          count(missing) > 0
+        missing := missing_labels
+        count(missing) > 0
 
-          msg := core.format_with_id(sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing]), policyID)
+        msg := core.format_with_id(sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing]), policyID)
       }
 
       missing_labels = missing {
-          provided := {label | core.labels[label]}
-          required := {label | label := input.parameters.labels[_]}
-          missing := required - provided
+        provided := {label | core.labels[label]}
+        required := {label | label := input.parameters.labels[_]}
+        missing := required - provided
       }
     target: admission.k8s.gatekeeper.sh
 status: {}
