@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: lint go
         run: |
@@ -27,7 +27,7 @@ jobs:
           go-version: 1.17.x
 
       - name: checkout source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: build
         run: make build
@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: docker build
         run: make docker-build
@@ -86,7 +86,7 @@ jobs:
     container: openpolicyagent/conftest:latest
     steps:
       - name: checkout source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: verify policy formatting
         run: conftest fmt --check examples
@@ -102,7 +102,7 @@ jobs:
       - acceptance
     steps:
       - name: checkout source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: fetch gatekeeper versions
         id: fetch-gk-versions
         working-directory: .github/scripts
@@ -120,7 +120,7 @@ jobs:
         gk-version: ${{ fromJson(needs.e2e-prep.outputs.gk-versions) }}
     steps:
       - name: checkout source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: download build
         uses: actions/download-artifact@v2
