@@ -474,11 +474,7 @@ func getRecursiveImportPaths(regoFile *loader.RegoFile, regoFiles map[string]*lo
 	var recursiveImports []string
 	for i := range regoFile.Parsed.Imports {
 		importPath := regoFile.Parsed.Imports[i].Path.String()
-
-		// future.keywords is a special import in Rego and we should not
-		// attempt to actually import it.
-		// https://www.openpolicyagent.org/docs/latest/policy-language/#operators
-		if strings.HasPrefix(importPath, "future.keywords") {
+		if !strings.HasPrefix(importPath, "data.lib.") {
 			continue
 		}
 
