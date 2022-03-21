@@ -3,6 +3,8 @@
 # The description
 #
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+# @matchExpression foo In bar,baz
+# @matchExpression doggos Exists
 package test
 
 import future.keywords

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -275,15 +276,21 @@ func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 		return unstructured.Unstructured{}, fmt.Errorf("matchers: %w", err)
 	}
 
-	if len(matchers.KindMatchers) != 0 {
+	if len(matchers.KindMatchers) > 0 {
 		if err := setKindMatcher(&constraint, matchers.KindMatchers); err != nil {
 			return unstructured.Unstructured{}, fmt.Errorf("set kind matcher: %w", err)
 		}
 	}
 
-	if len(matchers.MatchLabelsMatcher) != 0 {
+	if len(matchers.MatchLabelsMatcher) > 0 {
 		if err := setMatchLabelsMatcher(&constraint, matchers.MatchLabelsMatcher); err != nil {
 			return unstructured.Unstructured{}, fmt.Errorf("set match labels matcher: %w", err)
+		}
+	}
+
+	if len(matchers.MatchExpressionsMatcher) > 0 {
+		if err := setMatchExpressionsMatcher(&constraint, matchers.MatchExpressionsMatcher); err != nil {
+			return unstructured.Unstructured{}, fmt.Errorf("set match expressions matcher: %w", err)
 		}
 	}
 
@@ -357,6 +364,18 @@ func setMatchLabelsMatcher(constraint *unstructured.Unstructured, matcher rego.M
 		return fmt.Errorf("set constraint labelSelector.matchLabels matchers: %w", err)
 	}
 	return nil
+}
+
+func setMatchExpressionsMatcher(constraint *unstructured.Unstructured, matcher []rego.MatchExpressionMatcher) error {
+	marshalled, err := json.Marshal(matcher)
+	if err != nil {
+		return err
+	}
+	var unmarshalled []interface{}
+	if err := json.Unmarshal(marshalled, &unmarshalled); err != nil {
+		return err
+	}
+	return unstructured.SetNestedSlice(constraint.Object, unmarshalled, "spec", "match", "labelSelector", "matchExpressions")
 }
 
 func isValidEnforcementAction(action string) bool {
