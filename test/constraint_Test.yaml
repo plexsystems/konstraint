@@ -13,3 +13,12 @@ spec:
       - Deployment
       - StatefulSet
       - Pod
+    labelSelector:
+      matchExpressions:
+      - key: foo
+        operator: In
+        values:
+        - bar
+        - baz
+      - key: doggos
+        operator: Exists

@@ -7,8 +7,9 @@ import (
 
 // Matchers are all of the matchers that can be applied to constraints.
 type Matchers struct {
-	KindMatchers       KindMatchers
-	MatchLabelsMatcher MatchLabelsMatcher
+	KindMatchers            KindMatchers
+	MatchLabelsMatcher      MatchLabelsMatcher
+	MatchExpressionsMatcher []MatchExpressionMatcher
 }
 
 // KindMatchers is the slice of KindMatcher
@@ -33,6 +34,13 @@ type KindMatcher struct {
 // MatchLabelsMatcher is the matcher to generate `constraints.spec.match.labelSelector.matchLabels`.
 type MatchLabelsMatcher map[string]string
 
+// MatchExpressionsMatcher is the matcher to generate `constraints.spec.match.labelSelector.matchExpressions`.
+type MatchExpressionMatcher struct {
+	Key      string   `json:"key"`
+	Operator string   `json:"operator"`
+	Values   []string `json:"values,omitempty"`
+}
+
 func (m MatchLabelsMatcher) String() string {
 	var result string
 	for k, v := range m {
@@ -47,19 +55,27 @@ func (r Rego) Matchers() (Matchers, error) {
 	var matchers Matchers
 	for _, comment := range r.headerComments {
 		if commentStartsWith(comment, "@kinds") {
-			var err error
-			matchers.KindMatchers, err = getKindMatchers(comment)
+			m, err := getKindMatchers(comment)
 			if err != nil {
 				return Matchers{}, fmt.Errorf("get kind matchers: %w", err)
 			}
+			matchers.KindMatchers = m
 		}
 
 		if commentStartsWith(comment, "@matchlabels") {
-			var err error
-			matchers.MatchLabelsMatcher, err = getMatchLabelsMatcher(comment)
+			m, err := getMatchLabelsMatcher(comment)
 			if err != nil {
 				return Matchers{}, fmt.Errorf("get match labels matcher: %w", err)
 			}
+			matchers.MatchLabelsMatcher = m
+		}
+
+		if commentStartsWith(comment, "@matchExpression") {
+			m, err := getMatchExperssionsMatcher(comment)
+			if err != nil {
+				return Matchers{}, fmt.Errorf("get match expression matcher: %w", err)
+			}
+			matchers.MatchExpressionsMatcher = append(matchers.MatchExpressionsMatcher, m)
 		}
 	}
 
@@ -98,6 +114,23 @@ func getMatchLabelsMatcher(comment string) (MatchLabelsMatcher, error) {
 		}
 
 		matcher[split[0]] = split[1]
+	}
+
+	return matcher, nil
+}
+
+func getMatchExperssionsMatcher(comment string) (MatchExpressionMatcher, error) {
+	argSpit := strings.TrimSpace(strings.SplitAfter(comment, "@matchExpression")[1])
+	lineSplit := strings.Split(argSpit, " ")
+	if len(lineSplit) != 2 && len(lineSplit) != 3 {
+		return MatchExpressionMatcher{}, fmt.Errorf("too few parameters: have %d, need 2 or 3", len(lineSplit))
+	}
+	matcher := MatchExpressionMatcher{
+		Key:      lineSplit[0],
+		Operator: lineSplit[1],
+	}
+	if len(lineSplit) == 3 {
+		matcher.Values = strings.Split(lineSplit[2], ",")
 	}
 
 	return matcher, nil
