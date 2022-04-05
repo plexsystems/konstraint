@@ -41,7 +41,7 @@ func newDocCommand() *cobra.Command {
 
 Save the documentation to a specific directory
 	konstraint doc --output docs/policies.md
-	
+
 Set the URL where the policies are hosted at
 	konstraint doc --url https://github.com/plexsystems/konstraint`,
 
@@ -95,7 +95,7 @@ func runDocCommand(path string) error {
 		return fmt.Errorf("parsing template: %w", err)
 	}
 
-	f, err := os.OpenFile(viper.GetString("output"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	f, err := os.OpenFile(viper.GetString("output"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 	if err != nil {
 		return fmt.Errorf("opening file for writing: %w", err)
 	}
