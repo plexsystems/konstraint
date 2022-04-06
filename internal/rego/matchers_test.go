@@ -112,3 +112,42 @@ func TestGetMatchExpressionsMatcher(t *testing.T) {
 		})
 	}
 }
+
+func TestGetStringListMatcher(t *testing.T) {
+	testCases := []struct {
+		desc      string
+		tag       string
+		comment   string
+		expected  []string
+		wantError bool
+	}{
+		{
+			desc:      "InvalidTag",
+			wantError: true, // will error without a match on the tag
+		},
+		{
+			desc:      "NoValuesSupplied",
+			tag:       "@foo",
+			comment:   "@foo     ",
+			wantError: true,
+		},
+		{
+			desc:     "Valid",
+			tag:      "@foo",
+			comment:  "@foo bar baz",
+			expected: []string{"bar", "baz"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			actual, err := getStringListMatcher(tc.tag, tc.comment)
+			if (err != nil && !tc.wantError) || (err == nil && tc.wantError) {
+				t.Errorf("Unexpected error state, have %v want %v", !tc.wantError, tc.wantError)
+			}
+			if !reflect.DeepEqual(actual, tc.expected) {
+				t.Errorf("Unexpected values, have %v want %v", actual, tc.expected)
+			}
+		})
+	}
+}

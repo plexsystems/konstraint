@@ -22,11 +22,12 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 ### Options
 
 ```
-  -d, --dryrun                Sets the enforcement action of the constraints to dryrun, overriding the @enforcement tag
-  -h, --help                  help for create
-  -o, --output string         Specify an output directory for the Gatekeeper resources
-      --partial-constriants   Generate partial Constraints for policies with parameters
-      --skip-constraints      Skip generation of constraints
+      --constraint-template-version string   Set the version of ConstraintTemplates (default "v1beta1")
+  -d, --dryrun                               Sets the enforcement action of the constraints to dryrun, overriding the @enforcement tag
+  -h, --help                                 help for create
+  -o, --output string                        Specify an output directory for the Gatekeeper resources
+      --partial-constraints                  Generate partial Constraints for policies with parameters
+      --skip-constraints                     Skip generation of constraints
 ```
 
 ### SEE ALSO

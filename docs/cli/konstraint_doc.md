@@ -14,7 +14,7 @@ Generate the documentation
 
 Save the documentation to a specific directory
 	konstraint doc --output docs/policies.md
-	
+
 Set the URL where the policies are hosted at
 	konstraint doc --url https://github.com/plexsystems/konstraint
 ```

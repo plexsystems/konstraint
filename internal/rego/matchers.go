@@ -7,9 +7,11 @@ import (
 
 // Matchers are all of the matchers that can be applied to constraints.
 type Matchers struct {
-	KindMatchers            KindMatchers
-	MatchLabelsMatcher      MatchLabelsMatcher
-	MatchExpressionsMatcher []MatchExpressionMatcher
+	KindMatchers             KindMatchers
+	MatchLabelsMatcher       MatchLabelsMatcher
+	MatchExpressionsMatcher  []MatchExpressionMatcher
+	NamespaceMatcher         []string
+	ExcludedNamespaceMatcher []string
 }
 
 // KindMatchers is the slice of KindMatcher
@@ -77,6 +79,22 @@ func (r Rego) Matchers() (Matchers, error) {
 			}
 			matchers.MatchExpressionsMatcher = append(matchers.MatchExpressionsMatcher, m)
 		}
+
+		if commentStartsWith(comment, "@namespaces") {
+			m, err := getStringListMatcher("@namespaces", comment)
+			if err != nil {
+				return Matchers{}, fmt.Errorf("get match namespaces matcher: %w", err)
+			}
+			matchers.NamespaceMatcher = append(matchers.NamespaceMatcher, m...)
+		}
+
+		if commentStartsWith(comment, "@excludedNamespaces") {
+			m, err := getStringListMatcher("@excludedNamespaces", comment)
+			if err != nil {
+				return Matchers{}, fmt.Errorf("get match excludedNamespaces matcher: %w", err)
+			}
+			matchers.ExcludedNamespaceMatcher = append(matchers.ExcludedNamespaceMatcher, m...)
+		}
 	}
 
 	return matchers, nil
@@ -134,6 +152,19 @@ func getMatchExperssionsMatcher(comment string) (MatchExpressionMatcher, error) 
 	}
 
 	return matcher, nil
+}
+
+func getStringListMatcher(tag, comment string) ([]string, error) {
+	argSpit := strings.SplitAfter(comment, tag)
+	if len(argSpit) == 0 {
+		return nil, fmt.Errorf("no match for tag %q in comment %q", tag, comment)
+	}
+	lineSplit := strings.Split(strings.TrimSpace(argSpit[1]), " ")
+	if len(lineSplit) == 1 {
+		return nil, fmt.Errorf("no values provided for tag: %s", tag)
+	}
+
+	return lineSplit, nil
 }
 
 func commentStartsWith(comment string, keyword string) bool {

@@ -4,6 +4,9 @@ metadata:
   name: test
 spec:
   match:
+    excludedNamespaces:
+    - kube-system
+    - gatekeeper-system
     kinds:
     - apiGroups:
       - apps
@@ -22,3 +25,7 @@ spec:
         - baz
       - key: doggos
         operator: Exists
+    namespaces:
+    - dev
+    - stage
+    - prod

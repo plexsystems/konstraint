@@ -5,6 +5,8 @@
 # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
 # @matchExpression foo In bar,baz
 # @matchExpression doggos Exists
+# @namespaces dev stage prod
+# @excludedNamespaces kube-system gatekeeper-system
 package test
 
 import future.keywords

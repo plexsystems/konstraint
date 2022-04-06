@@ -294,6 +294,18 @@ func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 		}
 	}
 
+	if len(matchers.NamespaceMatcher) > 0 {
+		if err := setNestedStringSlice(&constraint, matchers.NamespaceMatcher, "spec", "match", "namespaces"); err != nil {
+			return unstructured.Unstructured{}, fmt.Errorf("set namespace matcher: %w", err)
+		}
+	}
+
+	if len(matchers.ExcludedNamespaceMatcher) > 0 {
+		if err := setNestedStringSlice(&constraint, matchers.ExcludedNamespaceMatcher, "spec", "match", "excludedNamespaces"); err != nil {
+			return unstructured.Unstructured{}, fmt.Errorf("set namespace matcher: %w", err)
+		}
+	}
+
 	if len(violation.Parameters()) > 0 && viper.GetBool("partial-constraints") {
 		if err := addParametersToConstraint(&constraint, violation.Parameters()); err != nil {
 			return unstructured.Unstructured{}, fmt.Errorf("add parameters %v to constraint: %w", violation.Parameters(), err)
@@ -376,6 +388,14 @@ func setMatchExpressionsMatcher(constraint *unstructured.Unstructured, matcher [
 		return err
 	}
 	return unstructured.SetNestedSlice(constraint.Object, unmarshalled, "spec", "match", "labelSelector", "matchExpressions")
+}
+
+func setNestedStringSlice(constraint *unstructured.Unstructured, slice []string, path ...string) error {
+	var values []interface{}
+	for _, s := range slice {
+		values = append(values, interface{}(s))
+	}
+	return unstructured.SetNestedSlice(constraint.Object, values, path...)
 }
 
 func isValidEnforcementAction(action string) bool {
