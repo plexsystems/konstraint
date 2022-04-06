@@ -87,6 +87,22 @@ The comment block is also what is used when generating documentation via the `do
     # @matchlabels app.kubernetes.io/name=mysql app.kubernetes.io/version=5.8
     ```
 
+- `@matchExpression` generates `constraint.spec.match.labelSelector.matchExpressions`. The allowed format is `<key> <operator> <values>` where `key` is the name of the label to operate on, `operator` is one of `In`, `NotIn`, `Exists`, or `DoesNotExist`. The `values` field is an commaa separated field for the `In` and `NotIn` operators. More than one `@matchExpression` annotations can be supplied, each on their own line.
+    ```
+    # @matchExpression app.kubernetes.io/name In mysql,postgres
+    # @matchExpression foobarbaz Exists
+    ```
+
+- `@namespaces` generates `constraint.spec.match.namespaces`. The allowed format is space-separated list of namespaces.
+    ```
+    # @namespaces dev stage prod
+    ```
+
+- `@excludedNamespaces` generates `constraint.spec.match.excludedNamespaces`. The allowed format is a space-separated list of namespaces.
+    ```
+    # @excludedNamespaces kube-system gatekeeper-system
+    ```
+
 ### Skipping generation of the Constraint resource
 
 In some scenarios, you may wish for Konstraint to skip the generation of the `Constraint` resource for a policy and manage that externally. To do so, add the `@skip-constraint` tag in the header comment block.
