@@ -9,7 +9,6 @@
 # @excludedNamespaces kube-system gatekeeper-system
 package test
 
-import future.keywords
 import data.lib.libraryA
 
 policyID := "P123456"
