@@ -33,7 +33,7 @@ jobs:
         run: make build
 
       - name: upload build
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: konstraint-${{ matrix.os }}
           path: build/konstraint
