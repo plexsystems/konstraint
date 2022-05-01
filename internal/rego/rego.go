@@ -11,6 +11,8 @@ import (
 
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/loader"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // Severity describes the severity level of the rego file.
@@ -134,7 +136,7 @@ func (r Rego) Severity() Severity {
 func (r Rego) Kind() string {
 	kind := filepath.Base(filepath.Dir(r.Path()))
 	kind = strings.ReplaceAll(kind, "-", " ")
-	kind = strings.Title(kind)
+	kind = cases.Title(language.AmericanEnglish).String(kind)
 	kind = strings.ReplaceAll(kind, " ", "")
 
 	return kind
