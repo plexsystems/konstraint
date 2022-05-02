@@ -11,7 +11,7 @@ require (
 	github.com/spf13/viper v1.10.1
 	golang.org/x/text v0.3.7
 	k8s.io/apiextensions-apiserver v0.23.4
-	k8s.io/apimachinery v0.23.5
+	k8s.io/apimachinery v0.23.6
 )
 
 require (
