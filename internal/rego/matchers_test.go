@@ -34,6 +34,7 @@ func TestGetKindMatchers(t *testing.T) {
 func TestGetMatchLabelsMatcher(t *testing.T) {
 	comments := []string{
 		"@matchlabels team=a app.kubernetes.io/name=test",
+		"@matchlabels example.com/env=production",
 	}
 	rego := Rego{
 		headerComments: comments,
@@ -42,6 +43,7 @@ func TestGetMatchLabelsMatcher(t *testing.T) {
 	expected := MatchLabelsMatcher{
 		"team":                   "a",
 		"app.kubernetes.io/name": "test",
+		"example.com/env":        "production",
 	}
 
 	matchers, err := rego.Matchers()
