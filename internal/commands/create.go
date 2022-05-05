@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/plexsystems/konstraint/internal/rego"
 
@@ -327,40 +326,20 @@ func addParametersToConstraint(constraint *unstructured.Unstructured, parameters
 	return nil
 }
 
-func setKindMatcher(constraint *unstructured.Unstructured, kindMatchers []rego.KindMatcher) error {
-	var kinds []string
-	var apiGroups []string
-	for _, kindMatcher := range kindMatchers {
-		kinds = appendIfNotExists(kinds, kindMatcher.Kind)
-	}
+func setKindMatcher(constraint *unstructured.Unstructured, kindMatchers rego.KindMatchers) error {
+	constraintMatchers := make([]interface{}, len(kindMatchers))
 
-	for _, kindMatcher := range kindMatchers {
-		apiGroup := kindMatcher.APIGroup
-		if kindMatcher.APIGroup == "core" {
-			apiGroup = ""
+	for i, matcher := range kindMatchers {
+		constraintMatchers[i] = map[string]interface{}{
+			"apiGroups": toInterfaceSlice([]string{matcher.APIGroup}),
+			"kinds":     toInterfaceSlice(matcher.Kinds),
 		}
-
-		apiGroups = appendIfNotExists(apiGroups, apiGroup)
 	}
 
-	constraintMatcher := map[string]interface{}{
-		"apiGroups": toInterfaceSlice(apiGroups),
-		"kinds":     toInterfaceSlice(kinds),
-	}
-
-	if err := unstructured.SetNestedSlice(constraint.Object, []interface{}{constraintMatcher}, "spec", "match", "kinds"); err != nil {
+	if err := unstructured.SetNestedSlice(constraint.Object, constraintMatchers, "spec", "match", "kinds"); err != nil {
 		return fmt.Errorf("set constraint kinds matchers: %w", err)
 	}
 	return nil
-}
-
-func appendIfNotExists(currentItems []string, newItem string) []string {
-	for _, item := range currentItems {
-		if strings.EqualFold(newItem, item) {
-			return currentItems
-		}
-	}
-	return append(currentItems, newItem)
 }
 
 func toInterfaceSlice(input []string) []interface{} {

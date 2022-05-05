@@ -9,13 +9,15 @@ spec:
     - gatekeeper-system
     kinds:
     - apiGroups:
-      - apps
       - ""
+      kinds:
+      - Pod
+    - apiGroups:
+      - apps
       kinds:
       - DaemonSet
       - Deployment
       - StatefulSet
-      - Pod
     labelSelector:
       matchExpressions:
       - key: foo

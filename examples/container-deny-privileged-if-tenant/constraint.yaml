@@ -6,13 +6,15 @@ spec:
   match:
     kinds:
     - apiGroups:
-      - apps
       - ""
+      kinds:
+      - Pod
+    - apiGroups:
+      - apps
       kinds:
       - DaemonSet
       - Deployment
       - StatefulSet
-      - Pod
     labelSelector:
       matchLabels:
         is-tenant: "true"

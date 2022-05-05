@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestGetKindMatchers(t *testing.T) {
+func TestMultilineKindMatchers(t *testing.T) {
 	comments := []string{
 		"@kinds core/Pod apps/Deployment",
 		"@kinds apps/StatefulSet",
@@ -15,9 +15,8 @@ func TestGetKindMatchers(t *testing.T) {
 	}
 
 	expected := KindMatchers{
-		{APIGroup: "core", Kind: "Pod"},
-		{APIGroup: "apps", Kind: "Deployment"},
-		{APIGroup: "apps", Kind: "StatefulSet"},
+		{APIGroup: "", Kinds: []string{"Pod"}},
+		{APIGroup: "apps", Kinds: []string{"Deployment", "StatefulSet"}},
 	}
 
 	matchers, err := rego.Matchers()
@@ -28,6 +27,63 @@ func TestGetKindMatchers(t *testing.T) {
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("Unexpected KindMatchers. expected %v, actual %v.", expected, actual)
+	}
+}
+
+func TestKindMatchers(t *testing.T) {
+	tests := []struct {
+		name    string
+		comment string
+		want    KindMatchers
+	}{
+		{
+			"core_Pod",
+			"@kinds core/Pod",
+			KindMatchers{{APIGroup: "", Kinds: []string{"Pod"}}},
+		},
+		{
+			"core_Pod,core_Pod",
+			"@kinds core/Pod core/Pod",
+			KindMatchers{{APIGroup: "", Kinds: []string{"Pod"}}},
+		},
+		{
+			"apps_Deployment,apps_StatefulSet",
+			"@kinds apps/Deployment apps/StatefulSet",
+			KindMatchers{{APIGroup: "apps", Kinds: []string{"Deployment", "StatefulSet"}}},
+		},
+		{
+			"apps_StatefulSet,apps_Deployment",
+			"@kinds apps/StatefulSet apps/Deployment",
+			KindMatchers{{APIGroup: "apps", Kinds: []string{"Deployment", "StatefulSet"}}},
+		},
+		{
+			"apps_Deployment,apps_StatefulSet,core_Pod",
+			"@kinds apps/Deployment apps/StatefulSet core/Pod",
+			KindMatchers{
+				{APIGroup: "", Kinds: []string{"Pod"}},
+				{APIGroup: "apps", Kinds: []string{"Deployment", "StatefulSet"}},
+			},
+		},
+		{
+			"apps_Deployment,core_Pod,apps_StatefulSet",
+			"@kinds apps/Deployment core/Pod apps/StatefulSet",
+			KindMatchers{
+				{APIGroup: "", Kinds: []string{"Pod"}},
+				{APIGroup: "apps", Kinds: []string{"Deployment", "StatefulSet"}},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			matchers, err := Rego{headerComments: []string{tt.comment}}.Matchers()
+			if err != nil {
+				t.Fatal(err)
+			}
+			actual := matchers.KindMatchers
+			if !reflect.DeepEqual(tt.want, actual) {
+				t.Errorf("Unexpected KindMatchers. expected %v, actual %v.", tt.want, actual)
+			}
+		})
 	}
 }
 

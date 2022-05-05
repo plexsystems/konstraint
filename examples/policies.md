@@ -72,7 +72,7 @@ _source: [required-labels](required-labels)_
 
 **Severity:** Violation
 
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+**Resources:** core/Pod apps/DaemonSet apps/Deployment apps/StatefulSet
 
 Granting containers privileged capabilities on the node makes it easier
 for containers to escalate their privileges. As such, this is not allowed
@@ -107,7 +107,7 @@ _source: [container-deny-added-caps](container-deny-added-caps)_
 
 **Severity:** Violation
 
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+**Resources:** core/Pod apps/DaemonSet apps/Deployment apps/StatefulSet
 
 Privileged containers can much more easily obtain root on the node.
 As such, they are not allowed.
@@ -144,7 +144,7 @@ _source: [container-deny-escalation](container-deny-escalation)_
 
 **Severity:** Violation
 
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+**Resources:** core/Pod apps/DaemonSet apps/Deployment apps/StatefulSet
 
 Privileged containers can easily escalate to root privileges on the node. As
 such containers running as privileged or with sufficient capabilities granted
@@ -183,7 +183,7 @@ _source: [container-deny-privileged](container-deny-privileged)_
 
 **Severity:** Violation
 
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+**Resources:** core/Pod apps/DaemonSet apps/Deployment apps/StatefulSet
 
 Pods that can change aliases in the host's /etc/hosts file can
 redirect traffic to malicious servers.
@@ -215,7 +215,7 @@ _source: [pod-deny-host-alias](pod-deny-host-alias)_
 
 **Severity:** Violation
 
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+**Resources:** core/Pod apps/DaemonSet apps/Deployment apps/StatefulSet
 
 Pods that are allowed to access the host IPC can read memory of
 the other containers, breaking that security boundary.
@@ -247,7 +247,7 @@ _source: [pod-deny-host-ipc](pod-deny-host-ipc)_
 
 **Severity:** Violation
 
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+**Resources:** core/Pod apps/DaemonSet apps/Deployment apps/StatefulSet
 
 Pods that can access the host's network interfaces can potentially
 access and tamper with traffic the pod should not have access to.
@@ -279,7 +279,7 @@ _source: [pod-deny-host-network](pod-deny-host-network)_
 
 **Severity:** Violation
 
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+**Resources:** core/Pod apps/DaemonSet apps/Deployment apps/StatefulSet
 
 Pods that can access the host's process tree can view and attempt to
 modify processes outside of their namespace, breaking that security
@@ -312,7 +312,7 @@ _source: [pod-deny-host-pid](pod-deny-host-pid)_
 
 **Severity:** Violation
 
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+**Resources:** core/Pod apps/DaemonSet apps/Deployment apps/StatefulSet
 
 Pods running as root (uid of 0) can much more easily escalate privileges
 to root on the node. As such, they are not allowed.
@@ -579,7 +579,7 @@ _source: [psp-deny-privileged](psp-deny-privileged)_
 
 **Severity:** Violation
 
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+**Resources:** core/Pod apps/DaemonSet apps/Deployment apps/StatefulSet
 
 Using the latest tag on images can cause unexpected problems in production. By specifying a pinned version
 we can have higher confidence that our applications are immutable and do not change unexpectedly.
@@ -631,7 +631,7 @@ _source: [container-deny-latest-tag](container-deny-latest-tag)_
 
 **Severity:** Violation
 
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+**Resources:** core/Pod apps/DaemonSet apps/Deployment apps/StatefulSet
 
 Resource constraints on containers ensure that a given workload does not take up more resources than it requires
 and potentially starve other applications that need to run.
@@ -715,7 +715,7 @@ _source: [role-deny-use-privileged-psp](role-deny-use-privileged-psp)_
 
 **Severity:** Violation
 
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+**Resources:** core/Pod apps/DaemonSet apps/Deployment apps/StatefulSet
 
 **MatchLabels:** is-tenant=true
 
@@ -789,7 +789,7 @@ _source: [any-warn-deprecated-api-versions](any-warn-deprecated-api-versions)_
 
 **Severity:** Warning
 
-**Resources:** apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+**Resources:** core/Pod apps/DaemonSet apps/Deployment apps/StatefulSet
 
 In order to prevent persistence in the case of a compromise, it is
 important to make the root filesystem read-only.
