@@ -8,6 +8,7 @@ import (
 func TestGetKindMatchers(t *testing.T) {
 	comments := []string{
 		"@kinds core/Pod apps/Deployment",
+		"@kinds apps/StatefulSet",
 	}
 	rego := Rego{
 		headerComments: comments,
@@ -16,6 +17,7 @@ func TestGetKindMatchers(t *testing.T) {
 	expected := KindMatchers{
 		{APIGroup: "core", Kind: "Pod"},
 		{APIGroup: "apps", Kind: "Deployment"},
+		{APIGroup: "apps", Kind: "StatefulSet"},
 	}
 
 	matchers, err := rego.Matchers()
