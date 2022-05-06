@@ -2,6 +2,7 @@ package rego
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -14,23 +15,69 @@ type Matchers struct {
 	ExcludedNamespaceMatcher []string
 }
 
-// KindMatchers is the slice of KindMatcher
+// kindMatchersMap is internal representation of KindMatchers
+// it maps apiGroup to a slice of kinds
+type kindMatchersMap map[string][]string
+
+// KindMatcher is the matcher to generate `constraints.spec.match.kinds`
+type KindMatcher struct {
+	APIGroup string
+	Kinds    []string
+}
+
+// KindMatchers is a slice of KindMatcher
 type KindMatchers []KindMatcher
 
 func (k KindMatchers) String() string {
 	var result string
 	for _, kindMatcher := range k {
-		result += kindMatcher.APIGroup + "/" + kindMatcher.Kind + " "
+		apiGroup := kindMatcher.APIGroup
+		if apiGroup == "" {
+			apiGroup = "core"
+		}
+		for _, kind := range kindMatcher.Kinds {
+			result += apiGroup + "/" + kind + " "
+		}
 	}
 
 	result = strings.TrimSpace(result)
 	return result
 }
 
-// KindMatcher are the matchers that are applied to constraints.
-type KindMatcher struct {
-	APIGroup string
-	Kind     string
+// addIfNotPresent adds an apiGroup/kind matcher to the map
+// unless it's already present
+//
+// it also transforms apiGroup `"core"` to `""`
+func (k kindMatchersMap) addIfNotPreset(apiGroup, kind string) {
+	if apiGroup == "core" {
+		apiGroup = ""
+	}
+	for _, item := range k[apiGroup] {
+		if strings.EqualFold(kind, item) {
+			return
+		}
+	}
+	k[apiGroup] = append(k[apiGroup], kind)
+}
+
+// convert converts kindMatchersMap to KindMatchers,
+// sorted by apiGroup, with kinds in each apiGroupKinds sorted
+func (k kindMatchersMap) convert() KindMatchers {
+	apiGroups := make([]string, 0, len(k))
+	for apiGroup := range k {
+		apiGroups = append(apiGroups, apiGroup)
+	}
+	sort.Strings(apiGroups)
+
+	result := make(KindMatchers, len(apiGroups))
+	for i, apiGroup := range apiGroups {
+		result[i].APIGroup = apiGroup
+		kinds := k[apiGroup]
+		sort.Strings(kinds)
+		result[i].Kinds = kinds
+	}
+
+	return result
 }
 
 // MatchLabelsMatcher is the matcher to generate `constraints.spec.match.labelSelector.matchLabels`.
@@ -54,24 +101,24 @@ func (m MatchLabelsMatcher) String() string {
 
 // Matchers returns all of the matchers found in the rego file.
 func (r Rego) Matchers() (Matchers, error) {
-	var matchers Matchers
+	matchers := Matchers{
+		MatchLabelsMatcher: make(MatchLabelsMatcher),
+	}
+
+	kindMatchers := make(kindMatchersMap)
+
 	for _, comment := range r.headerComments {
 		if commentStartsWith(comment, "@kinds") {
-			m, err := getKindMatchers(comment)
+			err := appendKindMatchers(kindMatchers, comment)
 			if err != nil {
 				return Matchers{}, fmt.Errorf("get kind matchers: %w", err)
 			}
-			matchers.KindMatchers = append(matchers.KindMatchers, m...)
 		}
 
 		if commentStartsWith(comment, "@matchlabels") {
 			m, err := getMatchLabelsMatcher(comment)
 			if err != nil {
 				return Matchers{}, fmt.Errorf("get match labels matcher: %w", err)
-			}
-			if matchers.MatchLabelsMatcher == nil {
-				matchers.MatchLabelsMatcher = m
-				m = nil
 			}
 			for k, v := range m {
 				matchers.MatchLabelsMatcher[k] = v
@@ -103,29 +150,26 @@ func (r Rego) Matchers() (Matchers, error) {
 		}
 	}
 
+	if len(kindMatchers) > 0 {
+		matchers.KindMatchers = kindMatchers.convert()
+	}
+
 	return matchers, nil
 }
 
-func getKindMatchers(comment string) ([]KindMatcher, error) {
+func appendKindMatchers(kindMatchersMap kindMatchersMap, comment string) error {
 	kindMatcherText := strings.TrimSpace(strings.SplitAfter(comment, "@kinds")[1])
 	kindMatcherGroups := strings.Split(kindMatcherText, " ")
 
-	var kindMatchers []KindMatcher
 	for _, kindMatcherGroup := range kindMatcherGroups {
 		kindMatcherSegments := strings.Split(kindMatcherGroup, "/")
 		if len(kindMatcherSegments) != 2 {
-			return nil, fmt.Errorf("invalid @kinds: %s", kindMatcherGroup)
+			return fmt.Errorf("invalid @kinds: %s", kindMatcherGroup)
 		}
-
-		kindMatcher := KindMatcher{
-			APIGroup: kindMatcherSegments[0],
-			Kind:     kindMatcherSegments[1],
-		}
-
-		kindMatchers = append(kindMatchers, kindMatcher)
+		kindMatchersMap.addIfNotPreset(kindMatcherSegments[0], kindMatcherSegments[1])
 	}
 
-	return kindMatchers, nil
+	return nil
 }
 
 func getMatchLabelsMatcher(comment string) (MatchLabelsMatcher, error) {
