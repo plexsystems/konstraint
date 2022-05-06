@@ -8,6 +8,12 @@ spec:
     spec:
       names:
         kind: Test
+      validation:
+        openAPIV3Schema:
+          properties:
+            super:
+              description: super duper cool parameter with a description on two strings
+              type: string
   targets:
   - libs:
     - |-

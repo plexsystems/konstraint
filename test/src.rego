@@ -7,6 +7,8 @@
 # @matchExpression doggos Exists
 # @namespaces dev stage prod
 # @excludedNamespaces kube-system gatekeeper-system
+# @parameter super string -- super duper cool parameter
+# -- with a description on two strings
 package test
 
 import data.lib.libraryA

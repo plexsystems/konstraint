@@ -232,13 +232,17 @@ func getOpenAPISchemaProperties(r rego.Rego) map[string]apiextensionsv1.JSONSche
 	for _, p := range r.Parameters() {
 		if p.IsArray {
 			properties[p.Name] = apiextensionsv1.JSONSchemaProps{
-				Type: "array",
+				Type:        "array",
+				Description: p.Description,
 				Items: &apiextensionsv1.JSONSchemaPropsOrArray{
 					Schema: &apiextensionsv1.JSONSchemaProps{Type: p.Type},
 				},
 			}
 		} else {
-			properties[p.Name] = apiextensionsv1.JSONSchemaProps{Type: p.Type}
+			properties[p.Name] = apiextensionsv1.JSONSchemaProps{
+				Type:        p.Type,
+				Description: p.Description,
+			}
 		}
 	}
 

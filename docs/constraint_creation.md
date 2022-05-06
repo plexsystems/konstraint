@@ -121,12 +121,15 @@ Gatekeeper has the ability for a single `ConstraintTemplate` resource to be used
 
 To use parameters, add one or more `@parameter <name> <type>` statements where `<name>` is the name of the parameter and `<type>` is the OpenAPI v3 type of the parameter (string, integer, etc.). Arrays are supported via `@parameter <name> array <type>`. Each parameter tag must be on its own line. Each parameter in the rule body must have a `@parameter` tag in the comment block header.
 
+Parameter description can be added after `--`, and and can fold on multiple lines following the parameter.
+
 ```rego
 # @title Required Labels
 #
 # This policy allows you to require certain labels are set on a resource.
 #
-# @parameter labels array string
+# @parameter labels array string --
+# -- array of required label keys
 package required_labels
 
 import data.lib.core

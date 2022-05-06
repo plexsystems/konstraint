@@ -3,7 +3,8 @@
 # This policy allows you to require certain labels are set on a resource.
 # Adapted from https://github.com/open-policy-agent/gatekeeper/blob/master/example/templates/k8srequiredlabels_template.yaml
 #
-# @parameter labels array string
+# @parameter labels array string --
+# -- array of required label keys
 
 package required_labels
 
