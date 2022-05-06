@@ -103,6 +103,14 @@ The comment block is also what is used when generating documentation via the `do
     # @excludedNamespaces kube-system gatekeeper-system
     ```
 
+Multiple instances of annotations for matching of the same type are merged:
+```
+# @kinds apps/Deployment
+# @kinds core/Pod
+# is equivalent to
+# @kinds apps/Deployment core/Pod
+```
+
 ### Skipping generation of the Constraint resource
 
 In some scenarios, you may wish for Konstraint to skip the generation of the `Constraint` resource for a policy and manage that externally. To do so, add the `@skip-constraint` tag in the header comment block.

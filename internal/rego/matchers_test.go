@@ -8,6 +8,7 @@ import (
 func TestGetKindMatchers(t *testing.T) {
 	comments := []string{
 		"@kinds core/Pod apps/Deployment",
+		"@kinds apps/StatefulSet",
 	}
 	rego := Rego{
 		headerComments: comments,
@@ -16,6 +17,7 @@ func TestGetKindMatchers(t *testing.T) {
 	expected := KindMatchers{
 		{APIGroup: "core", Kind: "Pod"},
 		{APIGroup: "apps", Kind: "Deployment"},
+		{APIGroup: "apps", Kind: "StatefulSet"},
 	}
 
 	matchers, err := rego.Matchers()
@@ -32,6 +34,7 @@ func TestGetKindMatchers(t *testing.T) {
 func TestGetMatchLabelsMatcher(t *testing.T) {
 	comments := []string{
 		"@matchlabels team=a app.kubernetes.io/name=test",
+		"@matchlabels example.com/env=production",
 	}
 	rego := Rego{
 		headerComments: comments,
@@ -40,6 +43,7 @@ func TestGetMatchLabelsMatcher(t *testing.T) {
 	expected := MatchLabelsMatcher{
 		"team":                   "a",
 		"app.kubernetes.io/name": "test",
+		"example.com/env":        "production",
 	}
 
 	matchers, err := rego.Matchers()

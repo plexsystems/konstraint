@@ -61,7 +61,7 @@ func (r Rego) Matchers() (Matchers, error) {
 			if err != nil {
 				return Matchers{}, fmt.Errorf("get kind matchers: %w", err)
 			}
-			matchers.KindMatchers = m
+			matchers.KindMatchers = append(matchers.KindMatchers, m...)
 		}
 
 		if commentStartsWith(comment, "@matchlabels") {
@@ -69,7 +69,13 @@ func (r Rego) Matchers() (Matchers, error) {
 			if err != nil {
 				return Matchers{}, fmt.Errorf("get match labels matcher: %w", err)
 			}
-			matchers.MatchLabelsMatcher = m
+			if matchers.MatchLabelsMatcher == nil {
+				matchers.MatchLabelsMatcher = m
+				m = nil
+			}
+			for k, v := range m {
+				matchers.MatchLabelsMatcher[k] = v
+			}
 		}
 
 		if commentStartsWith(comment, "@matchExpression") {
