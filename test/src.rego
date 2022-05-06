@@ -13,6 +13,6 @@ import data.lib.libraryA
 
 policyID := "P123456"
 
-violation["msg"] {
+violation[{"msg": "msg"}] {
     true # some comment with a trailing space 
 }
