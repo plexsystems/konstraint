@@ -327,7 +327,7 @@ func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 			}
 		}
 
-		bodyParams := getBodyParamNames(file.Parsed.Rules)
+		bodyParams := getRuleParamNames(file.Parsed.Rules)
 		headerParams, err := getHeaderParams(headerComments)
 		if err != nil {
 			return nil, fmt.Errorf("parse header parameters: %w", err)
@@ -375,19 +375,19 @@ func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 	return regos, nil
 }
 
-func getBodyParamNames(rules []*ast.Rule) []string {
-	r := regexp.MustCompile(`(core|input)\.parameters\.([a-zA-Z0-9_-]+)`)
-	var bodyParams []string
-	for _, rule := range rules {
-		matches := r.FindAllStringSubmatch(rule.Body.String(), -1)
+func getRuleParamNames(rules []*ast.Rule) []string {
+	re := regexp.MustCompile(`input\.parameters\.([a-zA-Z0-9_-]+)`)
+	var ruleParams []string
+	for _, r := range rules {
+		matches := re.FindAllStringSubmatch(r.String(), -1)
 		for _, match := range matches {
-			if !contains(bodyParams, match[2]) {
-				bodyParams = append(bodyParams, match[2])
+			if !contains(ruleParams, match[1]) {
+				ruleParams = append(ruleParams, match[1])
 			}
 		}
 	}
 
-	return bodyParams
+	return ruleParams
 }
 
 func getHeaderParams(comments []string) ([]Parameter, error) {
