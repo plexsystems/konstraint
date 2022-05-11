@@ -26,7 +26,10 @@ const docTemplate = `# Policies
 
 **Parameters:**
 
-{{ range .Header.Parameters }}* {{ .Name }}: {{ if .IsArray }}array of {{ end }}{{ .Type }}
+{{ range .Header.Parameters -}}
+* {{ .Name }}: {{ if .IsArray }}array of {{ end }}{{ .Type }}
+{{- if .Description }}<br>
+  {{ .Description }}{{- end -}}
 {{ end }}
 {{- end }}
 

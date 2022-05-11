@@ -42,9 +42,10 @@ type Rego struct {
 
 // Parameter represents a parameter that the policy uses
 type Parameter struct {
-	Name    string
-	Type    string
-	IsArray bool
+	Name        string
+	Type        string
+	IsArray     bool
+	Description string
 }
 
 // GetAllSeverities gets all of the rego files found in the given
@@ -194,8 +195,16 @@ func (r Rego) PolicyID() string {
 func (r Rego) Description() string {
 	var description string
 	var handlingCodeBlock bool
+	var handlingParamDescription bool
+
 	for _, comment := range r.headerComments {
-		if commentStartsWith(comment, "@") {
+		if !handlingCodeBlock && !handlingParamDescription && commentStartsWith(comment, "@parameter") && strings.Contains(comment, "--") {
+			handlingParamDescription = true
+		} else if !handlingCodeBlock && handlingParamDescription && !commentStartsWith(comment, "--") {
+			handlingParamDescription = false
+		}
+
+		if handlingParamDescription || commentStartsWith(comment, "@") {
 			continue
 		}
 
@@ -392,12 +401,16 @@ func getBodyParamNames(rules []*ast.Rule) []string {
 
 func getHeaderParams(comments []string) ([]Parameter, error) {
 	var parameters []Parameter
-	for _, comment := range comments {
+	for i := 0; i < len(comments); i++ {
+		comment := comments[i]
+
 		if !commentStartsWith(comment, "@parameter ") {
 			continue
 		}
 
 		params := strings.SplitAfter(comment, "@parameter ")[1]
+		paramsDesc := strings.SplitN(params, " --", 2)
+		params = paramsDesc[0]
 		paramsSplit := strings.Split(params, " ")
 		if len(paramsSplit) == 0 {
 			return nil, fmt.Errorf("parameter name and type must be specified")
@@ -415,6 +428,22 @@ func getHeaderParams(comments []string) ([]Parameter, error) {
 			p.Type = paramsSplit[2]
 		} else {
 			p.Type = paramsSplit[1]
+		}
+
+		if len(paramsDesc) > 1 {
+			p.Description = strings.TrimSpace(paramsDesc[1])
+
+			for i++; i != len(comments); i++ {
+				extraComment := strings.TrimSpace(comments[i])
+				if !strings.HasPrefix(extraComment, "--") {
+					i--
+					break
+				}
+				extraComment = strings.TrimSpace(extraComment[2:])
+				p.Description += " " + extraComment
+			}
+
+			p.Description = strings.TrimSpace(p.Description)
 		}
 
 		parameters = append(parameters, p)

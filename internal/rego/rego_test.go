@@ -206,20 +206,29 @@ func TestGetHeaderParams(t *testing.T) {
 	comments := []string{
 		"@title Title",
 		"Description",
-		"@parameter foo string",
+		"@parameter foo string -- with description",
 		"@parameter bar array string",
+		"@parameter baz array string -- with multiline",
+		"-- description",
 		"@kinds another/thing",
 	}
 
 	expected := []Parameter{
 		{
-			Name: "foo",
-			Type: "string",
+			Name:        "foo",
+			Type:        "string",
+			Description: "with description",
 		},
 		{
 			Name:    "bar",
 			Type:    "string",
 			IsArray: true,
+		},
+		{
+			Name:        "baz",
+			Type:        "string",
+			IsArray:     true,
+			Description: "with multiline description",
 		},
 	}
 
