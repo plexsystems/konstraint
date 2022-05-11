@@ -162,43 +162,52 @@ func TestGetPolicyID_Null(t *testing.T) {
 	}
 }
 
-func TestGetBodyParamNamesFromInput(t *testing.T) {
-	ruleString := `violation[msg] {
-	foo := "bar"
-	bar := input.parameters.baz
-	baz := input.parameters.foobars[_]
-	box := input.parameters.baz
-}`
-
-	rule, err := ast.ParseRule(ruleString)
-	if err != nil {
-		t.Fatalf("parse rule: %s", err)
+func TestGetRuleParamNamesFromInput(t *testing.T) {
+	testCases := []struct {
+		desc string
+		rule string
+		want []string
+	}{
+		{
+			desc: "No Parameters",
+			rule: `foo = "bar" { true }`,
+		},
+		{
+			desc: "Parameters in rule body",
+			rule: `violation[msg] {
+				foo := "bar"
+				bar := input.parameters.baz
+				baz := input.parameters.foobars[_]
+				box := input.parameters.baz
+			}`,
+			want: []string{"baz", "foobars"},
+		},
+		{
+			desc: "Parameters in rule value",
+			rule: `foo = input.parameters.bar { true }`,
+			want: []string{"bar"},
+		},
+		{
+			desc: "Parameters in body and value",
+			rule: `foo = input.parameters.bar {
+				x := input.parameters.baz
+			}`,
+			want: []string{"bar", "baz"},
+		},
 	}
 
-	expected := []string{"baz", "foobars"}
-	actual := getBodyParamNames([]*ast.Rule{rule})
-	if !(reflect.DeepEqual(expected, actual)) {
-		t.Errorf("unexpected bodyParams. expected %+v, actual %+v", expected, actual)
-	}
-}
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			rule, err := ast.ParseRule(tc.rule)
+			if err != nil {
+				t.Fatalf("parse rule: %s", err)
+			}
 
-func TestGetBodyParamNamesFromCore(t *testing.T) {
-	ruleString := `violation[msg] {
-	foo := "bar"
-	bar := core.parameters.baz
-	baz := core.parameters.foobars[_]
-	box := core.parameters.baz
-}`
-
-	rule, err := ast.ParseRule(ruleString)
-	if err != nil {
-		t.Fatalf("parse rule: %s", err)
-	}
-
-	expected := []string{"baz", "foobars"}
-	actual := getBodyParamNames([]*ast.Rule{rule})
-	if !(reflect.DeepEqual(expected, actual)) {
-		t.Errorf("unexpected bodyParams. expected %+v, actual %+v", expected, actual)
+			actual := getRuleParamNames([]*ast.Rule{rule})
+			if !(reflect.DeepEqual(tc.want, actual)) {
+				t.Errorf("unexpected bodyParams. expected %+v, actual %+v", tc.want, actual)
+			}
+		})
 	}
 }
 
