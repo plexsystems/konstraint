@@ -241,7 +241,7 @@ func TestGetHeaderParams(t *testing.T) {
 		},
 	}
 
-	actual, err := getHeaderParams(comments)
+	actual, err := getHeaderParamsLegacy(comments)
 	if err != nil {
 		t.Fatalf("get header params: %s", err)
 	}

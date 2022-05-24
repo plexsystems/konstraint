@@ -2,6 +2,7 @@ package rego
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,13 +14,15 @@ import (
 	"github.com/open-policy-agent/opa/loader"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Severity describes the severity level of the rego file.
 type Severity string
 
-// The defined severity levels represent the valid severity
-// levels that a rego file can have.
+// The defined severity levels represent the valid severity levels that a rego
+// file can have.
 const (
 	Violation Severity = "Violation"
 	Warning   Severity = "Warning"
@@ -37,7 +40,36 @@ type Rego struct {
 	rules          []string
 	dependencies   []string
 	parameters     []Parameter
+	enforcement    string
 	skipConstraint bool
+
+	// Duplicate data from OPA Metadata annotations.
+	annotations                   *ast.Annotations
+	annoTitle                     string
+	annoDescription               string
+	annoParameters                map[string]apiextensionsv1.JSONSchemaProps
+	annoKindMatchers              []AnnoKindMatcher
+	annoNamespaceMatchers         []string
+	annoExcludedNamespaceMatchers []string
+	annoLabelSelector             *metav1.LabelSelector
+}
+
+type AnnoKindMatcher struct {
+	APIGroups []string `json:"apiGroups,omitempty"`
+	Kinds     []string `json:"kinds,omitempty"`
+}
+
+func (akm AnnoKindMatcher) String() string {
+	var result string
+	for _, apiGroup := range akm.APIGroups {
+		if apiGroup == "" {
+			apiGroup = "core"
+		}
+		for _, kind := range akm.Kinds {
+			result += apiGroup + "/" + kind + " "
+		}
+	}
+	return strings.TrimSpace(result)
 }
 
 // Parameter represents a parameter that the policy uses
@@ -48,16 +80,16 @@ type Parameter struct {
 	Description string
 }
 
-// GetAllSeverities gets all of the rego files found in the given
-// directory as well as any subdirectories.
-// Only rego files that contain a valid severity will be returned.
+// GetAllSeverities gets all of the rego files found in the given directory as
+// well as any subdirectories. Only rego files that contain a valid severity
+// will be returned.
 func GetAllSeverities(directory string) ([]Rego, error) {
 	return getAllSeverities(directory, true)
 }
 
-// GetAllSeveritiesWithoutImports gets all of the Rego files found
-// in the given directory as well as any subdirectories, but does
-// not attempt to parse the imports.
+// GetAllSeveritiesWithoutImports gets all of the Rego files found in the given
+// directory as well as any subdirectories, but does not attempt to parse the
+// imports.
 func GetAllSeveritiesWithoutImports(directory string) ([]Rego, error) {
 	return getAllSeverities(directory, false)
 }
@@ -80,9 +112,9 @@ func getAllSeverities(directory string, parseImports bool) ([]Rego, error) {
 	return allSeverities, nil
 }
 
-// GetViolations gets all of the files found in the given
-// directory as well as any subdirectories.
-// Only rego files that have a severity of violation will be returned.
+// GetViolations gets all of the files found in the given directory as well as
+// any subdirectories. Only rego files that have a severity of violation will
+// be returned.
 func GetViolations(directory string) ([]Rego, error) {
 	regos, err := parseDirectory(directory, true)
 	if err != nil {
@@ -111,9 +143,151 @@ func (r Rego) Parameters() []Parameter {
 	return r.parameters
 }
 
-// Severity returns the severity of the rego file.
-// When a rego file has multiple rules that are considered
-// to be different severities, the first rule is chosen.
+func (r Rego) AnnotationKindMatchers() []AnnoKindMatcher {
+	return r.annoKindMatchers
+}
+
+func (r Rego) AnnotationNamespaceMatchers() []string {
+	return r.annoNamespaceMatchers
+}
+
+func (r Rego) AnnotationExcludedNamespaceMatchers() []string {
+	return r.annoExcludedNamespaceMatchers
+}
+
+func (r Rego) AnnotationLabelSelectorMatcher() *metav1.LabelSelector {
+	return r.annoLabelSelector
+}
+
+func (r Rego) AnnotationParameters() map[string]apiextensionsv1.JSONSchemaProps {
+	return r.annoParameters
+}
+
+func (r Rego) GetAnnotation(name string) (any, bool) {
+	if r.annotations == nil {
+		return nil, false
+	}
+	switch name {
+	case "title":
+		return r.annotations.Title, true
+	case "description":
+		return r.annotations.Description, true
+	default:
+		v, ok := r.annotations.Custom[name]
+		return v, ok
+	}
+}
+
+func (r *Rego) parseAnnotations(annotations *ast.Annotations) error {
+	if annotations == nil {
+		return nil
+	}
+	if annotations.Title != "" {
+		r.annoTitle = annotations.Title
+	}
+	if annotations.Description != "" {
+		r.annoDescription = annotations.Description
+	}
+
+	matchers, ok := annotations.Custom["matchers"]
+	if ok {
+		if err := r.parseAnnotationsMatchers(matchers.(map[string]any)); err != nil {
+			return fmt.Errorf("parse matchers from OPA metadata: %w", err)
+		}
+	}
+
+	parameters, ok := annotations.Custom["parameters"]
+	if ok {
+		if err := r.parseAnnotationsParameters(parameters.(map[string]any)); err != nil {
+			return fmt.Errorf("parse parameters from OPA metadata: %w", err)
+		}
+	}
+
+	skipConstraint, ok := annotations.Custom["skipConstraint"]
+	if ok {
+		sc, ok := skipConstraint.(bool)
+		if !ok {
+			return fmt.Errorf("supplied skipConstraint value is not a bool: %T", skipConstraint)
+		}
+		r.skipConstraint = sc
+	}
+
+	enforcement, ok := annotations.Custom["enforcement"]
+	if ok {
+		e, ok := enforcement.(string)
+		if !ok {
+			return fmt.Errorf("supplied enforcement value is not a string: %T", enforcement)
+		}
+		r.enforcement = e
+	}
+
+	return nil
+}
+
+func (r *Rego) parseAnnotationsMatchers(matchers map[string]any) error {
+	kindMatchers, ok := matchers["kinds"]
+	if ok {
+		km, err := remarshal[[]AnnoKindMatcher](kindMatchers)
+		if err != nil {
+			return fmt.Errorf("unmarshal kind matchers: %w", err)
+		}
+		r.annoKindMatchers = km
+	}
+
+	namespaceMatchers, ok := matchers["namespaces"]
+	if ok {
+		ns, err := remarshal[[]string](namespaceMatchers)
+		if err != nil {
+			return fmt.Errorf("unmarshal namespaces matcher: %w", err)
+		}
+		r.annoNamespaceMatchers = ns
+	}
+
+	excludedNamespaceMatchers, ok := matchers["excludedNamespaces"]
+	if ok {
+		ens, err := remarshal[[]string](excludedNamespaceMatchers)
+		if err != nil {
+			return fmt.Errorf("unmarshal excludedNamespaces matcher: %w", err)
+		}
+		r.annoExcludedNamespaceMatchers = ens
+	}
+
+	labelSelector, ok := matchers["labelSelector"]
+	if ok {
+		ls, err := remarshal[metav1.LabelSelector](labelSelector)
+		if err != nil {
+			return fmt.Errorf("unmarshal labelSelector matcher: %w", err)
+		}
+		r.annoLabelSelector = &ls
+	}
+
+	return nil
+}
+
+func (r *Rego) parseAnnotationsParameters(parameters map[string]any) error {
+	params, err := remarshal[map[string]apiextensionsv1.JSONSchemaProps](parameters)
+	if err != nil {
+		return fmt.Errorf("unmarshal parameters: %w", err)
+	}
+	r.annoParameters = params
+	return nil
+}
+
+func remarshal[Type any, V any](v V) (Type, error) {
+	var result Type
+	bytes, err := json.Marshal(v)
+	if err != nil {
+		return result, fmt.Errorf("marshal value %v: %w", v, err)
+	}
+	if err := json.Unmarshal(bytes, &result); err != nil {
+		return result, fmt.Errorf("unmarshal to type %T: %w", result, err)
+	}
+	return result, nil
+}
+
+// Severity returns the severity of the rego file. When a rego file has
+// multiple rules that are considered to be different severities, the first
+// rule is chosen.
 func (r Rego) Severity() Severity {
 	var severity Severity
 	for _, rule := range r.rules {
@@ -131,9 +305,8 @@ func (r Rego) Severity() Severity {
 	return severity
 }
 
-// Kind returns the Kubernetes Kind of the rego file.
-// The kind of the rego file is determined by the
-// name of the directory that the rego file exists in.
+// Kind returns the Kubernetes Kind of the rego file. The kind of the rego file
+// is determined by the name of the directory that the rego file exists in.
 func (r Rego) Kind() string {
 	kind := filepath.Base(filepath.Dir(r.Path()))
 	kind = strings.ReplaceAll(kind, "-", " ")
@@ -143,14 +316,18 @@ func (r Rego) Kind() string {
 	return kind
 }
 
-// Name returns the name of the rego file.
-// The name of the rego file is its kind as lowercase.
+// Name returns the name of the rego file. The name of the rego file is its
+// kind as lowercase.
 func (r Rego) Name() string {
 	return strings.ToLower(r.Kind())
 }
 
 // Title returns the title found in the header comment of the rego file.
 func (r Rego) Title() string {
+	if r.annoTitle != "" {
+		return r.annoTitle
+	}
+
 	var title string
 	for _, comment := range r.headerComments {
 		if !commentStartsWith(comment, "@title") {
@@ -166,9 +343,13 @@ func (r Rego) Title() string {
 	return title
 }
 
-// Enforcement returns the enforcement action in the header comment
-// Defaults to deny if no enforcement action is specified
+// Enforcement returns the enforcement action in the header comment. Defaults
+// to deny if no enforcement action is specified.
 func (r Rego) Enforcement() string {
+	if r.enforcement != "" {
+		return r.enforcement
+	}
+
 	enforcement := "deny"
 	for _, comment := range r.headerComments {
 		if !commentStartsWith(comment, "@enforcement") {
@@ -184,15 +365,19 @@ func (r Rego) Enforcement() string {
 	return enforcement
 }
 
-// PolicyID returns the identifier of the policy
-// The returned value will be a blank string if an id was not specified in the policy body
+// PolicyID returns the identifier of the policy. The returned value will be a
+// blank string if an id was not specified in the policy body.
 func (r Rego) PolicyID() string {
 	return r.id
 }
 
-// Description returns the entire description
-// found in the header comment of the rego file.
+// Description returns the entire description found in the header comment of
+// the Rego file.
 func (r Rego) Description() string {
+	if r.annoDescription != "" {
+		return r.annoDescription
+	}
+
 	var description string
 	var handlingCodeBlock bool
 	var handlingParamDescription bool
@@ -260,21 +445,22 @@ func removeHeaderComments(input string) string {
 	return result
 }
 
-// Dependencies returns all of the source for the rego files that this
-// rego file depends on.
+// Dependencies returns all of the source for the rego files that this rego
+// file depends on.
 func (r Rego) Dependencies() []string {
 	return r.dependencies
 }
 
-// SkipConstraint returns whether or not the generation of the Constraint should be skipped
-// It is only set to true when the @skip-constraint tag is present in the comment header block
+// SkipConstraint returns whether or not the generation of the Constraint
+// should be skipped. It is only set to true when the @skip-constraint tag is
+// present in the comment header block
 func (r Rego) SkipConstraint() bool {
 	return r.skipConstraint
 }
 
 func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 	// Recursively find all rego files (ignoring test files), starting at the given directory.
-	result, err := loader.NewFileLoader().Filtered([]string{directory}, func(abspath string, info os.FileInfo, depth int) bool {
+	result, err := loader.NewFileLoader().WithProcessAnnotation(true).Filtered([]string{directory}, func(abspath string, info os.FileInfo, depth int) bool {
 		if strings.HasSuffix(info.Name(), "_test.rego") {
 			return true
 		}
@@ -326,6 +512,14 @@ func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 			rules = append(rules, file.Parsed.Rules[r].Head.Name.String())
 		}
 
+		var annotations *ast.Annotations
+		for _, a := range file.Parsed.Annotations {
+			if a.Scope == "package" {
+				annotations = a
+				break
+			}
+		}
+
 		var headerComments []string
 		for _, c := range file.Parsed.Comments {
 			// If the line number of the comment comes before the line number
@@ -333,13 +527,20 @@ func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 			// a header comment.
 			if c.Location.Row < file.Parsed.Package.Location.Row {
 				headerComments = append(headerComments, string(c.Text))
+			} else {
+				break
 			}
 		}
 
 		bodyParams := getRuleParamNames(file.Parsed.Rules)
-		headerParams, err := getHeaderParams(headerComments)
-		if err != nil {
-			return nil, fmt.Errorf("parse header parameters: %w", err)
+		var headerParams []Parameter
+		if annotations != nil {
+			headerParams = getHeaderParams(annotations)
+		} else {
+			headerParams, err = getHeaderParamsLegacy(headerComments)
+			if err != nil {
+				return nil, fmt.Errorf("parse header parameters: %w", err)
+			}
 		}
 
 		paramsDiff := paramDiff(bodyParams, headerParams)
@@ -370,6 +571,13 @@ func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 			headerComments: headerComments,
 			raw:            trimEachLine(string(file.Raw)),
 			skipConstraint: hasSkipConstraintTag(headerComments),
+			annotations:    annotations,
+		}
+
+		if annotations != nil {
+			if err := rego.parseAnnotations(annotations); err != nil {
+				return nil, fmt.Errorf("parse OPA Metadata annotations: %w", err)
+			}
 		}
 
 		regos = append(regos, rego)
@@ -399,7 +607,20 @@ func getRuleParamNames(rules []*ast.Rule) []string {
 	return ruleParams
 }
 
-func getHeaderParams(comments []string) ([]Parameter, error) {
+func getHeaderParams(annotations *ast.Annotations) []Parameter {
+	params, ok := annotations.Custom["parameters"].(map[string]any)
+	if !ok {
+		return nil
+	}
+	var parameters []Parameter
+	for p := range params {
+		parameters = append(parameters, Parameter{Name: p})
+	}
+
+	return parameters
+}
+
+func getHeaderParamsLegacy(comments []string) ([]Parameter, error) {
 	var parameters []Parameter
 	for i := 0; i < len(comments); i++ {
 		comment := comments[i]
