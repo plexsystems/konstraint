@@ -41,23 +41,24 @@ _NOTE: While not technically required, the tool works best with a folder structu
 
 ## Annotating Rules
 
-To further promote that the `.rego` file is the source of truth for policy, a block comment can be added to each policy file.
+To further promote that the `.rego` file is the source of truth for policy, a block comment can be added to each policy file. Konstraint uses the [OPA Metadata Annotations](https://www.openpolicyagent.org/docs/latest/annotations/) to achieve this. The OPA metadata annotations are a YAML document in the comments above the package declaration preceded by a line containing the `METADATA` tag. Standard metadata fields are use where possible, but additional Gatekeeper-specific annotations are used under the `custom` metadata key as necessary.
 
 This comment block should:
 
+- Include a title that succinctly describes the policy.
 - Include a human readable description of what the policy does.
 - Set the matchers used when generating the Constraints.
 
 It may also specify the enforcement action (either `deny` or `dryrun`) that Gatekeeper should take when a resource violates the constraint. If no enforcement action is specified, Konstraint defaults to using `deny` to align with Gatekeeper's default action. If the enforcement is set to `dryrun`, the policy will be skipped in the documentation generation.
 
 ```rego
-# @title Pods must not run with access to the host IPC
-#
-# Pods that are allowed to access the host IPC can read memory of
-# the other containers, breaking that security boundary.
-#
-# @enforcement deny
-# @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+# METADATA
+# title: Pods must not run with access to the host IPC
+# description: >-
+#   Pods that are allowed to access the host IPC can read memory of
+#   the other containers, breaking that security boundary.
+# custom:
+#   enforcement: dryun
 package pod_deny_host_ipc
 
 import data.lib.core
@@ -78,72 +79,68 @@ The comment block is also what is used when generating documentation via the `do
 
 ### Annotating rules for matchers
 
-- `@kinds` generates `constraint.spec.match.kinds`. The allowed format is space-separated `<group>/<kind>` list.
-    ```
-    # @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-    ```
-- `@matchlabels` generates `constraint.spec.match.labelSelector.matchLabels`. The allowed format is space-separated `<label-key>=<label-val>` list.
-    ```
-    # @matchlabels app.kubernetes.io/name=mysql app.kubernetes.io/version=5.8
-    ```
+Any matchers that Gatekeeper [supports](https://open-policy-agent.github.io/gatekeeper/website/docs/howto/#the-match-field) can be added under the `custom.matchers` annotation. These matchers are embedded into the `ConstraintTemplate` resource as-is. The example below will create a `ConstraintTemplate` that only applies to Kubernetes [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) resources in namespaces named `foo`, `bar`, or `bar`.
 
-- `@matchExpression` generates `constraint.spec.match.labelSelector.matchExpressions`. The allowed format is `<key> <operator> <values>` where `key` is the name of the label to operate on, `operator` is one of `In`, `NotIn`, `Exists`, or `DoesNotExist`. The `values` field is an commaa separated field for the `In` and `NotIn` operators. More than one `@matchExpression` annotations can be supplied, each on their own line.
-    ```
-    # @matchExpression app.kubernetes.io/name In mysql,postgres
-    # @matchExpression foobarbaz Exists
-    ```
+```rego
+# METADATA
+# title: Matchers example
+# description: Only applies to Deployments in the 'foo', 'bar', and 'baz' namespaces.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - apps
+#       kinds:
+#       - Deployment
+#     namespaces:
+#     - foo
+#     - bar
+#     - baz
+package main
 
-- `@namespaces` generates `constraint.spec.match.namespaces`. The allowed format is space-separated list of namespaces.
-    ```
-    # @namespaces dev stage prod
-    ```
+import data.lib.core
 
-- `@excludedNamespaces` generates `constraint.spec.match.excludedNamespaces`. The allowed format is a space-separated list of namespaces.
-    ```
-    # @excludedNamespaces kube-system gatekeeper-system
-    ```
-
-Multiple instances of annotations for matching of the same type are merged:
-```
-# @kinds apps/Deployment
-# @kinds core/Pod
-# is equivalent to
-# @kinds apps/Deployment core/Pod
+violation[{"msg": msg}] {
+    msg := sprintf("%v is a Deployment in the foo, bar, or baz namespace", [core.resource])
+}
 ```
 
 ### Skipping generation of the Constraint resource
 
-In some scenarios, you may wish for Konstraint to skip the generation of the `Constraint` resource for a policy and manage that externally. To do so, add the `@skip-constraint` tag in the header comment block.
+In some scenarios, you may wish for Konstraint to skip the generation of the `Constraint` resource for a policy and manage that externally. To do so, add the `skipConstraint: true` annotation in the custom metadata section.
 
 ## Using Input Parameters
 
-Gatekeeper has the ability for a single `ConstraintTemplate` resource to be used by multiple `Constraint`s. One of the reasons for this is that it allows for passing input parameters to the policy so a single policy to avoid duplication. Konstraint supports these input parameters via `@parameter` tags in the header comment block. **NOTE:** When input parameters are specified, Konstraint skips the generation of the `Constraint` resource.
+Gatekeeper has the ability for a single `ConstraintTemplate` resource to be used by multiple `Constraint`s. One of the reasons for this is that it allows for passing input parameters to the policy so a single policy to avoid duplication. Konstraint supports these input parameters via the `parameters` object in the custom metadata section. **NOTE:** When input parameters are specified, Konstraint skips the generation of the `Constraint` resource unless the `--partial-constraint` flag is set.
 
-To use parameters, add one or more `@parameter <name> <type>` statements where `<name>` is the name of the parameter and `<type>` is the OpenAPI v3 type of the parameter (string, integer, etc.). Arrays are supported via `@parameter <name> array <type>`. Each parameter tag must be on its own line. Each parameter in the rule body must have a `@parameter` tag in the comment block header.
-
-Parameter description can be added after `--`, and and can fold on multiple lines following the parameter.
+The contents of the `parameters` key must be a dictionary (aka map) where the key is the name of the parameter following the [OpenAPI V3 schema](https://swagger.io/specification/). This means each dictionary must, at a minimum, also include a `type` field that indicates what the type of the input is. The example below demonstrates an input that blocks resources that are missing any of the required labels specified in the parameters.
 
 ```rego
-# @title Required Labels
-#
-# This policy allows you to require certain labels are set on a resource.
-#
-# @parameter labels array string --
-# -- array of required label keys
+# METADATA
+# title: Required Labels
+# description: >-
+#  This policy allows you to require certain labels are set on a resource.
+# custom:
+#   parameters:
+#     labels:
+#       type: array
+#       description: Array of required label keys.
+#       items:
+#         type: string
 package required_labels
 
 import data.lib.core
 
 violation[msg] {
-    missing := missing_labels
-    count(missing) > 0
+	missing := missing_labels
+	count(missing) > 0
 
-    msg := core.format(sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing]))
+	msg := sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing])
 }
 
 missing_labels = missing {
-    provided := {label | core.labels[label]}
-    required := {label | label := input.parameters.labels[_]}
-    missing := required - provided
+	provided := {label | core.labels[label]}
+	required := {label | label := input.parameters.labels[_]}
+	missing := required - provided
 }
 ```
