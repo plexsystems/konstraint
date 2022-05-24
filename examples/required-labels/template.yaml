@@ -12,7 +12,7 @@ spec:
         openAPIV3Schema:
           properties:
             labels:
-              description: array of required label keys
+              description: Array of required label keys.
               items:
                 type: string
               type: array

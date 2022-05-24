@@ -38,10 +38,9 @@
 **Parameters:**
 
 * labels: array of string<br>
-  array of required label keys
+  Array of required label keys.
 
-This policy allows you to require certain labels are set on a resource.
-Adapted from https://github.com/open-policy-agent/gatekeeper/blob/master/example/templates/k8srequiredlabels_template.yaml
+This policy allows you to require certain labels are set on a resource. Adapted from https://github.com/open-policy-agent/gatekeeper/blob/master/example/templates/k8srequiredlabels_template.yaml
 
 ### Rego
 
@@ -185,8 +184,7 @@ _source: [container-deny-privileged](container-deny-privileged)_
 
 **Resources:** core/Pod apps/DaemonSet apps/Deployment apps/StatefulSet
 
-Pods that can change aliases in the host's /etc/hosts file can
-redirect traffic to malicious servers.
+Pods that can change aliases in the host's /etc/hosts file can redirect traffic to malicious servers.
 
 ### Rego
 
