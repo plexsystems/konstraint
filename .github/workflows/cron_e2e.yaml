@@ -2,7 +2,7 @@ name: E2E Weekly
 on:
   workflow_dispatch: # Allow manual runs
   schedule:
-    cron: '35 16 * * 1' # 16:35 UTC, weekly on Monday
+    - cron: '35 16 * * 1' # 16:35 UTC, weekly on Monday
 
 jobs:
   build:
