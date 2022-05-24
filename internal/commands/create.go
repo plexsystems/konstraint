@@ -97,20 +97,21 @@ func runCreateCommand(path string) error {
 		if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
 			return fmt.Errorf("create output dir: %w", err)
 		}
-		var constraintTemplateBytes []byte
-		constraintTemplateVersion := viper.GetString("constraint-template-version")
 
+		constraintTemplateVersion := viper.GetString("constraint-template-version")
+		var constraintTemplate any
 		switch constraintTemplateVersion {
 		case "v1":
-			constraintTemplate := getConstraintTemplatev1(violation)
-			constraintTemplateBytes, err = yaml.Marshal(&constraintTemplate)
+			constraintTemplate, err = getConstraintTemplatev1(violation, logger)
 		case "v1beta1":
-			constraintTemplate := getConstraintTemplatev1beta1(violation)
-			constraintTemplateBytes, err = yaml.Marshal(&constraintTemplate)
+			constraintTemplate, err = getConstraintTemplatev1beta1(violation, logger)
 		default:
 			return fmt.Errorf("unsupported API version for constrainttemplate: %s", constraintTemplateVersion)
 		}
-
+		if err != nil {
+			return fmt.Errorf("build constrainttemplate: %w", err)
+		}
+		constraintTemplateBytes, err := yaml.Marshal(constraintTemplate)
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
 		}
@@ -120,22 +121,22 @@ func runCreateCommand(path string) error {
 		}
 
 		if viper.GetBool("skip-constraints") || violation.SkipConstraint() {
-			logger.Info("skipping constraint generation due to configuration")
+			logger.Info("Skipping constraint generation due to configuration")
 			continue
 		}
 
 		// Skip Constraint generation if there are parameters on the template.
 		if len(violation.Parameters()) > 0 && !viper.GetBool("partial-constraints") {
-			logger.Warn("skipping constraint generation due to use of parameters")
+			logger.Warn("Skipping constraint generation due to use of parameters")
 			continue
 		}
 
-		constraint, err := getConstraint(violation)
+		constraint, err := getConstraint(violation, logger)
 		if err != nil {
 			return fmt.Errorf("get constraint: %w", err)
 		}
 
-		constraintBytes, err := yaml.Marshal(&constraint)
+		constraintBytes, err := yaml.Marshal(constraint)
 		if err != nil {
 			return fmt.Errorf("marshal constraint: %w", err)
 		}
@@ -150,7 +151,7 @@ func runCreateCommand(path string) error {
 	return nil
 }
 
-func getConstraintTemplatev1(violation rego.Rego) v1.ConstraintTemplate {
+func getConstraintTemplatev1(violation rego.Rego, logger *log.Entry) (*v1.ConstraintTemplate, error) {
 	constraintTemplate := v1.ConstraintTemplate{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "templates.gatekeeper.sh/v1",
@@ -178,6 +179,7 @@ func getConstraintTemplatev1(violation rego.Rego) v1.ConstraintTemplate {
 	}
 
 	if len(violation.Parameters()) > 0 {
+		logger.Warn("Parameters are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
 		constraintTemplate.Spec.CRD.Spec.Validation = &v1.Validation{
 			OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 				Properties: getOpenAPISchemaProperties(violation),
@@ -186,10 +188,22 @@ func getConstraintTemplatev1(violation rego.Rego) v1.ConstraintTemplate {
 		}
 	}
 
-	return constraintTemplate
+	if len(violation.AnnotationParameters()) > 0 {
+		if constraintTemplate.Spec.CRD.Spec.Validation != nil {
+			logger.Warn("Parameters already set with legacy annotations, overwriting the parameters using values from OPA Metadata")
+		}
+		constraintTemplate.Spec.CRD.Spec.Validation = &v1.Validation{
+			OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+				Properties: violation.AnnotationParameters(),
+				Type:       "object",
+			},
+		}
+	}
+
+	return &constraintTemplate, nil
 }
 
-func getConstraintTemplatev1beta1(violation rego.Rego) v1beta1.ConstraintTemplate {
+func getConstraintTemplatev1beta1(violation rego.Rego, logger *log.Entry) (*v1beta1.ConstraintTemplate, error) {
 	constraintTemplate := v1beta1.ConstraintTemplate{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "templates.gatekeeper.sh/v1beta1",
@@ -217,6 +231,7 @@ func getConstraintTemplatev1beta1(violation rego.Rego) v1beta1.ConstraintTemplat
 	}
 
 	if len(violation.Parameters()) > 0 {
+		logger.Warn("Parameters are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
 		constraintTemplate.Spec.CRD.Spec.Validation = &v1beta1.Validation{
 			OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 				Properties: getOpenAPISchemaProperties(violation),
@@ -224,7 +239,18 @@ func getConstraintTemplatev1beta1(violation rego.Rego) v1beta1.ConstraintTemplat
 		}
 	}
 
-	return constraintTemplate
+	if len(violation.AnnotationParameters()) > 0 {
+		if constraintTemplate.Spec.CRD.Spec.Validation != nil {
+			logger.Warn("Parameters already set with legacy annotations, overwriting the parameters using values from OPA Metadata")
+		}
+		constraintTemplate.Spec.CRD.Spec.Validation = &v1beta1.Validation{
+			OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+				Properties: violation.AnnotationParameters(),
+			},
+		}
+	}
+
+	return &constraintTemplate, nil
 }
 
 func getOpenAPISchemaProperties(r rego.Rego) map[string]apiextensionsv1.JSONSchemaProps {
@@ -249,20 +275,20 @@ func getOpenAPISchemaProperties(r rego.Rego) map[string]apiextensionsv1.JSONSche
 	return properties
 }
 
-func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
+func getConstraint(violation rego.Rego, logger *log.Entry) (*unstructured.Unstructured, error) {
 	gvk := schema.GroupVersionKind{
 		Group:   "constraints.gatekeeper.sh",
 		Version: "v1beta1",
 		Kind:    violation.Kind(),
 	}
 
-	constraint := unstructured.Unstructured{}
+	var constraint unstructured.Unstructured
 	constraint.SetGroupVersionKind(gvk)
 	constraint.SetName(violation.Name())
 
 	if violation.Enforcement() != "deny" {
 		if err := unstructured.SetNestedField(constraint.Object, violation.Enforcement(), "spec", "enforcementAction"); err != nil {
-			return unstructured.Unstructured{}, fmt.Errorf("set constraint enforcement: %w", err)
+			return nil, fmt.Errorf("set constraint enforcement: %w", err)
 		}
 	}
 
@@ -270,55 +296,95 @@ func getConstraint(violation rego.Rego) (unstructured.Unstructured, error) {
 	dryrun := viper.GetBool("dryrun")
 	if dryrun {
 		if err := unstructured.SetNestedField(constraint.Object, "dryrun", "spec", "enforcementAction"); err != nil {
-			return unstructured.Unstructured{}, fmt.Errorf("set constraint dryrun: %w", err)
+			return nil, fmt.Errorf("set constraint dryrun: %w", err)
 		}
 	}
 
 	matchers, err := violation.Matchers()
 	if err != nil {
-		return unstructured.Unstructured{}, fmt.Errorf("matchers: %w", err)
+		return nil, fmt.Errorf("get matchers: %w", err)
 	}
 
 	if len(matchers.KindMatchers) > 0 {
+		logger.Warn("Kind Matchers are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
 		if err := setKindMatcher(&constraint, matchers.KindMatchers); err != nil {
-			return unstructured.Unstructured{}, fmt.Errorf("set kind matcher: %w", err)
+			return nil, fmt.Errorf("set kind matcher: %w", err)
 		}
 	}
 
 	if len(matchers.MatchLabelsMatcher) > 0 {
+		logger.Warn("Match Labels Matchers are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
 		if err := setMatchLabelsMatcher(&constraint, matchers.MatchLabelsMatcher); err != nil {
-			return unstructured.Unstructured{}, fmt.Errorf("set match labels matcher: %w", err)
+			return nil, fmt.Errorf("set match labels matcher: %w", err)
 		}
 	}
 
 	if len(matchers.MatchExpressionsMatcher) > 0 {
+		logger.Warn("Match Expressions Matchers are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
 		if err := setMatchExpressionsMatcher(&constraint, matchers.MatchExpressionsMatcher); err != nil {
-			return unstructured.Unstructured{}, fmt.Errorf("set match expressions matcher: %w", err)
+			return nil, fmt.Errorf("set match expressions matcher: %w", err)
 		}
 	}
 
 	if len(matchers.NamespaceMatcher) > 0 {
+		logger.Warn("Namespace Matchers are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
 		if err := setNestedStringSlice(&constraint, matchers.NamespaceMatcher, "spec", "match", "namespaces"); err != nil {
-			return unstructured.Unstructured{}, fmt.Errorf("set namespace matcher: %w", err)
+			return nil, fmt.Errorf("set namespace matcher: %w", err)
 		}
 	}
 
 	if len(matchers.ExcludedNamespaceMatcher) > 0 {
+		logger.Warn("Excluded Namespace Matchers are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
 		if err := setNestedStringSlice(&constraint, matchers.ExcludedNamespaceMatcher, "spec", "match", "excludedNamespaces"); err != nil {
-			return unstructured.Unstructured{}, fmt.Errorf("set namespace matcher: %w", err)
+			return nil, fmt.Errorf("set namespace matcher: %w", err)
 		}
 	}
 
-	if len(violation.Parameters()) > 0 && viper.GetBool("partial-constraints") {
-		if err := addParametersToConstraint(&constraint, violation.Parameters()); err != nil {
-			return unstructured.Unstructured{}, fmt.Errorf("add parameters %v to constraint: %w", violation.Parameters(), err)
+	metadataMatchers, ok := violation.GetAnnotation("matchers")
+	if ok {
+		if len(matchers.KindMatchers) > 0 ||
+			len(matchers.MatchLabelsMatcher) > 0 ||
+			len(matchers.MatchExpressionsMatcher) > 0 ||
+			len(matchers.NamespaceMatcher) > 0 ||
+			len(matchers.ExcludedNamespaceMatcher) > 0 {
+			logger.Warn("Overwriting matchers set with legacy annotations using matchers from OPA Metadata.")
+		}
+
+		if err := unstructured.SetNestedField(constraint.Object, metadataMatchers, "spec", "match"); err != nil {
+			return nil, fmt.Errorf("set matchers from metadata annotation: %w", err)
 		}
 	}
 
-	return constraint, nil
+	if viper.GetBool("partial-constraints") {
+		if len(violation.Parameters()) > 0 {
+			logger.Warn("Parameters are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
+			if err := addParametersToConstraintLegacy(&constraint, violation.Parameters()); err != nil {
+				return nil, fmt.Errorf("add parameters %v to constraint: %w", violation.Parameters(), err)
+			}
+		}
+		if len(violation.AnnotationParameters()) > 0 {
+			if err := addParametersToConstraint(&constraint, violation.AnnotationParameters()); err != nil {
+				return nil, fmt.Errorf("add parameters %v to constraint: %w", violation.AnnotationParameters(), err)
+			}
+		}
+	}
+
+	return &constraint, nil
 }
 
-func addParametersToConstraint(constraint *unstructured.Unstructured, parameters []rego.Parameter) error {
+func addParametersToConstraint(constraint *unstructured.Unstructured, parameters map[string]apiextensionsv1.JSONSchemaProps) error {
+	params := make(map[string]any, len(parameters))
+	for p := range parameters {
+		params[p] = nil
+	}
+	if err := unstructured.SetNestedField(constraint.Object, params, "spec", "parameters"); err != nil {
+		return fmt.Errorf("set parameters map: %w", err)
+	}
+
+	return nil
+}
+
+func addParametersToConstraintLegacy(constraint *unstructured.Unstructured, parameters []rego.Parameter) error {
 	params := make(map[string]interface{}, len(parameters))
 	for _, p := range parameters {
 		params[p.Name] = nil
