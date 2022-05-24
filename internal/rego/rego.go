@@ -62,8 +62,8 @@ type AnnoKindMatcher struct {
 func (akm AnnoKindMatcher) String() string {
 	var result string
 	for _, apiGroup := range akm.APIGroups {
-		if apiGroup == "" {
-			apiGroup = "core"
+		if apiGroup == coreAPIShorthand {
+			apiGroup = coreAPIGroup
 		}
 		for _, kind := range akm.Kinds {
 			result += apiGroup + "/" + kind + " "
