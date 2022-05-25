@@ -732,7 +732,15 @@ func getRecursiveImportPaths(regoFile *loader.RegoFile, regoFiles map[string]*lo
 
 		imported := regoFiles[importPath]
 		if imported == nil {
-			return nil, fmt.Errorf("import not found: %s", importPath)
+			// It is possible that the import is for a specific rule in a package
+			// rather than for the package itself. To check for this, we remove
+			// the last element in the import path and check again.
+			split := strings.Split(importPath, ".")
+			parent := strings.Join(split[0:len(split)-1], ".")
+			imported = regoFiles[parent]
+			if imported == nil {
+				return nil, fmt.Errorf("import not found: %s", importPath)
+			}
 		}
 
 		recursiveImports = append(recursiveImports, imported.Parsed.Package.Path.String())
