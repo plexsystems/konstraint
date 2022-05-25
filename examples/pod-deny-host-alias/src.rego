@@ -1,9 +1,21 @@
-# @title Pods must not have access to the host aliases
-#
-# Pods that can change aliases in the host's /etc/hosts file can
-# redirect traffic to malicious servers.
-#
-# @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+# METADATA
+# title: Pods must not have access to the host aliases
+# description: >-
+#   Pods that can change aliases in the host's /etc/hosts file can
+#   redirect traffic to malicious servers.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - ""
+#       kinds:
+#       - Pod
+#     - apiGroups:
+#       - apps
+#       kinds:
+#       - DaemonSet
+#       - Deployment
+#       - StatefulSet
 package pod_deny_host_alias
 
 import data.lib.core

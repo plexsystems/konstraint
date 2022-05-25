@@ -13,6 +13,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Header is the header comment block found on a Rego policy.
@@ -120,7 +122,7 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 	}
 
 	if viper.GetBool("no-rego") {
-		log.Info("no-rego flag is set. policy source will not be included in the documentation")
+		log.Info("no-rego flag is set. Policy source will not be included in the documentation.")
 	}
 
 	documents := make(map[rego.Severity][]Document)
@@ -131,7 +133,7 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		})
 
 		if policy.Title() == "" {
-			logger.Warn("no title set, skipping documentation generation")
+			logger.Warn("No title set, skipping documentation generation.")
 			continue
 		}
 
@@ -166,24 +168,44 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		anchor := strings.ToLower(strings.ReplaceAll(documentTitle, " ", "-"))
 		anchor = strings.ReplaceAll(anchor, ":", "")
 
-		matchers, err := policy.Matchers()
+		legacyMatchers, err := policy.Matchers()
 		if err != nil {
-			return nil, fmt.Errorf("matchers: %w", err)
+			return nil, fmt.Errorf("parse matchers from legacy annotations: %w", err)
 		}
-		resources := matchers.KindMatchers.String()
-		if resources == "" {
-			logger.Warn("no kind matchers set, this can lead to poor policy performance")
-			resources = "Any Resource"
+
+		var matchResources string
+		if len(policy.AnnotationKindMatchers()) > 0 {
+			for _, akm := range policy.AnnotationKindMatchers() {
+				matchResources += akm.String() + " "
+			}
+			matchResources = strings.TrimSpace(matchResources)
+		} else {
+			matchResources = legacyMatchers.KindMatchers.String()
 		}
-		matchLabels := matchers.MatchLabelsMatcher.String()
+		if matchResources == "" {
+			logger.Warn("No kind matchers set, this can lead to poor policy performance.")
+			matchResources = "Any Resource"
+		}
+
+		var matchLabels string
+		if policy.AnnotationLabelSelectorMatcher() != nil {
+			matchLabels = labelSelectorDocString(policy.AnnotationLabelSelectorMatcher())
+		} else {
+			matchLabels = legacyMatchers.MatchLabelsMatcher.String()
+		}
+
+		parameters := policy.Parameters()
+		if len(policy.AnnotationParameters()) > 0 {
+			parameters = annoParamsToLegacyFormat(policy.AnnotationParameters())
+		}
 
 		header := Header{
 			Title:       documentTitle,
 			Description: policy.Description(),
-			Resources:   resources,
+			Resources:   matchResources,
 			MatchLabels: matchLabels,
 			Anchor:      anchor,
-			Parameters:  policy.Parameters(),
+			Parameters:  parameters,
 		}
 
 		var rego string
@@ -212,6 +234,39 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 
 	sortPoliciesByTitle(documents)
 	return documents, nil
+}
+
+func labelSelectorDocString(selector *metav1.LabelSelector) string {
+	var result string
+	for k, v := range selector.MatchLabels {
+		result += fmt.Sprintf("%s=%s, ", k, v)
+	}
+	for _, expr := range selector.MatchExpressions {
+		result += fmt.Sprintf("%s %s %v, ", expr.Key, expr.Operator, expr.Values)
+	}
+
+	return strings.TrimSuffix(result, ", ")
+}
+
+func annoParamsToLegacyFormat(parameters map[string]apiextensionsv1.JSONSchemaProps) []rego.Parameter {
+	var results []rego.Parameter
+	for param, config := range parameters {
+		if config.Type == "array" {
+			results = append(results, rego.Parameter{
+				Name:        param,
+				Description: config.Description,
+				IsArray:     true,
+				Type:        config.Items.Schema.Type,
+			})
+		} else {
+			results = append(results, rego.Parameter{
+				Name:        param,
+				Description: config.Description,
+				Type:        config.Type,
+			})
+		}
+	}
+	return results
 }
 
 func sortPoliciesByTitle(policyMap map[rego.Severity][]Document) {

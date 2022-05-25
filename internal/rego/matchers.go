@@ -25,6 +25,11 @@ type KindMatcher struct {
 	Kinds    []string
 }
 
+const (
+	coreAPIGroup     = "core"
+	coreAPIShorthand = ""
+)
+
 // KindMatchers is a slice of KindMatcher
 type KindMatchers []KindMatcher
 
@@ -32,8 +37,8 @@ func (k KindMatchers) String() string {
 	var result string
 	for _, kindMatcher := range k {
 		apiGroup := kindMatcher.APIGroup
-		if apiGroup == "" {
-			apiGroup = "core"
+		if apiGroup == coreAPIShorthand {
+			apiGroup = coreAPIGroup
 		}
 		for _, kind := range kindMatcher.Kinds {
 			result += apiGroup + "/" + kind + " "
@@ -49,8 +54,8 @@ func (k KindMatchers) String() string {
 //
 // it also transforms apiGroup `"core"` to `""`
 func (k kindMatchersMap) addIfNotPreset(apiGroup, kind string) {
-	if apiGroup == "core" {
-		apiGroup = ""
+	if apiGroup == coreAPIGroup {
+		apiGroup = coreAPIShorthand
 	}
 	for _, item := range k[apiGroup] {
 		if strings.EqualFold(kind, item) {
