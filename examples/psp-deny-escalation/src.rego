@@ -1,9 +1,15 @@
-# @title PodSecurityPolicies must not allow privileged escalation
-# 
-# Allowing privileged containers can much more easily obtain root on the node.
-# As such, they are not allowed.
-#
-# @kinds policy/PodSecurityPolicy
+# METADATA
+# title: PodSecurityPolicies must not allow privileged escalation
+# description: |-
+#   Allowing privileged containers can much more easily obtain root on the node.
+#   As such, they are not allowed.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - policy
+#       kinds:
+#       - PodSecurityPolicy
 package psp_deny_escalation
 
 import data.lib.core

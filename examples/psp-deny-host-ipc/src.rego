@@ -1,9 +1,15 @@
-# @title PodSecurityPolicies must not allow access to the host IPC
-#
-# Allowing pods to access the host IPC can read memory of
-# the other containers, breaking that security boundary.
-#
-# @kinds policy/PodSecurityPolicy
+# METADATA
+# title: PodSecurityPolicies must not allow access to the host IPC
+# description: |-
+#   Allowing pods to access the host IPC can read memory of
+#   the other containers, breaking that security boundary.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - policy
+#       kinds:
+#       - PodSecurityPolicy
 package psp_deny_host_ipc
 
 import data.lib.core

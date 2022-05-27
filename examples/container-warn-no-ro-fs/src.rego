@@ -1,9 +1,21 @@
-# @title Containers should not have a writable root filesystem
-#
-# In order to prevent persistence in the case of a compromise, it is
-# important to make the root filesystem read-only.
-#
-# @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+# METADATA
+# title: Containers should not have a writable root filesystem
+# description: |-
+#   In order to prevent persistence in the case of a compromise, it is
+#   important to make the root filesystem read-only.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - ""
+#       kinds:
+#       - Pod
+#     - apiGroups:
+#       - apps
+#       kinds:
+#       - DaemonSet
+#       - Deployment
+#       - StatefulSet
 package container_warn_no_ro_fs
 
 import data.lib.core

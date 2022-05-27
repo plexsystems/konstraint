@@ -1,14 +1,28 @@
-# @title Tenants' containers must not run as privileged
-#
-# Privileged containers can easily escalate to root privileges on the node. As
-# such containers running as privileged or with sufficient capabilities granted
-# to obtain the same effect are not allowed if they are labeled as tenant.
-# To take advantage of this policy, it must be combined with another policy
-# that enforces the 'is-tenant' label.
-# This is the example for @matchlabels.
-#
-# @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
-# @matchlabels is-tenant=true
+# METADATA
+# title: Tenants' containers must not run as privileged
+# description: |-
+#   Privileged containers can easily escalate to root privileges on the node. As
+#   such containers running as privileged or with sufficient capabilities granted
+#   to obtain the same effect are not allowed if they are labeled as tenant.
+#   To take advantage of this policy, it must be combined with another policy
+#   that enforces the 'is-tenant' label.
+#   This is the example for @matchlabels.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - ""
+#       kinds:
+#       - Pod
+#     - apiGroups:
+#       - apps
+#       kinds:
+#       - DaemonSet
+#       - Deployment
+#       - StatefulSet
+#     labelSelector:
+#       matchLabels:
+#         is-tenant: "true"
 package container_deny_privileged_if_tenant
 
 import data.lib.core

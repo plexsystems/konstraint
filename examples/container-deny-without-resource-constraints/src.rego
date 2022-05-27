@@ -1,9 +1,21 @@
-# @title Containers must define resource constraints
-#
-# Resource constraints on containers ensure that a given workload does not take up more resources than it requires
-# and potentially starve other applications that need to run.
-#
-# @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+# METADATA
+# title: Containers must define resource constraints
+# description: |-
+#   Resource constraints on containers ensure that a given workload does not take up more resources than it requires
+#   and potentially starve other applications that need to run.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - ""
+#       kinds:
+#       - Pod
+#     - apiGroups:
+#       - apps
+#       kinds:
+#       - DaemonSet
+#       - Deployment
+#       - StatefulSet
 package container_deny_without_resource_constraints
 
 import data.lib.core

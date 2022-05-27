@@ -1,10 +1,22 @@
-# @title Pods must not run with access to the host PID namespace
-#
-# Pods that can access the host's process tree can view and attempt to
-# modify processes outside of their namespace, breaking that security
-# boundary.
-#
-# @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+# METADATA
+# title: Pods must not run with access to the host PID namespace
+# description: |-
+#   Pods that can access the host's process tree can view and attempt to
+#   modify processes outside of their namespace, breaking that security
+#   boundary.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - ""
+#       kinds:
+#       - Pod
+#     - apiGroups:
+#       - apps
+#       kinds:
+#       - DaemonSet
+#       - Deployment
+#       - StatefulSet
 package pod_deny_host_pid
 
 import data.lib.core

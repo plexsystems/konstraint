@@ -1,10 +1,22 @@
-# @title Containers must drop all capabilities
-#
-# Granting containers privileged capabilities on the node makes it easier
-# for containers to escalate their privileges. As such, this is not allowed
-# outside of Kubernetes controller namespaces.
-#
-# @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+# METADATA
+# title: Containers must drop all capabilities
+# description: |-
+#   Granting containers privileged capabilities on the node makes it easier
+#   for containers to escalate their privileges. As such, this is not allowed
+#   outside of Kubernetes controller namespaces.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - ""
+#       kinds:
+#       - Pod
+#     - apiGroups:
+#       - apps
+#       kinds:
+#       - DaemonSet
+#       - Deployment
+#       - StatefulSet
 package container_deny_added_caps
 
 import data.lib.core
