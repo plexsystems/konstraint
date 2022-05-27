@@ -96,7 +96,7 @@ third
 `
 
 	rego := Rego{
-		raw: raw,
+		sanitizedRaw: raw,
 	}
 
 	actual := rego.Source()
@@ -116,11 +116,8 @@ func TestEnforcement(t *testing.T) {
 		"@enforcement dryrun",
 		"@kinds apps/Deployment",
 	}
-	rego := Rego{
-		headerComments: comments,
-	}
 
-	actual := rego.Enforcement()
+	actual := getEnforcementTag(comments)
 	const expected = "dryrun"
 	if actual != expected {
 		t.Errorf("unexpected Enforcement. expected %v, actual %v", expected, actual)

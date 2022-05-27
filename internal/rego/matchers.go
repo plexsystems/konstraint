@@ -49,6 +49,27 @@ func (k KindMatchers) String() string {
 	return result
 }
 
+// ToSpec converts KindMatchers to a slice in format
+// compatible with `spec.match.kinds` of a Constraint
+func (k KindMatchers) ToSpec() []any {
+	specSlice := make([]interface{}, len(k))
+
+	for i, matcher := range k {
+		// convert to interface slice so apimachinery's runtime.DeepCopy works
+		kinds := make([]any, len(matcher.Kinds))
+		for j, kind := range matcher.Kinds {
+			kinds[j] = any(kind)
+		}
+
+		specSlice[i] = map[string]any{
+			"apiGroups": []any{any(matcher.APIGroup)},
+			"kinds":     kinds,
+		}
+	}
+
+	return specSlice
+}
+
 // addIfNotPresent adds an apiGroup/kind matcher to the map
 // unless it's already present
 //

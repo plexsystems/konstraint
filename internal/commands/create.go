@@ -182,7 +182,7 @@ func getConstraintTemplatev1(violation rego.Rego, logger *log.Entry) (*v1.Constr
 		logger.Warn("Parameters are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
 		constraintTemplate.Spec.CRD.Spec.Validation = &v1.Validation{
 			OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
-				Properties: getOpenAPISchemaProperties(violation),
+				Properties: violation.GetOpenAPISchemaProperties(),
 				Type:       "object",
 			},
 		}
@@ -234,7 +234,7 @@ func getConstraintTemplatev1beta1(violation rego.Rego, logger *log.Entry) (*v1be
 		logger.Warn("Parameters are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
 		constraintTemplate.Spec.CRD.Spec.Validation = &v1beta1.Validation{
 			OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
-				Properties: getOpenAPISchemaProperties(violation),
+				Properties: violation.GetOpenAPISchemaProperties(),
 			},
 		}
 	}
@@ -251,28 +251,6 @@ func getConstraintTemplatev1beta1(violation rego.Rego, logger *log.Entry) (*v1be
 	}
 
 	return &constraintTemplate, nil
-}
-
-func getOpenAPISchemaProperties(r rego.Rego) map[string]apiextensionsv1.JSONSchemaProps {
-	properties := make(map[string]apiextensionsv1.JSONSchemaProps)
-	for _, p := range r.Parameters() {
-		if p.IsArray {
-			properties[p.Name] = apiextensionsv1.JSONSchemaProps{
-				Type:        "array",
-				Description: p.Description,
-				Items: &apiextensionsv1.JSONSchemaPropsOrArray{
-					Schema: &apiextensionsv1.JSONSchemaProps{Type: p.Type},
-				},
-			}
-		} else {
-			properties[p.Name] = apiextensionsv1.JSONSchemaProps{
-				Type:        p.Type,
-				Description: p.Description,
-			}
-		}
-	}
-
-	return properties
 }
 
 func getConstraint(violation rego.Rego, logger *log.Entry) (*unstructured.Unstructured, error) {
@@ -397,27 +375,10 @@ func addParametersToConstraintLegacy(constraint *unstructured.Unstructured, para
 }
 
 func setKindMatcher(constraint *unstructured.Unstructured, kindMatchers rego.KindMatchers) error {
-	constraintMatchers := make([]interface{}, len(kindMatchers))
-
-	for i, matcher := range kindMatchers {
-		constraintMatchers[i] = map[string]interface{}{
-			"apiGroups": toInterfaceSlice([]string{matcher.APIGroup}),
-			"kinds":     toInterfaceSlice(matcher.Kinds),
-		}
-	}
-
-	if err := unstructured.SetNestedSlice(constraint.Object, constraintMatchers, "spec", "match", "kinds"); err != nil {
+	if err := unstructured.SetNestedSlice(constraint.Object, kindMatchers.ToSpec(), "spec", "match", "kinds"); err != nil {
 		return fmt.Errorf("set constraint kinds matchers: %w", err)
 	}
 	return nil
-}
-
-func toInterfaceSlice(input []string) []interface{} {
-	res := make([]interface{}, len(input))
-	for i, v := range input {
-		res[i] = v
-	}
-	return res
 }
 
 func setMatchLabelsMatcher(constraint *unstructured.Unstructured, matcher rego.MatchLabelsMatcher) error {

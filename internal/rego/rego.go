@@ -31,11 +31,20 @@ const (
 	PolicyIDVariable = "policyID"
 )
 
+// Keys used in Custom section of OPA Rich Metadata Annotations
+const (
+	annoEnforcement    = "enforcement"
+	annoMatchers       = "matchers"
+	annoParameters     = "parameters"
+	annoSkipConstraint = "skipConstraint"
+)
+
 // Rego represents a parsed rego file.
 type Rego struct {
 	id             string
 	path           string
 	raw            string
+	sanitizedRaw   string
 	headerComments []string
 	rules          []string
 	dependencies   []string
@@ -189,21 +198,21 @@ func (r *Rego) parseAnnotations(annotations *ast.Annotations) error {
 		r.annoDescription = annotations.Description
 	}
 
-	matchers, ok := annotations.Custom["matchers"]
+	matchers, ok := annotations.Custom[annoMatchers]
 	if ok {
 		if err := r.parseAnnotationsMatchers(matchers.(map[string]any)); err != nil {
 			return fmt.Errorf("parse matchers from OPA metadata: %w", err)
 		}
 	}
 
-	parameters, ok := annotations.Custom["parameters"]
+	parameters, ok := annotations.Custom[annoParameters]
 	if ok {
 		if err := r.parseAnnotationsParameters(parameters.(map[string]any)); err != nil {
 			return fmt.Errorf("parse parameters from OPA metadata: %w", err)
 		}
 	}
 
-	skipConstraint, ok := annotations.Custom["skipConstraint"]
+	skipConstraint, ok := annotations.Custom[annoSkipConstraint]
 	if ok {
 		sc, ok := skipConstraint.(bool)
 		if !ok {
@@ -212,7 +221,7 @@ func (r *Rego) parseAnnotations(annotations *ast.Annotations) error {
 		r.skipConstraint = sc
 	}
 
-	enforcement, ok := annotations.Custom["enforcement"]
+	enforcement, ok := annotations.Custom[annoEnforcement]
 	if ok {
 		e, ok := enforcement.(string)
 		if !ok {
@@ -349,9 +358,12 @@ func (r Rego) Enforcement() string {
 	if r.enforcement != "" {
 		return r.enforcement
 	}
+	return "deny"
+}
 
-	enforcement := "deny"
-	for _, comment := range r.headerComments {
+func getEnforcementTag(headerComments []string) string {
+	enforcement := ""
+	for _, comment := range headerComments {
 		if !commentStartsWith(comment, "@enforcement") {
 			continue
 		}
@@ -418,18 +430,113 @@ func (r Rego) Description() string {
 	return description
 }
 
+// HasLegacyAnnotations checks whenether rego file is using legacy
+// style annotations instead of OPA Rich Metadata annotations
+func (r Rego) HasLegacyAnnotations() bool {
+	return r.annotations == nil
+}
+
+type ConvertedLegacyAnnotations struct {
+	Title       string         `json:"title,omitempty"`
+	Description string         `json:"description,omitempty"`
+	Custom      map[string]any `json:"custom,omitempty"`
+}
+
+// ConvertLegacyAnnotations converts legacy annotations
+// to map containing new style annotations
+func (r Rego) ConvertLegacyAnnotations() (*ConvertedLegacyAnnotations, error) {
+	custom := make(map[string]any)
+	if r.enforcement != "" {
+		custom[annoEnforcement] = r.enforcement
+	}
+	if r.skipConstraint {
+		custom[annoSkipConstraint] = r.skipConstraint
+	}
+	if len(r.parameters) > 0 {
+		custom[annoParameters] = r.GetOpenAPISchemaProperties()
+	}
+
+	matchers, err := r.Matchers()
+	if err != nil {
+		return nil, fmt.Errorf("cant get legacy matchers: %w", err)
+	}
+
+	matcherMap := make(map[string]any)
+
+	if len(matchers.KindMatchers) > 0 {
+		matcherMap["kinds"] = matchers.KindMatchers.ToSpec()
+	}
+
+	labelSelector := make(map[string]any)
+	if len(matchers.MatchLabelsMatcher) > 0 {
+		labelSelector["matchLabels"] = matchers.MatchLabelsMatcher
+	}
+	if len(matchers.MatchExpressionsMatcher) > 0 {
+		labelSelector["matchExpressions"] = matchers.MatchExpressionsMatcher
+	}
+	if len(labelSelector) > 0 {
+		matcherMap["labelSelector"] = labelSelector
+	}
+
+	if len(matchers.NamespaceMatcher) > 0 {
+		matcherMap["namespaces"] = matchers.NamespaceMatcher
+	}
+	if len(matchers.ExcludedNamespaceMatcher) > 0 {
+		matcherMap["excludedNamespaces"] = matchers.ExcludedNamespaceMatcher
+	}
+
+	if len(matcherMap) > 0 {
+		custom[annoMatchers] = matcherMap
+	}
+
+	return &ConvertedLegacyAnnotations{
+		Title:       r.Title(),
+		Description: r.Description(),
+		Custom:      custom,
+	}, nil
+}
+
+func (r Rego) GetOpenAPISchemaProperties() map[string]apiextensionsv1.JSONSchemaProps {
+	properties := make(map[string]apiextensionsv1.JSONSchemaProps)
+	for _, p := range r.Parameters() {
+		if p.IsArray {
+			properties[p.Name] = apiextensionsv1.JSONSchemaProps{
+				Type:        "array",
+				Description: p.Description,
+				Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+					Schema: &apiextensionsv1.JSONSchemaProps{Type: p.Type},
+				},
+			}
+		} else {
+			properties[p.Name] = apiextensionsv1.JSONSchemaProps{
+				Type:        p.Type,
+				Description: p.Description,
+			}
+		}
+	}
+
+	return properties
+}
+
 // Source returns the original source code inside
 // of the rego file without any comments.
 func (r Rego) Source() string {
-	return removeComments(r.raw)
+	return removeComments(r.sanitizedRaw)
 }
 
 // FullSource returns the original source code inside
 // of the rego file including comments except the header
 func (r Rego) FullSource() string {
-	withoutHeader := removeHeaderComments(r.raw)
+	withoutHeader := removeHeaderComments(r.sanitizedRaw)
 
 	return strings.Trim(withoutHeader, "\n\t ")
+}
+
+// LegacyConversionSource returns the original source code
+// with comments except header,
+// but doesn't trim any trailing whitespace
+func (r Rego) LegacyConversionSource() string {
+	return removeHeaderComments(r.raw)
 }
 
 func removeHeaderComments(input string) string {
@@ -481,11 +588,6 @@ func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 
 	files := make(map[string]*loader.RegoFile)
 	for m := range result.Modules {
-		// Many YAML parsers have problems handling carriage returns and tabs so we sanitize the Rego
-		// before storing it so it can be rendered properly.
-		result.Modules[m].Raw = bytes.ReplaceAll(result.Modules[m].Raw, []byte("\r"), []byte(""))
-		result.Modules[m].Raw = bytes.ReplaceAll(result.Modules[m].Raw, []byte("\t"), []byte("  "))
-
 		// Re-key the loaded rego file map based on the package path of the rego file.
 		// This makes finding the source rego file from an import path much easier.
 		files[result.Modules[m].Parsed.Package.Path.String()] = result.Modules[m]
@@ -504,7 +606,7 @@ func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 
 		var dependencies []string
 		for _, importPath := range importPaths {
-			dependencies = append(dependencies, removeComments(string(files[importPath].Raw)))
+			dependencies = append(dependencies, removeComments(sanitizeRawSource(files[importPath].Raw)))
 		}
 
 		var rules []string
@@ -569,8 +671,10 @@ func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 			rules:          rules,
 			parameters:     headerParams,
 			headerComments: headerComments,
-			raw:            trimEachLine(string(file.Raw)),
+			raw:            string(file.Raw),
+			sanitizedRaw:   sanitizeRawSource(file.Raw),
 			skipConstraint: hasSkipConstraintTag(headerComments),
+			enforcement:    getEnforcementTag(headerComments),
 			annotations:    annotations,
 		}
 
@@ -592,6 +696,14 @@ func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 	return regos, nil
 }
 
+func sanitizeRawSource(raw []byte) string {
+	// Many YAML parsers have problems handling carriage returns and tabs so we sanitize the Rego
+	// before storing it so it can be rendered properly.
+	raw = bytes.ReplaceAll(raw, []byte("\r"), []byte(""))
+	raw = bytes.ReplaceAll(raw, []byte("\t"), []byte("  "))
+	return trimEachLine(string(raw))
+}
+
 func getRuleParamNames(rules []*ast.Rule) []string {
 	re := regexp.MustCompile(`input\.parameters\.([a-zA-Z0-9_-]+)`)
 	var ruleParams []string
@@ -608,7 +720,7 @@ func getRuleParamNames(rules []*ast.Rule) []string {
 }
 
 func getHeaderParams(annotations *ast.Annotations) []Parameter {
-	params, ok := annotations.Custom["parameters"].(map[string]any)
+	params, ok := annotations.Custom[annoParameters].(map[string]any)
 	if !ok {
 		return nil
 	}
