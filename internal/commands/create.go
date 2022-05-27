@@ -126,7 +126,7 @@ func runCreateCommand(path string) error {
 		}
 
 		// Skip Constraint generation if there are parameters on the template.
-		if len(violation.Parameters()) > 0 && !viper.GetBool("partial-constraints") {
+		if !viper.GetBool("partial-constraints") && (len(violation.Parameters()) > 0 || len(violation.AnnotationParameters()) > 0) {
 			logger.Warn("Skipping constraint generation due to use of parameters")
 			continue
 		}
