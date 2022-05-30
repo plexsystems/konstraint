@@ -6,7 +6,6 @@
 #   to obtain the same effect are not allowed if they are labeled as tenant.
 #   To take advantage of this policy, it must be combined with another policy
 #   that enforces the 'is-tenant' label.
-#   This is the example for @matchlabels.
 # custom:
 #   matchers:
 #     kinds:
