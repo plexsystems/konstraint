@@ -1,9 +1,15 @@
-# @title PodSecurityPolicies must require containers to not run as privileged
-#
-# Allowing privileged containers can much more easily obtain root on the node.
-# As such, they are not allowed.
-#
-# @kinds policy/PodSecurityPolicy
+# METADATA
+# title: PodSecurityPolicies must require containers to not run as privileged
+# description: |-
+#   Allowing privileged containers can much more easily obtain root on the node.
+#   As such, they are not allowed.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - policy
+#       kinds:
+#       - PodSecurityPolicy
 package psp_deny_privileged
 
 import data.lib.core

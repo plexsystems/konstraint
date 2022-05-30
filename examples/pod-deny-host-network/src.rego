@@ -1,9 +1,21 @@
-# @title Pods must not run with access to the host networking
-#
-# Pods that can access the host's network interfaces can potentially
-# access and tamper with traffic the pod should not have access to.
-#
-# @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+# METADATA
+# title: Pods must not run with access to the host networking
+# description: |-
+#   Pods that can access the host's network interfaces can potentially
+#   access and tamper with traffic the pod should not have access to.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - ""
+#       kinds:
+#       - Pod
+#     - apiGroups:
+#       - apps
+#       kinds:
+#       - DaemonSet
+#       - Deployment
+#       - StatefulSet
 package pod_deny_host_network
 
 import data.lib.core

@@ -1,9 +1,15 @@
-# @title PodSecurityPolicies must not allow access to the host aliases
-# 
-# Allowing pods to can change aliases in the host's /etc/hosts file can 
-# redirect traffic to malicious servers.
-#
-# @kinds policy/PodSecurityPolicy
+# METADATA
+# title: PodSecurityPolicies must not allow access to the host aliases
+# description: |-
+#   Allowing pods to can change aliases in the host's /etc/hosts file can
+#   redirect traffic to malicious servers.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - policy
+#       kinds:
+#       - PodSecurityPolicy
 package psp_deny_host_alias
 
 import data.lib.core

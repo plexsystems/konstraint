@@ -1,9 +1,15 @@
-# @title PodSecurityPolicies should require that a read-only root filesystem is set
-#
-# Allowing pods to access the host's network interfaces can potentially
-# access and tamper with traffic the pod should not have access to.
-#
-# @kinds policy/PodSecurityPolicy
+# METADATA
+# title: PodSecurityPolicies should require that a read-only root filesystem is set
+# description: |-
+#   Allowing pods to access the host's network interfaces can potentially
+#   access and tamper with traffic the pod should not have access to.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - policy
+#       kinds:
+#       - PodSecurityPolicy
 package psp_warn_no_ro_fs
 
 import data.lib.core

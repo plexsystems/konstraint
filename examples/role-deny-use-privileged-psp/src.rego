@@ -1,8 +1,14 @@
-# @title Roles must not allow use of privileged PodSecurityPolicies
-# 
-# Workloads not running in the exempted namespaces must not use PodSecurityPolicies with privileged permissions.
-#
-# @kinds rbac.authorization.k8s.io/Role
+# METADATA
+# title: Roles must not allow use of privileged PodSecurityPolicies
+# description: Workloads not running in the exempted namespaces must not use PodSecurityPolicies
+#   with privileged permissions.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - rbac.authorization.k8s.io
+#       kinds:
+#       - Role
 package role_deny_use_privileged_psps
 
 import data.lib.core

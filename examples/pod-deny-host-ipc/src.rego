@@ -1,9 +1,21 @@
-# @title Pods must not run with access to the host IPC
-#
-# Pods that are allowed to access the host IPC can read memory of
-# the other containers, breaking that security boundary.
-#
-# @kinds apps/DaemonSet apps/Deployment apps/StatefulSet core/Pod
+# METADATA
+# title: Pods must not run with access to the host IPC
+# description: |-
+#   Pods that are allowed to access the host IPC can read memory of
+#   the other containers, breaking that security boundary.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - ""
+#       kinds:
+#       - Pod
+#     - apiGroups:
+#       - apps
+#       kinds:
+#       - DaemonSet
+#       - Deployment
+#       - StatefulSet
 package pod_deny_host_ipc
 
 import data.lib.core

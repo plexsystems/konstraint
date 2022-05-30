@@ -293,7 +293,6 @@ such containers running as privileged or with sufficient capabilities granted
 to obtain the same effect are not allowed if they are labeled as tenant.
 To take advantage of this policy, it must be combined with another policy
 that enforces the 'is-tenant' label.
-This is the example for @matchlabels.
 
 
 _source: [container-deny-privileged-if-tenant](container-deny-privileged-if-tenant)_

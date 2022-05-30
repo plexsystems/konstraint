@@ -1,10 +1,16 @@
-# @title PodSecurityPolicies must require all capabilities are dropped
-# 
-# Allowing containers privileged capabilities on the node makes it easier
-# for containers to escalate their privileges. As such, this is not allowed
-# outside of Kubernetes controller namespaces.
-#
-# @kinds policy/PodSecurityPolicy
+# METADATA
+# title: PodSecurityPolicies must require all capabilities are dropped
+# description: |-
+#   Allowing containers privileged capabilities on the node makes it easier
+#   for containers to escalate their privileges. As such, this is not allowed
+#   outside of Kubernetes controller namespaces.
+# custom:
+#   matchers:
+#     kinds:
+#     - apiGroups:
+#       - policy
+#       kinds:
+#       - PodSecurityPolicy
 package psp_deny_added_caps
 
 import data.lib.core

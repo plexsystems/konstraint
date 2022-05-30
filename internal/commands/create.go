@@ -21,6 +21,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+const (
+	legacyMigrationMessage = " are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations. See konstraint convert."
+)
+
 func newCreateCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "create <dir>",
@@ -179,10 +183,10 @@ func getConstraintTemplatev1(violation rego.Rego, logger *log.Entry) (*v1.Constr
 	}
 
 	if len(violation.Parameters()) > 0 {
-		logger.Warn("Parameters are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
+		logger.Warn("Parameters" + legacyMigrationMessage)
 		constraintTemplate.Spec.CRD.Spec.Validation = &v1.Validation{
 			OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
-				Properties: getOpenAPISchemaProperties(violation),
+				Properties: violation.GetOpenAPISchemaProperties(),
 				Type:       "object",
 			},
 		}
@@ -231,10 +235,10 @@ func getConstraintTemplatev1beta1(violation rego.Rego, logger *log.Entry) (*v1be
 	}
 
 	if len(violation.Parameters()) > 0 {
-		logger.Warn("Parameters are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
+		logger.Warn("Parameters" + legacyMigrationMessage)
 		constraintTemplate.Spec.CRD.Spec.Validation = &v1beta1.Validation{
 			OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
-				Properties: getOpenAPISchemaProperties(violation),
+				Properties: violation.GetOpenAPISchemaProperties(),
 			},
 		}
 	}
@@ -251,28 +255,6 @@ func getConstraintTemplatev1beta1(violation rego.Rego, logger *log.Entry) (*v1be
 	}
 
 	return &constraintTemplate, nil
-}
-
-func getOpenAPISchemaProperties(r rego.Rego) map[string]apiextensionsv1.JSONSchemaProps {
-	properties := make(map[string]apiextensionsv1.JSONSchemaProps)
-	for _, p := range r.Parameters() {
-		if p.IsArray {
-			properties[p.Name] = apiextensionsv1.JSONSchemaProps{
-				Type:        "array",
-				Description: p.Description,
-				Items: &apiextensionsv1.JSONSchemaPropsOrArray{
-					Schema: &apiextensionsv1.JSONSchemaProps{Type: p.Type},
-				},
-			}
-		} else {
-			properties[p.Name] = apiextensionsv1.JSONSchemaProps{
-				Type:        p.Type,
-				Description: p.Description,
-			}
-		}
-	}
-
-	return properties
 }
 
 func getConstraint(violation rego.Rego, logger *log.Entry) (*unstructured.Unstructured, error) {
@@ -306,35 +288,35 @@ func getConstraint(violation rego.Rego, logger *log.Entry) (*unstructured.Unstru
 	}
 
 	if len(matchers.KindMatchers) > 0 {
-		logger.Warn("Kind Matchers are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
+		logger.Warn("Kind Matchers" + legacyMigrationMessage)
 		if err := setKindMatcher(&constraint, matchers.KindMatchers); err != nil {
 			return nil, fmt.Errorf("set kind matcher: %w", err)
 		}
 	}
 
 	if len(matchers.MatchLabelsMatcher) > 0 {
-		logger.Warn("Match Labels Matchers are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
+		logger.Warn("Match Labels Matchers" + legacyMigrationMessage)
 		if err := setMatchLabelsMatcher(&constraint, matchers.MatchLabelsMatcher); err != nil {
 			return nil, fmt.Errorf("set match labels matcher: %w", err)
 		}
 	}
 
 	if len(matchers.MatchExpressionsMatcher) > 0 {
-		logger.Warn("Match Expressions Matchers are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
+		logger.Warn("Match Expressions Matchers" + legacyMigrationMessage)
 		if err := setMatchExpressionsMatcher(&constraint, matchers.MatchExpressionsMatcher); err != nil {
 			return nil, fmt.Errorf("set match expressions matcher: %w", err)
 		}
 	}
 
 	if len(matchers.NamespaceMatcher) > 0 {
-		logger.Warn("Namespace Matchers are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
+		logger.Warn("Namespace Matchers" + legacyMigrationMessage)
 		if err := setNestedStringSlice(&constraint, matchers.NamespaceMatcher, "spec", "match", "namespaces"); err != nil {
 			return nil, fmt.Errorf("set namespace matcher: %w", err)
 		}
 	}
 
 	if len(matchers.ExcludedNamespaceMatcher) > 0 {
-		logger.Warn("Excluded Namespace Matchers are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
+		logger.Warn("Excluded Namespace Matchers" + legacyMigrationMessage)
 		if err := setNestedStringSlice(&constraint, matchers.ExcludedNamespaceMatcher, "spec", "match", "excludedNamespaces"); err != nil {
 			return nil, fmt.Errorf("set namespace matcher: %w", err)
 		}
@@ -357,7 +339,7 @@ func getConstraint(violation rego.Rego, logger *log.Entry) (*unstructured.Unstru
 
 	if viper.GetBool("partial-constraints") {
 		if len(violation.Parameters()) > 0 {
-			logger.Warn("Parameters are set with legacy annotations, this functionality will be removed in a future release. Please migrate to OPA Metadata annotations.")
+			logger.Warn("Parameters" + legacyMigrationMessage)
 			if err := addParametersToConstraintLegacy(&constraint, violation.Parameters()); err != nil {
 				return nil, fmt.Errorf("add parameters %v to constraint: %w", violation.Parameters(), err)
 			}
@@ -397,27 +379,10 @@ func addParametersToConstraintLegacy(constraint *unstructured.Unstructured, para
 }
 
 func setKindMatcher(constraint *unstructured.Unstructured, kindMatchers rego.KindMatchers) error {
-	constraintMatchers := make([]interface{}, len(kindMatchers))
-
-	for i, matcher := range kindMatchers {
-		constraintMatchers[i] = map[string]interface{}{
-			"apiGroups": toInterfaceSlice([]string{matcher.APIGroup}),
-			"kinds":     toInterfaceSlice(matcher.Kinds),
-		}
-	}
-
-	if err := unstructured.SetNestedSlice(constraint.Object, constraintMatchers, "spec", "match", "kinds"); err != nil {
+	if err := unstructured.SetNestedSlice(constraint.Object, kindMatchers.ToSpec(), "spec", "match", "kinds"); err != nil {
 		return fmt.Errorf("set constraint kinds matchers: %w", err)
 	}
 	return nil
-}
-
-func toInterfaceSlice(input []string) []interface{} {
-	res := make([]interface{}, len(input))
-	for i, v := range input {
-		res[i] = v
-	}
-	return res
 }
 
 func setMatchLabelsMatcher(constraint *unstructured.Unstructured, matcher rego.MatchLabelsMatcher) error {

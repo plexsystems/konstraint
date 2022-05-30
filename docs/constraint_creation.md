@@ -109,6 +109,11 @@ violation[{"msg": msg}] {
 
 In some scenarios, you may wish for Konstraint to skip the generation of the `Constraint` resource for a policy and manage that externally. To do so, add the `skipConstraint: true` annotation in the custom metadata section.
 
+### Legacy annotations
+Previously Konstraint had custom annotation format, such as `@title` or `@kinds`, which is a legacy format and will be removed in future releases.
+
+To aid with transition to OPA Metadata format, a conversion tool is provided as `konstraint convert`
+
 ## Using Input Parameters
 
 Gatekeeper has the ability for a single `ConstraintTemplate` resource to be used by multiple `Constraint`s. One of the reasons for this is that it allows for passing input parameters to the policy so a single policy to avoid duplication. Konstraint supports these input parameters via the `parameters` object in the custom metadata section. **NOTE:** When input parameters are specified, Konstraint skips the generation of the `Constraint` resource unless the `--partial-constraint` flag is set.
