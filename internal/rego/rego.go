@@ -533,33 +533,22 @@ func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 		}
 
 		bodyParams := getRuleParamNames(file.Parsed.Rules)
+		var paramsDiff []string
+
 		var headerParams []Parameter
-		if annotations != nil {
-			headerParams = getHeaderParams(annotations)
-		} else {
+		if annotations == nil {
 			headerParams, err = getHeaderParamsLegacy(headerComments)
 			if err != nil {
 				return nil, fmt.Errorf("parse header parameters: %w", err)
 			}
+			paramsDiff = paramDiff(bodyParams, headerParams)
+		} else {
+			tempHeaderParams := getHeaderParams(annotations)
+			paramsDiff = paramDiff(bodyParams, tempHeaderParams)
 		}
 
-		paramsDiff := paramDiff(bodyParams, headerParams)
 		if len(paramsDiff) > 0 {
-			return nil, fmt.Errorf("missing @parameter tags for parameters %v found in the policy: %v", paramsDiff, file.Name)
-		}
-
-		for _, bodyParam := range bodyParams {
-			var seen bool
-			for _, headerParam := range headerParams {
-				if headerParam.Name == bodyParam {
-					seen = true
-					break
-				}
-			}
-
-			if !seen {
-				return nil, fmt.Errorf("missing @parameter tag for parameter: %s", bodyParam)
-			}
+			return nil, fmt.Errorf("missing definitions for parameters %v found in the policy `%s`", paramsDiff, file.Name)
 		}
 
 		rego := Rego{
