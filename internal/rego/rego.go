@@ -430,20 +430,21 @@ func (r Rego) Description() string {
 	return description
 }
 
-// HasLegacyAnnotations checks whenether rego file is using legacy
-// style annotations instead of OPA Rich Metadata annotations
-func (r Rego) HasLegacyAnnotations() bool {
-	return r.annotations == nil
+// HasMetadataAnnotations checks whenether rego file has
+// OPA Metadata Annotations
+func (r Rego) HasMetadataAnnotations() bool {
+	return r.annotations != nil
 }
 
+// ConvertedLegacyAnnotations holds OPA Metadata Annotations,
+// which were converted from legacy style annotations
 type ConvertedLegacyAnnotations struct {
 	Title       string         `json:"title,omitempty"`
 	Description string         `json:"description,omitempty"`
 	Custom      map[string]any `json:"custom,omitempty"`
 }
 
-// ConvertLegacyAnnotations converts legacy annotations
-// to map containing new style annotations
+// ConvertLegacyAnnotations converts legacy annotations to ConvertedLegacyAnnotations
 func (r Rego) ConvertLegacyAnnotations() (*ConvertedLegacyAnnotations, error) {
 	custom := make(map[string]any)
 	if r.enforcement != "" {

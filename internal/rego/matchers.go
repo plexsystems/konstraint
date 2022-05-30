@@ -52,7 +52,7 @@ func (k KindMatchers) String() string {
 // ToSpec converts KindMatchers to a slice in format
 // compatible with `spec.match.kinds` of a Constraint
 func (k KindMatchers) ToSpec() []any {
-	specSlice := make([]interface{}, len(k))
+	specSlice := make([]any, len(k))
 
 	for i, matcher := range k {
 		// convert to interface slice so apimachinery's runtime.DeepCopy works

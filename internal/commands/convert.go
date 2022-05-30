@@ -14,8 +14,9 @@ import (
 func newConvertCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "convert <dir>",
-		Short: "Convert old style annotations to OPA Rich Metadata Annotations",
-		Example: `Convert all found policies inplace
+		Short: "Convert legacy annotations to OPA Metadata Annotations",
+		Long:  "Converts legacy annotations to OPA Metadata Annotations, and does nothing on files containing OPA Metadata Annotations",
+		Example: `Convert all policies with legacy annotations to OPA Metadata annotations in-place
 
 konstraint convert examples`,
 
@@ -38,19 +39,22 @@ func runConvertCommand(path string) error {
 		return fmt.Errorf("get regos: %w", err)
 	}
 
+	conversions := 0
+
 	for _, r := range regos {
 		logger := log.WithFields(log.Fields{
 			"name": r.Kind(),
 			"src":  r.Path(),
 		})
 
-		if !r.HasLegacyAnnotations() {
+		if r.HasMetadataAnnotations() {
+			logger.Info("was skipped since it has OPA Annotations already")
 			continue
 		}
 
 		conveted, err := r.ConvertLegacyAnnotations()
 		if err != nil {
-			logger.WithError(err).Error("cant convert legacy annotations")
+			logger.WithError(err).Error("Failed to convert legacy annotations")
 		}
 
 		var sb strings.Builder
@@ -60,7 +64,7 @@ func runConvertCommand(path string) error {
 		if conveted.Title != "" {
 			yml, err := yaml.Marshal(&rego.ConvertedLegacyAnnotations{Title: conveted.Title})
 			if err != nil {
-				logger.WithError(err).Error("cant convert annotations to yaml")
+				logger.WithError(err).Error("Failed to marshal OPA Annotations title field to YAML")
 				continue
 			}
 			appendCommentedYaml(&sb, yml)
@@ -68,7 +72,7 @@ func runConvertCommand(path string) error {
 		if conveted.Description != "" {
 			yml, err := yaml.Marshal(&rego.ConvertedLegacyAnnotations{Description: conveted.Description})
 			if err != nil {
-				logger.WithError(err).Error("cant convert annotations to yaml")
+				logger.WithError(err).Error("Failed to marshal OPA Annotations description field to YAML")
 				continue
 			}
 			appendCommentedYaml(&sb, yml)
@@ -76,7 +80,7 @@ func runConvertCommand(path string) error {
 		if len(conveted.Custom) > 0 {
 			yml, err := yaml.Marshal(&rego.ConvertedLegacyAnnotations{Custom: conveted.Custom})
 			if err != nil {
-				logger.WithError(err).Error("cant convert annotations to yaml")
+				logger.WithError(err).Error("Failed to marshal OPA Annotations custom field to YAML")
 				continue
 			}
 			appendCommentedYaml(&sb, yml)
@@ -86,11 +90,17 @@ func runConvertCommand(path string) error {
 		sb.WriteByte('\n')
 
 		if err := ioutil.WriteFile(r.Path(), []byte(sb.String()), 0644); err != nil {
-			return fmt.Errorf("writing constraint: %w", err)
+			return fmt.Errorf("writing updated policy source: %w", err)
 		}
+
+		conversions++
+		logger.Info("converted successfully")
 	}
 
-	// log.WithField("num_policies", len(violations)).Info("completed successfully")
+	log.
+		WithField("num_policies", len(regos)).
+		WithField("num_converted", conversions).
+		Info("completed successfully")
 
 	return nil
 }
@@ -108,8 +118,6 @@ func appendCommentedYaml(sb *strings.Builder, yaml []byte) {
 			continue
 		}
 
-		sb.WriteString("# ")
-		sb.WriteString(line)
-		sb.WriteByte('\n')
+		sb.WriteString("# " + line + "\n")
 	}
 }
