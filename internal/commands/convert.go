@@ -15,7 +15,7 @@ func newConvertCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "convert <dir>",
 		Short: "Convert legacy annotations to OPA Metadata Annotations",
-		Long:  "Converts legacy annotations to OPA Metadata Annotations, and does nothing on files containing OPA Metadata Annotations",
+		Long:  "Converts legacy annotations to OPA Metadata Annotations. Policies that already have any package-level OPA Metadata Annotations set will be skipped, even if the policy contains legacy annotations.",
 		Example: `Convert all policies with legacy annotations to OPA Metadata annotations in-place
 
 konstraint convert examples`,
@@ -39,7 +39,7 @@ func runConvertCommand(path string) error {
 		return fmt.Errorf("get regos: %w", err)
 	}
 
-	conversions := 0
+	var conversions int
 
 	for _, r := range regos {
 		logger := log.WithFields(log.Fields{
@@ -97,10 +97,10 @@ func runConvertCommand(path string) error {
 		logger.Info("converted successfully")
 	}
 
-	log.
-		WithField("num_policies", len(regos)).
-		WithField("num_converted", conversions).
-		Info("completed successfully")
+	log.WithFields(log.Fields{
+		"num_policies":  len(regos),
+		"num_converted": conversions,
+	}).Info("Completed successfully.")
 
 	return nil
 }
