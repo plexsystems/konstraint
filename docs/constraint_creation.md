@@ -8,8 +8,8 @@ When using `konstraint doc`, Konstraint will create documentation for each polic
 
 The following rule names are organized into their own sections as they have special meaning within the context of Gatekeeper and Conftest:
 
-- `violation` (supported by Gatekeeper and Conftest)
-- `warn` (supported by Conftest)
+- `violation`
+- `warn`
 
 If a policy file does not contain any of the above rules, the policy is added to the `Other` section.
 
@@ -32,16 +32,16 @@ For example, a policy found in: `policies/pod-volume-size-limits/src.rego` gener
   - kind: _PodVolumeSizeLimits_
   - name: _podvolumesizelimits_
 
-When using the `--output` parameter, all templates and constraints will be generated in the path specified in the parameter with the format:
+When using the `--output` flag, all templates and constraints will be generated in the path specified in the parameter with the format:
 
 - constraint_PodVolumeSizeLimits.yaml
 - template_PodVolumeSizeLimits.yaml
 
 _NOTE: While not technically required, the tool works best with a folder structure similar to how Gatekeeper itself [structures policies and templates](https://github.com/open-policy-agent/gatekeeper-library/tree/master/library)._
 
-## Annotating Rules
+## Annotating Policies
 
-To further promote that the `.rego` file is the source of truth for policy, a block comment can be added to each policy file. Konstraint uses the [OPA Metadata Annotations](https://www.openpolicyagent.org/docs/latest/annotations/) to achieve this. The OPA metadata annotations are a YAML document in the comments above the package declaration preceded by a line containing the `METADATA` tag. Standard metadata fields are use where possible, but additional Gatekeeper-specific annotations are used under the `custom` metadata key as necessary.
+To further promote that the `.rego` file is the source of truth for policy, a block comment can be added to each policy file. Konstraint uses the [OPA Metadata Annotations](https://www.openpolicyagent.org/docs/latest/annotations/) to achieve this. The OPA metadata annotations are a YAML document in the comments above the package declaration preceded by a line containing the `METADATA` tag. Standard metadata fields are use where possible, but additional Gatekeeper-specific annotations are used under the `custom` metadata key as necessary. The metadata comment block is also what is used when generating documentation via the `doc` command.
 
 This comment block should:
 
@@ -49,7 +49,7 @@ This comment block should:
 - Include a human readable description of what the policy does.
 - Set the matchers used when generating the Constraints.
 
-It may also specify the enforcement action (either `deny` or `dryrun`) that Gatekeeper should take when a resource violates the constraint. If no enforcement action is specified, Konstraint defaults to using `deny` to align with Gatekeeper's default action. If the enforcement is set to `dryrun`, the policy will be skipped in the documentation generation.
+It may also specify the [enforcement action](https://open-policy-agent.github.io/gatekeeper/website/docs/howto/#the-enforcementaction-field) (`deny`, `warn`, or `dryrun`) that Gatekeeper should take when a resource violates the constraint. If no enforcement action is specified, Konstraint defaults to using `deny` to align with Gatekeeper's default action. If the enforcement is set to `dryrun`, the policy will be skipped in the documentation generation.
 
 ```rego
 # METADATA
@@ -75,11 +75,9 @@ pod_has_hostipc {
 }
 ```
 
-The comment block is also what is used when generating documentation via the `doc` command.
-
 ### Annotating rules for matchers
 
-Any matchers that Gatekeeper [supports](https://open-policy-agent.github.io/gatekeeper/website/docs/howto/#the-match-field) can be added under the `custom.matchers` annotation. These matchers are embedded into the `ConstraintTemplate` resource as-is. The example below will create a `ConstraintTemplate` that only applies to Kubernetes [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) resources in namespaces named `foo`, `bar`, or `bar`.
+Any matchers that Gatekeeper [supports](https://open-policy-agent.github.io/gatekeeper/website/docs/howto/#the-match-field) can be added under the `custom.matchers` annotation. These matchers are embedded into the `ConstraintTemplate` resource as-is. The example below will create a `ConstraintTemplate` that only applies to Kubernetes [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) resources in namespaces named `foo`, `bar`, or `baz`.
 
 ```rego
 # METADATA
