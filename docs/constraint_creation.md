@@ -58,7 +58,7 @@ It may also specify the [enforcement action](https://open-policy-agent.github.io
 #   Pods that are allowed to access the host IPC can read memory of
 #   the other containers, breaking that security boundary.
 # custom:
-#   enforcement: dryun
+#   enforcement: dryrun
 package pod_deny_host_ipc
 
 import data.lib.core
