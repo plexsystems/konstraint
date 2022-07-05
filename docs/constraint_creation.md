@@ -103,9 +103,12 @@ violation[{"msg": msg}] {
 }
 ```
 
-### Skipping generation of the Constraint resource
+### Skipping generation of the Constraint and/or ConstraintTemplate resource
 
 In some scenarios, you may wish for Konstraint to skip the generation of the `Constraint` resource for a policy and manage that externally. To do so, add the `skipConstraint: true` annotation in the custom metadata section.
+
+You can also skip the generation of both the `Constraint` and `ConstraintTemplate` resource with the `skipTemplate: true` annotation
+in the custom metadata section.
 
 ### Legacy annotations
 Previously Konstraint had custom annotation format, such as `@title` or `@kinds`, which is a legacy format and will be removed in future releases.

@@ -85,6 +85,11 @@ func runCreateCommand(path string) error {
 			"src":  violation.Path(),
 		})
 
+		if violation.SkipTemplate() {
+			logger.Info("Skipping constrainttemplate generation due to configuration")
+			continue
+		}
+
 		if !isValidEnforcementAction(violation.Enforcement()) {
 			return fmt.Errorf("enforcement action (%v) is invalid in policy: %s", violation.Enforcement(), violation.Path())
 		}
