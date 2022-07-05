@@ -248,6 +248,20 @@ func TestGetHeaderParams(t *testing.T) {
 	}
 }
 
+func TestHasSkipTemplateTag(t *testing.T) {
+	comments := []string{
+		"@title Title",
+		"Description",
+		"@kinds another/thing",
+		"@skip-template",
+	}
+
+	skip := hasSkipTemplateTag(comments)
+	if !skip {
+		t.Error("SkipTemplate is false when the @skip-template comment tag is present")
+	}
+}
+
 func TestHasSkipConstraintTag(t *testing.T) {
 	comments := []string{
 		"@title Title",

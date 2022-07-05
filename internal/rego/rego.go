@@ -36,6 +36,7 @@ const (
 	annoEnforcement    = "enforcement"
 	annoMatchers       = "matchers"
 	annoParameters     = "parameters"
+	annoSkipTemplate   = "skipTemplate"
 	annoSkipConstraint = "skipConstraint"
 )
 
@@ -50,6 +51,7 @@ type Rego struct {
 	dependencies   []string
 	parameters     []Parameter
 	enforcement    string
+	skipTemplate   bool
 	skipConstraint bool
 
 	// Duplicate data from OPA Metadata annotations.
@@ -210,6 +212,15 @@ func (r *Rego) parseAnnotations(annotations *ast.Annotations) error {
 		if err := r.parseAnnotationsParameters(parameters.(map[string]any)); err != nil {
 			return fmt.Errorf("parse parameters from OPA metadata: %w", err)
 		}
+	}
+
+	skipTemplate, ok := annotations.Custom[annoSkipTemplate]
+	if ok {
+		st, ok := skipTemplate.(bool)
+		if !ok {
+			return fmt.Errorf("supplied skipTemplate value is not a bool: %T", skipTemplate)
+		}
+		r.skipTemplate = st
 	}
 
 	skipConstraint, ok := annotations.Custom[annoSkipConstraint]
@@ -450,6 +461,9 @@ func (r Rego) ConvertLegacyAnnotations() (*ConvertedLegacyAnnotations, error) {
 	if r.enforcement != "" {
 		custom[annoEnforcement] = r.enforcement
 	}
+	if r.skipTemplate {
+		custom[annoSkipTemplate] = r.skipTemplate
+	}
 	if r.skipConstraint {
 		custom[annoSkipConstraint] = r.skipConstraint
 	}
@@ -559,6 +573,13 @@ func (r Rego) Dependencies() []string {
 	return r.dependencies
 }
 
+// SkipTemplate returns whether or not the generation of the Template
+// should be skipped. It is only set to true when the @skip-template tag is
+// present in the comment header block
+func (r Rego) SkipTemplate() bool {
+	return r.skipTemplate
+}
+
 // SkipConstraint returns whether or not the generation of the Constraint
 // should be skipped. It is only set to true when the @skip-constraint tag is
 // present in the comment header block
@@ -663,6 +684,7 @@ func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 			headerComments: headerComments,
 			raw:            string(file.Raw),
 			sanitizedRaw:   sanitizeRawSource(file.Raw),
+			skipTemplate:   hasSkipTemplateTag(headerComments),
 			skipConstraint: hasSkipConstraintTag(headerComments),
 			enforcement:    getEnforcementTag(headerComments),
 			annotations:    annotations,
@@ -784,6 +806,16 @@ func trimEachLine(raw string) string {
 	}
 
 	return result
+}
+
+func hasSkipTemplateTag(comments []string) bool {
+	for _, comment := range comments {
+		if commentStartsWith(comment, "@skip-template") {
+			return true
+		}
+	}
+
+	return false
 }
 
 func hasSkipConstraintTag(comments []string) bool {
