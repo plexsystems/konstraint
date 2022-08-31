@@ -14,7 +14,7 @@ test: ## Runs the unit tests.
 	go test -v ./... -count=1
 
 .PHONY: lint
-lint: ## Runs the unit tests.
+lint: ## Runs the go linters.
 	golangci-lint run
 
 .PHONY: acceptance
