@@ -150,3 +150,17 @@ missing_labels = missing {
 	missing := required - provided
 }
 ```
+## Setting constraint metadata.annotations and metadata.labels
+
+You can optionally specify annotations and labels for the generated Constraint. This can eg be useful if you use Argo CD for deployment (see [here](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types)). 
+
+```
+# METADATA
+# title: Required Labels
+# description: >-
+#  This policy allows you to require certain labels are set on a resource.
+# custom:
+#   annotations:
+#     "argocd.argoproj.io/sync-options": "SkipDryRunOnMissingResource=true"
+...
+```
