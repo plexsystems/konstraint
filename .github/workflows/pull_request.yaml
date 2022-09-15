@@ -26,6 +26,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+
     steps:
       - name: setup go
         uses: actions/setup-go@v3
@@ -73,6 +74,7 @@ jobs:
     name: Docker Tests
     needs: [lint]
     runs-on: ubuntu-latest
+
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -89,6 +91,7 @@ jobs:
   policy-tests:
     name: Policy Tests
     runs-on: ubuntu-latest
+
     container: openpolicyagent/conftest:latest
     steps:
       - name: checkout source
@@ -106,9 +109,11 @@ jobs:
     needs:
       - lint
       - acceptance
+
     steps:
       - name: checkout source
         uses: actions/checkout@v3
+
       - name: fetch gatekeeper versions
         id: fetch-gk-versions
         working-directory: .github/scripts
@@ -124,6 +129,7 @@ jobs:
     strategy:
       matrix:
         gk-version: ${{ fromJson(needs.e2e-prep.outputs.gk-versions) }}
+
     steps:
       - name: checkout source
         uses: actions/checkout@v3
@@ -141,14 +147,14 @@ jobs:
 
       - name: create kind cluster
         run: kind create cluster
-      
+
       - name: install gatekeeper
         env:
           GK_VERSION: ${{ matrix.gk-version }}
         run: |
           helm repo add gk https://open-policy-agent.github.io/gatekeeper/charts
           kubectl create ns gatekeeper-system
-          helm install gatekeeper gk/gatekeeper -n gatekeeper-system --set replicas=1 --version ${GK_VERSION}
+          helm install gatekeeper gk/gatekeeper -n gatekeeper-system --set replicas=1 --version ${GK_VERSION} --set psp.enabled=false
 
       - name: apply resources
         working-directory: e2e-resources
