@@ -60,7 +60,7 @@ func runConvertCommand(path string) error {
 		var sb strings.Builder
 		sb.WriteString("# METADATA\n")
 
-		// force order: `title`, `description`, `custom`
+		// Force order: `title`, `description`, `custom`
 		if conveted.Title != "" {
 			yml, err := yaml.Marshal(&rego.ConvertedLegacyAnnotations{Title: conveted.Title})
 			if err != nil {
