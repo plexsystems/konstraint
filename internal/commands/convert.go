@@ -2,7 +2,7 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -89,7 +89,7 @@ func runConvertCommand(path string) error {
 		sb.WriteString(r.LegacyConversionSource())
 		sb.WriteByte('\n')
 
-		if err := ioutil.WriteFile(r.Path(), []byte(sb.String()), 0644); err != nil {
+		if err := os.WriteFile(r.Path(), []byte(sb.String()), 0644); err != nil {
 			return fmt.Errorf("writing updated policy source: %w", err)
 		}
 
