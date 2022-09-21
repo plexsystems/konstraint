@@ -152,7 +152,7 @@ missing_labels = missing {
 ```
 ## Setting constraint metadata.annotations and metadata.labels
 
-You can optionally specify annotations and labels for the generated Constraint. This can eg be useful if you use Argo CD for deployment (see [here](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types)). 
+You can optionally specify annotations and labels for the generated Constraint. This can be useful if you use Argo CD for deployment (see [here](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types)). 
 
 ```
 # METADATA

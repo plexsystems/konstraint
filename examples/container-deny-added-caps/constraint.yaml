@@ -1,6 +1,8 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: ContainerDenyAddedCaps
 metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   name: containerdenyaddedcaps
 spec:
   match:
