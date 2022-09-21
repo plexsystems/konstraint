@@ -8,15 +8,19 @@ jobs:
   build:
     name: Build latest binary
     runs-on: ubuntu-latest
+
     steps:
       - name: setup go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.18.x
+          go-version: 1.19.x
+
       - name: checkout source
         uses: actions/checkout@v3
+
       - name: build
         run: make build
+
       - name: upload build
         uses: actions/upload-artifact@v3
         with:
@@ -31,6 +35,7 @@ jobs:
     steps:
       - name: checkout source
         uses: actions/checkout@v3
+
       - name: fetch gatekeeper versions
         id: fetch-gk-versions
         working-directory: .github/scripts
@@ -46,6 +51,7 @@ jobs:
     strategy:
       matrix:
         gk-version: ${{ fromJson(needs.e2e-prep.outputs.gk-versions) }}
+
     steps:
       - name: checkout source
         uses: actions/checkout@v3
@@ -63,14 +69,14 @@ jobs:
 
       - name: create kind cluster
         run: kind create cluster
-      
+
       - name: install gatekeeper
         env:
           GK_VERSION: ${{ matrix.gk-version }}
         run: |
           helm repo add gk https://open-policy-agent.github.io/gatekeeper/charts
           kubectl create ns gatekeeper-system
-          helm install gatekeeper gk/gatekeeper -n gatekeeper-system --set replicas=1 --version ${GK_VERSION}
+          helm install gatekeeper gk/gatekeeper -n gatekeeper-system --set replicas=1 --version ${GK_VERSION} --set psp.enabled=false
 
       - name: apply resources
         working-directory: e2e-resources

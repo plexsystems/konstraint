@@ -2,7 +2,7 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -60,7 +60,7 @@ func runConvertCommand(path string) error {
 		var sb strings.Builder
 		sb.WriteString("# METADATA\n")
 
-		// force order: `title`, `description`, `custom`
+		// Force order: `title`, `description`, `custom`
 		if conveted.Title != "" {
 			yml, err := yaml.Marshal(&rego.ConvertedLegacyAnnotations{Title: conveted.Title})
 			if err != nil {
@@ -89,7 +89,7 @@ func runConvertCommand(path string) error {
 		sb.WriteString(r.LegacyConversionSource())
 		sb.WriteByte('\n')
 
-		if err := ioutil.WriteFile(r.Path(), []byte(sb.String()), 0644); err != nil {
+		if err := os.WriteFile(r.Path(), []byte(sb.String()), 0644); err != nil {
 			return fmt.Errorf("writing updated policy source: %w", err)
 		}
 

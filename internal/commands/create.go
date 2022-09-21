@@ -3,7 +3,6 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -111,21 +110,19 @@ func runCreateCommand(path string) error {
 		var constraintTemplate any
 		switch constraintTemplateVersion {
 		case "v1":
-			constraintTemplate, err = getConstraintTemplatev1(violation, logger)
+			constraintTemplate = getConstraintTemplatev1(violation, logger)
 		case "v1beta1":
-			constraintTemplate, err = getConstraintTemplatev1beta1(violation, logger)
+			constraintTemplate = getConstraintTemplatev1beta1(violation, logger)
 		default:
 			return fmt.Errorf("unsupported API version for constrainttemplate: %s", constraintTemplateVersion)
 		}
-		if err != nil {
-			return fmt.Errorf("build constrainttemplate: %w", err)
-		}
+
 		constraintTemplateBytes, err := yaml.Marshal(constraintTemplate)
 		if err != nil {
 			return fmt.Errorf("marshal constrainttemplate: %w", err)
 		}
 
-		if err := ioutil.WriteFile(filepath.Join(outputDir, templateFileName), constraintTemplateBytes, 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(outputDir, templateFileName), constraintTemplateBytes, 0644); err != nil {
 			return fmt.Errorf("writing template: %w", err)
 		}
 
@@ -150,7 +147,7 @@ func runCreateCommand(path string) error {
 			return fmt.Errorf("marshal constraint: %w", err)
 		}
 
-		if err := ioutil.WriteFile(filepath.Join(outputDir, constraintFileName), constraintBytes, 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(outputDir, constraintFileName), constraintBytes, 0644); err != nil {
 			return fmt.Errorf("writing constraint: %w", err)
 		}
 	}
@@ -160,7 +157,7 @@ func runCreateCommand(path string) error {
 	return nil
 }
 
-func getConstraintTemplatev1(violation rego.Rego, logger *log.Entry) (*v1.ConstraintTemplate, error) {
+func getConstraintTemplatev1(violation rego.Rego, logger *log.Entry) *v1.ConstraintTemplate {
 	constraintTemplate := v1.ConstraintTemplate{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "templates.gatekeeper.sh/v1",
@@ -209,10 +206,10 @@ func getConstraintTemplatev1(violation rego.Rego, logger *log.Entry) (*v1.Constr
 		}
 	}
 
-	return &constraintTemplate, nil
+	return &constraintTemplate
 }
 
-func getConstraintTemplatev1beta1(violation rego.Rego, logger *log.Entry) (*v1beta1.ConstraintTemplate, error) {
+func getConstraintTemplatev1beta1(violation rego.Rego, logger *log.Entry) *v1beta1.ConstraintTemplate {
 	constraintTemplate := v1beta1.ConstraintTemplate{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "templates.gatekeeper.sh/v1beta1",
@@ -259,7 +256,7 @@ func getConstraintTemplatev1beta1(violation rego.Rego, logger *log.Entry) (*v1be
 		}
 	}
 
-	return &constraintTemplate, nil
+	return &constraintTemplate
 }
 
 func getConstraint(violation rego.Rego, logger *log.Entry) (*unstructured.Unstructured, error) {
