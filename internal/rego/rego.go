@@ -38,7 +38,14 @@ const (
 	annoParameters     = "parameters"
 	annoSkipTemplate   = "skipTemplate"
 	annoSkipConstraint = "skipConstraint"
+	annoAnnotations    = "annotations"
+	annoLabels         = "labels"
 )
+
+type MetaData struct {
+	Annotations map[string]string
+	Labels      map[string]string
+}
 
 // Rego represents a parsed rego file.
 type Rego struct {
@@ -53,7 +60,7 @@ type Rego struct {
 	enforcement    string
 	skipTemplate   bool
 	skipConstraint bool
-
+	metaData       *MetaData
 	// Duplicate data from OPA Metadata annotations.
 	annotations                   *ast.Annotations
 	annoTitle                     string
@@ -241,7 +248,52 @@ func (r *Rego) parseAnnotations(annotations *ast.Annotations) error {
 		r.enforcement = e
 	}
 
+	metaAnnotations, ok := annotations.Custom[annoAnnotations]
+	if ok {
+		a, ok := metaAnnotations.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("supplied annotations value is not a map[string]interface{}: %T", metaAnnotations)
+		}
+		if r.metaData == nil {
+			r.metaData = &MetaData{}
+		}
+		ans, err := switchToMap(a)
+		if err != nil {
+			return err
+		}
+		r.metaData.Annotations = ans
+	}
+
+	metaLabels, ok := annotations.Custom[annoLabels]
+	if ok {
+		l, ok := metaLabels.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("supplied labels value is not a map[string]interface{}: %T", metaLabels)
+		}
+		if r.metaData == nil {
+			r.metaData = &MetaData{}
+		}
+		labels, err := switchToMap(l)
+		if err != nil {
+			return err
+		}
+		r.metaData.Labels = labels
+	}
+
 	return nil
+}
+
+func switchToMap(in map[string]interface{}) (map[string]string, error) {
+	out := map[string]string{}
+	for k, v := range in {
+		switch c := v.(type) {
+		case string:
+			out[k] = v.(string)
+		default:
+			return nil, fmt.Errorf("supplied value is not a string: %v", c)
+		}
+	}
+	return out, nil
 }
 
 func (r *Rego) parseAnnotationsMatchers(matchers map[string]any) error {
@@ -340,6 +392,22 @@ func (r Rego) Kind() string {
 // kind as lowercase.
 func (r Rego) Name() string {
 	return strings.ToLower(r.Kind())
+}
+
+// Labels returns the labels found in the header comment of the rego file.
+func (r Rego) Labels() map[string]string {
+	if r.metaData == nil {
+		return nil
+	}
+	return r.metaData.Labels
+}
+
+// Annotations returns the annotations found in the header comment of the rego file.
+func (r Rego) Annotations() map[string]string {
+	if r.metaData == nil {
+		return nil
+	}
+	return r.metaData.Annotations
 }
 
 // Title returns the title found in the header comment of the rego file.
@@ -441,7 +509,7 @@ func (r Rego) Description() string {
 	return description
 }
 
-// HasMetadataAnnotations checks whenether rego file has
+// HasMetadataAnnotations checks whether rego file has
 // OPA Metadata Annotations
 func (r Rego) HasMetadataAnnotations() bool {
 	return r.annotations != nil

@@ -269,6 +269,14 @@ func getConstraint(violation rego.Rego, logger *log.Entry) (*unstructured.Unstru
 	var constraint unstructured.Unstructured
 	constraint.SetGroupVersionKind(gvk)
 	constraint.SetName(violation.Name())
+	annotations := violation.Annotations()
+	if annotations != nil {
+		constraint.SetAnnotations(annotations)
+	}
+	labels := violation.Labels()
+	if labels != nil {
+		constraint.SetLabels(labels)
+	}
 
 	if violation.Enforcement() != "deny" {
 		if err := unstructured.SetNestedField(constraint.Object, violation.Enforcement(), "spec", "enforcementAction"); err != nil {

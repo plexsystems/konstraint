@@ -5,6 +5,8 @@
 #   for containers to escalate their privileges. As such, this is not allowed
 #   outside of Kubernetes controller namespaces.
 # custom:
+#   annotations:
+#     "argocd.argoproj.io/sync-options": "SkipDryRunOnMissingResource=true"
 #   matchers:
 #     kinds:
 #     - apiGroups:
