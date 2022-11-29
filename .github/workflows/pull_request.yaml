@@ -117,7 +117,7 @@ jobs:
       - name: fetch gatekeeper versions
         id: fetch-gk-versions
         working-directory: .github/scripts
-        run: echo "::set-output name=gk-versions::$(./fetch_gk_versions.sh)"
+        run: echo "gk-versions=$(./fetch_gk_versions.sh)" >> $GITHUB_OUTPUT
     outputs:
       gk-versions: ${{ steps.fetch-gk-versions.outputs.gk-versions }}
 
