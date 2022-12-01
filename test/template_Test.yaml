@@ -12,7 +12,9 @@ spec:
         openAPIV3Schema:
           properties:
             super:
-              description: super duper cool parameter with a description on two strings
+              description: |-
+                super duper cool parameter with a description
+                on two lines.
               type: string
   targets:
   - libs:
@@ -29,7 +31,7 @@ spec:
       policyID := "P123456"
 
       violation[{"msg": "msg"}] {
-          true # some comment with a trailing space
+          true # some comment
       }
     target: admission.k8s.gatekeeper.sh
 status: {}

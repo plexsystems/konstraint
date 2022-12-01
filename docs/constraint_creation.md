@@ -111,6 +111,7 @@ You can also skip the generation of both the `Constraint` and `ConstraintTemplat
 in the custom metadata section.
 
 ### Legacy annotations
+
 Previously Konstraint had custom annotation format, such as `@title` or `@kinds`, which is a legacy format and will be removed in future releases.
 
 To aid with transition to OPA Metadata format, a conversion tool is provided as `konstraint convert`
@@ -138,23 +139,24 @@ package required_labels
 import data.lib.core
 
 violation[msg] {
-	missing := missing_labels
-	count(missing) > 0
+    missing := missing_labels
+    count(missing) > 0
 
-	msg := sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing])
+    msg := sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing])
 }
 
 missing_labels = missing {
-	provided := {label | core.labels[label]}
-	required := {label | label := input.parameters.labels[_]}
-	missing := required - provided
+    provided := {label | core.labels[label]}
+    required := {label | label := input.parameters.labels[_]}
+    missing := required - provided
 }
 ```
+
 ## Setting constraint metadata.annotations and metadata.labels
 
-You can optionally specify annotations and labels for the generated Constraint. This can be useful if you use Argo CD for deployment (see [here](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types)). 
+You can optionally specify annotations and labels for the generated Constraint. This can be useful if you use Argo CD for deployment (see [here](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#skip-dry-run-for-new-custom-resources-types)).
 
-```
+```rego
 # METADATA
 # title: Required Labels
 # description: >-
