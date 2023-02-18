@@ -57,8 +57,8 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	golang.org/x/net v0.5.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
 	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
