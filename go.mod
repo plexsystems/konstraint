@@ -6,7 +6,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220218180203-c2a0d8cdf85a
 	github.com/open-policy-agent/opa v0.53.0
-	github.com/sirupsen/logrus v1.9.2
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
 	golang.org/x/text v0.9.0
