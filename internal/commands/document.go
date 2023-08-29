@@ -52,6 +52,10 @@ Set the URL where the policies are hosted at
 				return fmt.Errorf("bind output flag: %w", err)
 			}
 
+			if err := viper.BindPFlag("template-file", cmd.Flags().Lookup("template-file")); err != nil {
+				return fmt.Errorf("bind template-file flag: %w", err)
+			}
+
 			if err := viper.BindPFlag("url", cmd.Flags().Lookup("url")); err != nil {
 				return fmt.Errorf("bind url flag: %w", err)
 			}
@@ -74,6 +78,7 @@ Set the URL where the policies are hosted at
 	}
 
 	cmd.Flags().StringP("output", "o", "policies.md", "Output location (including filename) for the policy documentation")
+	cmd.Flags().String("template-file", "", `File to read the template from (default: "")`)
 	cmd.Flags().String("url", "", "The URL where the policy files are hosted at (e.g. https://github.com/policies)")
 	cmd.Flags().Bool("no-rego", false, "Do not include the Rego in the policy documentation")
 	cmd.Flags().Bool("include-comments", false, "Include comments from the rego source in the documentation")
@@ -83,6 +88,8 @@ Set the URL where the policies are hosted at
 
 func runDocCommand(path string) error {
 	outputDirectory := filepath.Dir(viper.GetString("output"))
+	appliedTemplate := docTemplate
+
 	if err := os.MkdirAll(outputDirectory, os.ModePerm); err != nil {
 		return fmt.Errorf("create output dir: %w", err)
 	}
@@ -92,7 +99,16 @@ func runDocCommand(path string) error {
 		return fmt.Errorf("get documentation: %w", err)
 	}
 
-	t, err := template.New("docs").Parse(docTemplate)
+	if file := viper.GetString("template-file"); file != "" {
+		b, err := os.ReadFile(file)
+		if err != nil {
+			return fmt.Errorf("unable to open/read template file: %w", err)
+		}
+		appliedTemplate = string(b)
+	}
+
+	t, err := template.New("docs").Parse(appliedTemplate)
+
 	if err != nil {
 		return fmt.Errorf("parsing template: %w", err)
 	}
