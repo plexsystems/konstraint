@@ -41,7 +41,7 @@ _NOTE: While not technically required, the tool works best with a folder structu
 
 ## Annotating Policies
 
-To further promote that the `.rego` file is the source of truth for policy, a block comment can be added to each policy file. Konstraint uses the [OPA Metadata Annotations](https://www.openpolicyagent.org/docs/latest/annotations/) to achieve this. The OPA metadata annotations are a YAML document in the comments above the package declaration preceded by a line containing the `METADATA` tag. Standard metadata fields are use where possible, but additional Gatekeeper-specific annotations are used under the `custom` metadata key as necessary. The metadata comment block is also what is used when generating documentation via the `doc` command.
+To further promote that the `.rego` file is the source of truth for policy, a block comment can be added to each policy file. Konstraint uses the [OPA Metadata Annotations](https://www.openpolicyagent.org/docs/latest/policy-language/#annotations) to achieve this. The OPA metadata annotations are a YAML document in the comments above the package declaration preceded by a line containing the `METADATA` tag. Standard metadata fields are use where possible, but additional Gatekeeper-specific annotations are used under the `custom` metadata key as necessary. The metadata comment block is also what is used when generating documentation via the `doc` command.
 
 This comment block should:
 
