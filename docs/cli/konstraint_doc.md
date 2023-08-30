@@ -22,11 +22,12 @@ Set the URL where the policies are hosted at
 ### Options
 
 ```
-  -h, --help               help for doc
-      --include-comments   Include comments from the rego source in the documentation
-      --no-rego            Do not include the Rego in the policy documentation
-  -o, --output string      Output location (including filename) for the policy documentation (default "policies.md")
-      --url string         The URL where the policy files are hosted at (e.g. https://github.com/policies)
+  -h, --help                   help for doc
+      --include-comments       Include comments from the rego source in the documentation
+      --no-rego                Do not include the Rego in the policy documentation
+  -o, --output string          Output location (including filename) for the policy documentation (default "policies.md")
+      --template-file string   File to read the template from (default: "")
+      --url string             The URL where the policy files are hosted at (e.g. https://github.com/policies)
 ```
 
 ### SEE ALSO
