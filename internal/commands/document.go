@@ -1,6 +1,7 @@
 package commands
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -33,6 +34,9 @@ type Document struct {
 	URL    string
 	Rego   string
 }
+
+//go:embed document_template.tpl
+var docTemplate string
 
 func newDocCommand() *cobra.Command {
 	cmd := cobra.Command{

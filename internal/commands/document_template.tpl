@@ -1,6 +1,4 @@
-package commands
-
-const docTemplate = `# Policies
+# Policies
 {{ range $severity, $value := . }}
 ## {{ $severity }}{{- if ne $severity "Not Enforced" }}s{{ end }}
 
@@ -35,7 +33,7 @@ const docTemplate = `# Policies
 {{ .Header.Description }}
 {{ if ne .Rego "" }}
 ### Rego
-{{ $codeblock := "` + "```" + `" }}
+{{ $codeblock := "```" }}
 {{ $codeblock }}rego
 {{ .Rego }}
 {{ $codeblock }}{{- end }}
@@ -43,4 +41,4 @@ const docTemplate = `# Policies
 _source: [{{ .URL }}]({{ .URL }})_
 {{ end }}
 
-{{- end }}`
+{{- end }}
