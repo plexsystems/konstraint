@@ -5,10 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/plexsystems/konstraint/internal/rego"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/yaml"
 )
 
 func newConvertCommand() *cobra.Command {
