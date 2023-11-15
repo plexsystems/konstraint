@@ -1,13 +1,9 @@
 package container_warn_no_ro_fs
 
 test_rofs_true {
-	input := {"securityContext": {"readOnlyRootFilesystem": true}}
-
-	not no_read_only_filesystem(input)
+	not no_read_only_filesystem({"securityContext": {"readOnlyRootFilesystem": true}})
 }
 
 test_rofs_false {
-	input := {"securityContext": {"readOnlyRootFilesystem": false}}
-
-	no_read_only_filesystem(input)
+	no_read_only_filesystem({"securityContext": {"readOnlyRootFilesystem": false}})
 }

@@ -1,0 +1,22 @@
+rules:
+  bugs:
+    inconsistent-args:
+      level: ignore
+  idiomatic:
+    no-defined-entrypoint:
+      level: ignore
+  imports:
+    prefer-package-imports:
+      level: ignore
+  style:
+    line-length:
+      level: error
+      max-line-length: 120
+      non-breakable-word-threshold: 50
+    prefer-some-in-iteration:
+      level: ignore
+    prefer-snake-case:
+      level: ignore
+  testing:
+    test-outside-test-package:
+      level: ignore

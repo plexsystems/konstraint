@@ -1,31 +1,25 @@
 package psp_warn_no_ro_fs
 
 test_rofs_true {
-	input := {
+	not no_read_only_filesystem({
 		"kind": "PodSecurityPolicy",
 		"metadata": {"name": "test-psp"},
 		"spec": {"readOnlyRootFilesystem": true},
-	}
-
-	not no_read_only_filesystem(input)
+	})
 }
 
 test_null {
-	input := {
+	no_read_only_filesystem({
 		"kind": "PodSecurityPolicy",
 		"metadata": {"name": "test-psp"},
 		"spec": {"a": "b"},
-	}
-
-	no_read_only_filesystem(input)
+	})
 }
 
 test_rofs_false {
-	input := {
+	no_read_only_filesystem({
 		"kind": "PodSecurityPolicy",
 		"metadata": {"name": "test-psp"},
 		"spec": {"readOnlyRootFilesystem": false},
-	}
-
-	no_read_only_filesystem(input)
+	})
 }

@@ -39,10 +39,14 @@ import data.lib.pods
 policyID := "P2001"
 
 violation[msg] {
+	some container
 	pods.containers[container]
 	has_latest_tag(container)
 
-	msg := core.format_with_id(sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]), policyID)
+	msg := core.format_with_id(
+		sprintf("%s/%s/%s: Images must not use the latest tag", [core.kind, core.name, container.name]),
+		policyID,
+	)
 }
 
 has_latest_tag(c) {

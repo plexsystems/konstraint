@@ -18,6 +18,7 @@ import data.lib.psps
 policyID := "P2004"
 
 warn[msg] {
+	some psp
 	psps.psps[psp]
 	no_read_only_filesystem(psp)
 

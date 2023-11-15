@@ -22,10 +22,14 @@ policyID := "P1009"
 violation[msg] {
 	not psp_dropped_all_capabilities
 
-	msg := core.format_with_id(sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]), policyID)
+	msg := core.format_with_id(
+		sprintf("%s/%s: Does not require droping all capabilities", [core.kind, core.name]),
+		policyID,
+	)
 }
 
 psp_dropped_all_capabilities {
+	some psp
 	psps.psps[psp]
 	security.dropped_capability(psp, "all")
 }

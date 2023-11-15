@@ -23,7 +23,7 @@ violation[msg] {
 	msg := core.format_with_id(sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing]), policyID)
 }
 
-missing_labels = missing {
+missing_labels := missing {
 	provided := {label | core.labels[label]}
 	required := {label | label := input.parameters.labels[_]}
 	missing := required - provided

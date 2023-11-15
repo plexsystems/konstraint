@@ -1,13 +1,9 @@
 package container_deny_escalation
 
 test_allowescalation_false {
-	input := {"securityContext": {"allowPrivilegeEscalation": false}}
-
-	not container_allows_escalation(input)
+	not container_allows_escalation({"securityContext": {"allowPrivilegeEscalation": false}})
 }
 
 test_allowescalation_true {
-	input := {"securityContext": {"allowPrivilegeEscalation": true}}
-
-	container_allows_escalation(input)
+	container_allows_escalation({"securityContext": {"allowPrivilegeEscalation": true}})
 }
