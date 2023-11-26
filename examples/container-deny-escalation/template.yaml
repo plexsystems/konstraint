@@ -119,6 +119,10 @@ spec:
       }
 
       container_allows_escalation(c) {
+        core.missing_field(c, "securityContext")
+      }
+
+      container_allows_escalation(c) {
         core.missing_field(c.securityContext, "allowPrivilegeEscalation")
       }
     target: admission.k8s.gatekeeper.sh

@@ -133,6 +133,10 @@ container_allows_escalation(c) {
 }
 
 container_allows_escalation(c) {
+  core.missing_field(c, "securityContext")
+}
+
+container_allows_escalation(c) {
   core.missing_field(c.securityContext, "allowPrivilegeEscalation")
 }
 ```
