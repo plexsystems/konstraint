@@ -1,55 +1,37 @@
 package lib.rbac
 
 test_rule_has_verb_with_use {
-	input := {"verbs": ["use"]}
-
-	rule_has_verb(input, "use")
+	rule_has_verb({"verbs": ["use"]}, "use")
 }
 
 test_rule_has_verb_with_asterisk {
-	input := {"verbs": ["*"]}
-
-	rule_has_verb(input, "use")
+	rule_has_verb({"verbs": ["*"]}, "use")
 }
 
 test_rule_has_verb_with_list {
-	input := {"verbs": ["list"]}
-
-	not rule_has_verb(input, "use")
+	not rule_has_verb({"verbs": ["list"]}, "use")
 }
 
 test_rule_has_resource_type_with_pod {
-	input := {"resources": ["Pod"]}
-
-	rule_has_resource_type(input, "pod")
+	rule_has_resource_type({"resources": ["Pod"]}, "pod")
 }
 
 test_rule_has_resource_type_with_resourceall {
-	input := {"resources": ["*"]}
-
-	rule_has_resource_type(input, "pod")
+	rule_has_resource_type({"resources": ["*"]}, "pod")
 }
 
 test_rule_has_resource_type_with_container {
-	input := {"resources": ["Container"]}
-
-	not rule_has_resource_type(input, "pod")
+	not rule_has_resource_type({"resources": ["Container"]}, "pod")
 }
 
 test_rule_has_resource_name_match {
-	input := {"resourceNames": ["test"]}
-
-	rule_has_resource_name(input, "test")
+	rule_has_resource_name({"resourceNames": ["test"]}, "test")
 }
 
 test_rule_has_resource_name_no_match {
-	input := {"resourceNames": ["test"]}
-
-	not rule_has_resource_name(input, "wrong")
+	not rule_has_resource_name({"resourceNames": ["test"]}, "wrong")
 }
 
 test_rule_has_resource_name_null {
-	input := {}
-
-	rule_has_resource_name(input, "wrong")
+	rule_has_resource_name({}, "wrong")
 }

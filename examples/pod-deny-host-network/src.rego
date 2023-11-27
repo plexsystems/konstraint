@@ -26,7 +26,10 @@ policyID := "P1006"
 violation[msg] {
 	pod_has_hostnetwork
 
-	msg := core.format_with_id(sprintf("%s/%s: Pod allows for accessing the host network", [core.kind, core.name]), policyID)
+	msg := core.format_with_id(
+		sprintf("%s/%s: Pod allows for accessing the host network", [core.kind, core.name]),
+		policyID,
+	)
 }
 
 pod_has_hostnetwork {

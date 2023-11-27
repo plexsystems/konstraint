@@ -1,11 +1,9 @@
 package lib.psps
 
 test_exception_pos {
-	input := {"metadata": {"name": "gce.privileged"}}
-	is_exception with input as input
+	is_exception with input as {"metadata": {"name": "gce.privileged"}}
 }
 
 test_exception_neg {
-	input := {"metadata": {"name": "test"}}
-	not is_exception with input as input
+	not is_exception with input as {"metadata": {"name": "test"}}
 }

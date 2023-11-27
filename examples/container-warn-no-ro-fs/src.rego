@@ -24,10 +24,14 @@ import data.lib.pods
 policyID := "P2003"
 
 warn[msg] {
+	some container
 	pods.containers[container]
 	no_read_only_filesystem(container)
 
-	msg := core.format_with_id(sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]), policyID)
+	msg := core.format_with_id(
+		sprintf("%s/%s/%s: Is not using a read only root filesystem", [core.kind, core.name, container.name]),
+		policyID,
+	)
 }
 
 no_read_only_filesystem(container) {

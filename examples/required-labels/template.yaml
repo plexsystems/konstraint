@@ -21,47 +21,45 @@ spec:
     - |-
       package lib.core
 
-      default is_gatekeeper = false
+      default is_gatekeeper := false
 
       is_gatekeeper {
         has_field(input, "review")
         has_field(input.review, "object")
       }
 
-      resource = input.review.object {
+      resource := input.review.object {
         is_gatekeeper
       }
 
-      resource = input {
+      resource := input {
         not is_gatekeeper
       }
 
-      format(msg) = {"msg": msg}
+      format(msg) := {"msg": msg}
 
-      format_with_id(msg, id) = msg_fmt {
-        msg_fmt := {
-          "msg": sprintf("%s: %s", [id, msg]),
-          "details": {"policyID": id},
-        }
+      format_with_id(msg, id) := {
+        "msg": sprintf("%s: %s", [id, msg]),
+        "details": {"policyID": id},
       }
 
-      apiVersion = resource.apiVersion
+      apiVersion := resource.apiVersion
 
-      name = resource.metadata.name
+      name := resource.metadata.name
 
-      kind = resource.kind
+      kind := resource.kind
 
-      labels = resource.metadata.labels
+      labels := resource.metadata.labels
 
-      annotations = resource.metadata.annotations
+      annotations := resource.metadata.annotations
 
       gv := split(apiVersion, "/")
 
-      group = gv[0] {
+      group := gv[0] {
         contains(apiVersion, "/")
       }
 
-      group = "core" {
+      group := "core" {
         not contains(apiVersion, "/")
       }
 
@@ -92,7 +90,7 @@ spec:
         msg := core.format_with_id(sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing]), policyID)
       }
 
-      missing_labels = missing {
+      missing_labels := missing {
         provided := {label | core.labels[label]}
         required := {label | label := input.parameters.labels[_]}
         missing := required - provided

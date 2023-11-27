@@ -88,6 +88,30 @@ jobs:
       - name: test doc command
         run: docker run -v $PWD:/konstraint konstraint doc /konstraint/examples
 
+  policy-checks:
+    name: Policy Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout source
+        uses: actions/checkout@v4
+
+      - name: setup opa
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: latest
+
+      - name: opa check strict
+        run: opa check --strict --ignore "*.yaml" examples
+
+      - name: setup regal
+        uses: styrainc/setup-regal@v0.2.0
+        with:
+          version: 0.12.0
+
+      - name: regal lint
+        run: regal lint --format github examples
+
   policy-tests:
     name: Policy Tests
     runs-on: ubuntu-latest

@@ -1,21 +1,17 @@
 package psp_deny_host_ipc
 
 test_hostipc_false {
-	input := {
+	not psp_allows_hostipc with input as {
 		"kind": "PodSecurityPolicy",
 		"metadata": {"name": "test-psp"},
 		"spec": {"hostIPC": false},
 	}
-
-	not psp_allows_hostipc with input as input
 }
 
 test_hostipc_true {
-	input := {
+	psp_allows_hostipc with input as {
 		"kind": "PodSecurityPolicy",
 		"metadata": {"name": "test-psp"},
 		"spec": {"hostIPC": true},
 	}
-
-	psp_allows_hostipc with input as input
 }

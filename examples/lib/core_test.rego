@@ -1,21 +1,17 @@
 package lib.core
 
 test_not_gk {
-	input := {"kind": "test"}
-	not is_gatekeeper with input as input
+	not is_gatekeeper with input as {"kind": "test"}
 }
 
 test_is_gk {
-	input := {"review": {"object": {"kind": "test"}}}
-	is_gatekeeper with input as input
+	is_gatekeeper with input as {"review": {"object": {"kind": "test"}}}
 }
 
 test_has_field_pos {
-	input := {"kind": "test"}
-	has_field(input, "kind")
+	has_field({"kind": "test"}, "kind")
 }
 
 test_missing_field {
-	input := {"kind": "test"}
-	not has_field(input, "abc")
+	not has_field({"kind": "test"}, "abc")
 }

@@ -18,6 +18,7 @@ import data.lib.psps
 policyID := "P1010"
 
 violation[msg] {
+	some psp
 	psps.psps[psp]
 	allows_escalation(psp)
 

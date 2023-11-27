@@ -24,6 +24,7 @@ import data.lib.pods
 policyID := "P1002"
 
 violation[msg] {
+	some container
 	pods.containers[container]
 	container_allows_escalation(container)
 
