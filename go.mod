@@ -1,6 +1,6 @@
 module github.com/plexsystems/konstraint
 
-go 1.19
+go 1.21
 
 require (
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220218180203-c2a0d8cdf85a

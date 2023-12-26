@@ -34,19 +34,18 @@ const (
 type KindMatchers []KindMatcher
 
 func (k KindMatchers) String() string {
-	var result string
+	var matchers []string
 	for _, kindMatcher := range k {
 		apiGroup := kindMatcher.APIGroup
 		if apiGroup == coreAPIShorthand {
 			apiGroup = coreAPIGroup
 		}
 		for _, kind := range kindMatcher.Kinds {
-			result += apiGroup + "/" + kind + " "
+			matchers = append(matchers, apiGroup+"/"+kind)
 		}
 	}
 
-	result = strings.TrimSpace(result)
-	return result
+	return strings.Join(matchers, " ")
 }
 
 // ToSpec converts KindMatchers to a slice in format
@@ -117,12 +116,12 @@ type MatchExpressionMatcher struct {
 }
 
 func (m MatchLabelsMatcher) String() string {
-	var result string
+	var matchers []string
 	for k, v := range m {
-		result += fmt.Sprintf("%s=%s ", k, v)
+		matchers = append(matchers, k+"="+v)
 	}
 
-	return strings.TrimSpace(result)
+	return strings.Join(matchers, " ")
 }
 
 // Matchers returns all of the matchers found in the rego file.
@@ -243,6 +242,6 @@ func getStringListMatcher(tag, comment string) ([]string, error) {
 	return lineSplit, nil
 }
 
-func commentStartsWith(comment string, keyword string) bool {
+func commentStartsWith(comment, keyword string) bool {
 	return strings.HasPrefix(strings.TrimSpace(comment), keyword)
 }

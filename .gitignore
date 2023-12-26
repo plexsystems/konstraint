@@ -24,3 +24,8 @@ konstraint*
 ## File-based project format:
 *.iws
 *.iml
+
+## NodeJS paths for NPM/bats CLI
+node_modules/
+package.json
+package-lock.json

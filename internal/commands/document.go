@@ -193,14 +193,13 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 			return nil, fmt.Errorf("parse matchers from legacy annotations: %w", err)
 		}
 
-		var matchResources string
+		matchResources := legacyMatchers.KindMatchers.String()
 		if len(policy.AnnotationKindMatchers()) > 0 {
-			for _, akm := range policy.AnnotationKindMatchers() {
-				matchResources += akm.String() + " "
+			kindMatchers := make([]string, len(policy.AnnotationKindMatchers()))
+			for i, akm := range policy.AnnotationKindMatchers() {
+				kindMatchers[i] = akm.String()
 			}
-			matchResources = strings.TrimSpace(matchResources)
-		} else {
-			matchResources = legacyMatchers.KindMatchers.String()
+			matchResources = strings.Join(kindMatchers, " ")
 		}
 		if matchResources == "" {
 			logger.Warn("No kind matchers set, this can lead to poor policy performance.")
@@ -257,15 +256,15 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 }
 
 func labelSelectorDocString(selector *metav1.LabelSelector) string {
-	var result string
+	var results []string
 	for k, v := range selector.MatchLabels {
-		result += fmt.Sprintf("%s=%s, ", k, v)
+		results = append(results, k+"="+v)
 	}
 	for _, expr := range selector.MatchExpressions {
-		result += fmt.Sprintf("%s %s %v, ", expr.Key, expr.Operator, expr.Values)
+		results = append(results, fmt.Sprintf("%s %s %v", expr.Key, expr.Operator, expr.Values))
 	}
 
-	return strings.TrimSuffix(result, ", ")
+	return strings.Join(results, ", ")
 }
 
 func annoParamsToLegacyFormat(parameters map[string]apiextensionsv1.JSONSchemaProps) []rego.Parameter {

@@ -78,16 +78,16 @@ type AnnoKindMatcher struct {
 }
 
 func (akm AnnoKindMatcher) String() string {
-	var result string
+	var matchers []string
 	for _, apiGroup := range akm.APIGroups {
 		if apiGroup == coreAPIShorthand {
 			apiGroup = coreAPIGroup
 		}
 		for _, kind := range akm.Kinds {
-			result += apiGroup + "/" + kind + " "
+			matchers = append(matchers, apiGroup+"/"+kind)
 		}
 	}
-	return strings.TrimSpace(result)
+	return strings.Join(matchers, " ")
 }
 
 // Parameter represents a parameter that the policy uses
@@ -469,11 +469,11 @@ func (r Rego) Description() string {
 		return r.annoDescription
 	}
 
-	var description string
+	var description strings.Builder
 	var handlingCodeBlock bool
 	var handlingParamDescription bool
 
-	for _, comment := range r.headerComments {
+	for i, comment := range r.headerComments {
 		if !handlingCodeBlock && !handlingParamDescription && commentStartsWith(comment, "@parameter") && strings.Contains(comment, "--") {
 			handlingParamDescription = true
 		} else if !handlingCodeBlock && handlingParamDescription && !commentStartsWith(comment, "--") {
@@ -497,16 +497,17 @@ func (r Rego) Description() string {
 		}
 
 		if handlingCodeBlock {
-			description += comment
+			description.WriteString(comment)
 		} else {
-			description += strings.TrimSpace(comment)
+			description.WriteString(strings.TrimSpace(comment))
 		}
 
-		description += "\n"
+		if i != len(r.headerComments)-1 {
+			description.WriteString("\n")
+		}
 	}
 
-	description = strings.Trim(description, "\n")
-	return description
+	return description.String()
 }
 
 // HasMetadataAnnotations checks whether rego file has
@@ -866,14 +867,12 @@ func getHeaderParamsLegacy(comments []string) ([]Parameter, error) {
 }
 
 func trimEachLine(raw string) string {
-	var result string
-
 	lines := strings.Split(raw, "\n")
-	for _, line := range lines {
-		result += strings.TrimRight(line, "\t ") + "\n"
+	for i, line := range lines {
+		lines[i] = strings.TrimRight(line, "\t ")
 	}
 
-	return result
+	return strings.Join(lines, "\n")
 }
 
 func hasSkipTemplateTag(comments []string) bool {
@@ -897,19 +896,21 @@ func hasSkipConstraintTag(comments []string) bool {
 }
 
 func removeComments(raw string) string {
-	var regoWithoutComments string
+	var src []string
 	lines := strings.Split(raw, "\n")
-	for _, line := range lines {
-		if strings.HasPrefix(line, "#") {
-			continue
+	for i, line := range lines {
+		if i == len(lines)-1 {
+			l := strings.TrimSpace(line)
+			if l == "" || l == "\n" || l == "\r\n" {
+				break
+			}
 		}
-
-		regoWithoutComments += line + "\n"
+		if !strings.HasPrefix(strings.TrimLeft(line, " \t"), "#") {
+			src = append(src, line)
+		}
 	}
 
-	regoWithoutComments = strings.TrimSpace(regoWithoutComments)
-	regoWithoutComments = strings.Trim(regoWithoutComments, "\n")
-	return regoWithoutComments
+	return strings.Join(src, "\n")
 }
 
 func getPolicyID(rules []*ast.Rule) string {
