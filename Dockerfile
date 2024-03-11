@@ -1,4 +1,4 @@
-FROM golang:1.22.0-alpine AS build
+FROM golang:1.22.1-alpine AS build
 ARG KONSTRAINT_VER
 
 WORKDIR /go/src/github.com/plexsystems/konstraint
