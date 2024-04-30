@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: lint go
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v5
         with:
           version: v1.52
           args: --timeout=5m --color=always --max-same-issues=0 --max-issues-per-linter=0
