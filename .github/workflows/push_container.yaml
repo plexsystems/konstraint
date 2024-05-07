@@ -38,7 +38,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
     - name: docker build
-      run: make docker-build version=${TAG_NAME}
+      run: >-
+        docker buildx create --name builder &&
+        docker buildx use --builder builder &&
+        make dockerx-build-push version=${TAG_NAME}
 
-    - name: docker push
-      run: make docker-push version=${TAG_NAME}
