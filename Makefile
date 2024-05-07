@@ -1,6 +1,8 @@
 ## The repository where the container image will be pushed to.
 IMAGE := ghcr.io/plexsystems/konstraint
 
+PLATFORMS := linux/arm/v7,linux/arm64/v8,linux/amd64
+
 #
 ##@ Development
 #
@@ -46,6 +48,39 @@ ifeq ($(version),)
 	docker build -t konstraint:latest .
 else
 	docker build -t konstraint:latest -t konstraint:$(version) --build-arg KONSTRAINT_VER=$(version) .
+endif
+
+.PHONY: dockerx-build
+dockerx-build: ## Builds the docker image. Can optionally pass in a version.
+ifeq ($(version),)
+	docker buildx build \
+		--platform "$(PLATFORMS)" \
+		-t konstraint:latest \
+		.
+else
+	docker buildx build \
+		--platform "$(PLATFORMS)" \
+		-t konstraint:latest \
+		-t "konstraint:$(version)" \
+		--build-arg "KONSTRAINT_VER=$(version)" .
+endif
+
+.PHONY: dockerx-build-push
+dockerx-build-push: ## Builds and pushes the docker image. Can optionally pass in a version.
+ifeq ($(version),)
+	docker buildx build \
+		--push \
+		--platform "$(PLATFORMS)" \
+		-t konstraint:latest \
+		.
+else
+	docker buildx build \
+		--push \
+		--platform "$(PLATFORMS)" \
+		-t konstraint:latest \
+		-t "konstraint:$(version)" \
+		--build-arg "KONSTRAINT_VER=$(version)" \
+		.
 endif
 
 .PHONY: docker-push
