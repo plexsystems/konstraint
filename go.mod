@@ -1,6 +1,7 @@
 module github.com/plexsystems/konstraint
 
 go 1.21
+toolchain go1.22.2
 
 require (
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220218180203-c2a0d8cdf85a
@@ -10,7 +11,7 @@ require (
 	github.com/spf13/viper v1.18.2
 	golang.org/x/text v0.15.0
 	k8s.io/apiextensions-apiserver v0.29.3
-	k8s.io/apimachinery v0.29.3
+	k8s.io/apimachinery v0.30.0
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -84,8 +85,8 @@ require (
 	k8s.io/apiserver v0.29.3 // indirect
 	k8s.io/client-go v0.29.3 // indirect
 	k8s.io/component-base v0.29.3 // indirect
-	k8s.io/klog/v2 v2.110.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
+	k8s.io/klog/v2 v2.120.1 // indirect
+	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
 	sigs.k8s.io/controller-runtime v0.11.1 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
