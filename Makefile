@@ -59,22 +59,6 @@ ifeq ($(version),)
 		.
 else
 	docker buildx build \
-		--platform "$(PLATFORMS)" \
-		-t konstraint:latest \
-		-t "konstraint:$(version)" \
-		--build-arg "KONSTRAINT_VER=$(version)" .
-endif
-
-.PHONY: dockerx-build-push
-dockerx-build-push: ## Builds and pushes the docker image. Can optionally pass in a version.
-ifeq ($(version),)
-	docker buildx build \
-		--push \
-		--platform "$(PLATFORMS)" \
-		-t konstraint:latest \
-		.
-else
-	docker buildx build \
 		--push \
 		--platform "$(PLATFORMS)" \
 		-t konstraint:latest \

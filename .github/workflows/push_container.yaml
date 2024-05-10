@@ -41,5 +41,4 @@ jobs:
       run: >-
         docker buildx create --name builder &&
         docker buildx use --builder builder &&
-        make dockerx-build-push version=${TAG_NAME}
-
+        make dockerx-build version=${TAG_NAME}
