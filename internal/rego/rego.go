@@ -657,17 +657,19 @@ func (r Rego) SkipConstraint() bool {
 
 func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 	// Recursively find all rego files (ignoring test files), starting at the given directory.
-	result, err := loader.NewFileLoader().WithProcessAnnotation(true).Filtered([]string{directory}, func(abspath string, info os.FileInfo, depth int) bool {
-		if strings.HasSuffix(info.Name(), "_test.rego") {
-			return true
-		}
+	result, err := loader.NewFileLoader().
+		WithProcessAnnotation(true).
+		Filtered([]string{directory}, func(_ string, info os.FileInfo, _ int) bool {
+			if strings.HasSuffix(info.Name(), "_test.rego") {
+				return true
+			}
 
-		if !info.IsDir() && filepath.Ext(info.Name()) != ".rego" {
-			return true
-		}
+			if !info.IsDir() && filepath.Ext(info.Name()) != ".rego" {
+				return true
+			}
 
-		return false
-	})
+			return false
+		})
 	if err != nil {
 		return nil, fmt.Errorf("filter rego files: %w", err)
 	}

@@ -17,7 +17,7 @@ jobs:
       - name: lint go
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.52
+          version: v1.59
           args: --timeout=5m --color=always --max-same-issues=0 --max-issues-per-linter=0
 
   acceptance:
