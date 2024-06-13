@@ -20,7 +20,7 @@ func newConvertCommand() *cobra.Command {
 
 konstraint convert examples`,
 
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			path := "."
 			if len(args) > 0 {
 				path = args[0]
