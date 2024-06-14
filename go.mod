@@ -6,7 +6,7 @@ require (
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220218180203-c2a0d8cdf85a
 	github.com/open-policy-agent/opa v0.65.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	golang.org/x/text v0.16.0
 	k8s.io/apiextensions-apiserver v0.30.2
