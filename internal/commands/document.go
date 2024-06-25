@@ -22,7 +22,7 @@ import (
 type Header struct {
 	Title       string
 	Description string
-	Resources   string
+	Resources   []string
 	MatchLabels string
 	Anchor      string
 	Parameters  []rego.Parameter
@@ -193,18 +193,18 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 			return nil, fmt.Errorf("parse matchers from legacy annotations: %w", err)
 		}
 
-		var matchResources string
+		var matchResources []string
 		if len(policy.AnnotationKindMatchers()) > 0 {
 			for _, akm := range policy.AnnotationKindMatchers() {
-				matchResources += akm.String() + " "
+				s := strings.Split(akm.String(), " ")
+				matchResources = append(matchResources, s...)
 			}
-			matchResources = strings.TrimSpace(matchResources)
 		} else {
-			matchResources = legacyMatchers.KindMatchers.String()
+			matchResources = strings.Split(legacyMatchers.KindMatchers.String(), " ")
 		}
-		if matchResources == "" {
+		if len(matchResources) == 0 {
 			logger.Warn("No kind matchers set, this can lead to poor policy performance.")
-			matchResources = "Any Resource"
+			matchResources = append(matchResources, "Any Resource")
 		}
 
 		var matchLabels string
