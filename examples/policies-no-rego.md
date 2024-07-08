@@ -34,6 +34,7 @@
 **Severity:** Violation
 
 **Resources:**
+
 - Any Resource
 
 **Parameters:**
@@ -51,6 +52,7 @@ _source: [required-labels](required-labels)_
 **Severity:** Violation
 
 **Resources:**
+
 - core/Pod
 - apps/DaemonSet
 - apps/Deployment
@@ -68,6 +70,7 @@ _source: [container-deny-added-caps](container-deny-added-caps)_
 **Severity:** Violation
 
 **Resources:**
+
 - core/Pod
 - apps/DaemonSet
 - apps/Deployment
@@ -84,6 +87,7 @@ _source: [container-deny-escalation](container-deny-escalation)_
 **Severity:** Violation
 
 **Resources:**
+
 - core/Pod
 - apps/DaemonSet
 - apps/Deployment
@@ -101,6 +105,7 @@ _source: [container-deny-privileged](container-deny-privileged)_
 **Severity:** Violation
 
 **Resources:**
+
 - core/Pod
 - apps/DaemonSet
 - apps/Deployment
@@ -116,6 +121,7 @@ _source: [pod-deny-host-alias](pod-deny-host-alias)_
 **Severity:** Violation
 
 **Resources:**
+
 - core/Pod
 - apps/DaemonSet
 - apps/Deployment
@@ -132,6 +138,7 @@ _source: [pod-deny-host-ipc](pod-deny-host-ipc)_
 **Severity:** Violation
 
 **Resources:**
+
 - core/Pod
 - apps/DaemonSet
 - apps/Deployment
@@ -148,6 +155,7 @@ _source: [pod-deny-host-network](pod-deny-host-network)_
 **Severity:** Violation
 
 **Resources:**
+
 - core/Pod
 - apps/DaemonSet
 - apps/Deployment
@@ -165,6 +173,7 @@ _source: [pod-deny-host-pid](pod-deny-host-pid)_
 **Severity:** Violation
 
 **Resources:**
+
 - core/Pod
 - apps/DaemonSet
 - apps/Deployment
@@ -181,6 +190,7 @@ _source: [pod-deny-without-runasnonroot](pod-deny-without-runasnonroot)_
 **Severity:** Violation
 
 **Resources:**
+
 - policy/PodSecurityPolicy
 
 Allowing containers privileged capabilities on the node makes it easier
@@ -195,6 +205,7 @@ _source: [psp-deny-added-caps](psp-deny-added-caps)_
 **Severity:** Violation
 
 **Resources:**
+
 - policy/PodSecurityPolicy
 
 Allowing privileged containers can much more easily obtain root on the node.
@@ -208,6 +219,7 @@ _source: [psp-deny-escalation](psp-deny-escalation)_
 **Severity:** Violation
 
 **Resources:**
+
 - policy/PodSecurityPolicy
 
 Allowing pods to can change aliases in the host's /etc/hosts file can
@@ -221,6 +233,7 @@ _source: [psp-deny-host-alias](psp-deny-host-alias)_
 **Severity:** Violation
 
 **Resources:**
+
 - policy/PodSecurityPolicy
 
 Allowing pods to access the host IPC can read memory of
@@ -234,6 +247,7 @@ _source: [psp-deny-host-ipc](psp-deny-host-ipc)_
 **Severity:** Violation
 
 **Resources:**
+
 - policy/PodSecurityPolicy
 
 Allowing pods to access the host's process tree can view and attempt to
@@ -248,6 +262,7 @@ _source: [psp-deny-host-network](psp-deny-host-network)_
 **Severity:** Violation
 
 **Resources:**
+
 - policy/PodSecurityPolicy
 
 Allowing pods to access the host's process tree can view and attempt to
@@ -262,6 +277,7 @@ _source: [psp-deny-host-pid](psp-deny-host-pid)_
 **Severity:** Violation
 
 **Resources:**
+
 - policy/PodSecurityPolicy
 
 Allowing privileged containers can much more easily obtain root on the node.
@@ -275,6 +291,7 @@ _source: [psp-deny-privileged](psp-deny-privileged)_
 **Severity:** Violation
 
 **Resources:**
+
 - core/Pod
 - apps/DaemonSet
 - apps/Deployment
@@ -306,6 +323,7 @@ _source: [container-deny-latest-tag](container-deny-latest-tag)_
 **Severity:** Violation
 
 **Resources:**
+
 - core/Pod
 - apps/DaemonSet
 - apps/Deployment
@@ -322,6 +340,7 @@ _source: [container-deny-without-resource-constraints](container-deny-without-re
 **Severity:** Violation
 
 **Resources:**
+
 - rbac.authorization.k8s.io/Role
 
 Workloads not running in the exempted namespaces must not use PodSecurityPolicies with privileged permissions.
@@ -334,6 +353,7 @@ _source: [role-deny-use-privileged-psp](role-deny-use-privileged-psp)_
 **Severity:** Violation
 
 **Resources:**
+
 - core/Pod
 - apps/DaemonSet
 - apps/Deployment
@@ -355,6 +375,7 @@ _source: [container-deny-privileged-if-tenant](container-deny-privileged-if-tena
 **Severity:** Warning
 
 **Resources:**
+
 - apps/DaemonSet
 - apps/Deployment
 
@@ -370,6 +391,7 @@ _source: [any-warn-deprecated-api-versions](any-warn-deprecated-api-versions)_
 **Severity:** Warning
 
 **Resources:**
+
 - core/Pod
 - apps/DaemonSet
 - apps/Deployment
@@ -386,6 +408,7 @@ _source: [container-warn-no-ro-fs](container-warn-no-ro-fs)_
 **Severity:** Warning
 
 **Resources:**
+
 - policy/PodSecurityPolicy
 
 Allowing pods to access the host's network interfaces can potentially
