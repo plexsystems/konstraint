@@ -200,7 +200,9 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 				matchResources = append(matchResources, s...)
 			}
 		} else {
-			matchResources = strings.Split(legacyMatchers.KindMatchers.String(), " ")
+			if len(legacyMatchers.KindMatchers) > 0 {
+				matchResources = strings.Split(legacyMatchers.KindMatchers.String(), " ")
+			}
 		}
 		if len(matchResources) == 0 {
 			logger.Warn("No kind matchers set, this can lead to poor policy performance.")
