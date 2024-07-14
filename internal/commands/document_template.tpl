@@ -13,7 +13,10 @@
 
 **Severity:** {{ $severity }}
 
-**Resources:** {{ .Header.Resources }}
+**Resources:**
+{{ range .Header.Resources }}
+- {{ . }}
+{{- end }}
 
 {{- if .Header.MatchLabels }}
 
