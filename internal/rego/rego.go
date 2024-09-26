@@ -382,6 +382,7 @@ func (r Rego) Severity() Severity {
 func (r Rego) Kind() string {
 	kind := filepath.Base(filepath.Dir(r.Path()))
 	kind = strings.ReplaceAll(kind, "-", " ")
+	kind = strings.ReplaceAll(kind, "_", " ")
 	kind = cases.Title(language.AmericanEnglish).String(kind)
 	kind = strings.ReplaceAll(kind, " ", "")
 
