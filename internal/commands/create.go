@@ -1,13 +1,16 @@
 package commands
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"github.com/plexsystems/konstraint/internal/rego"
 
+	"github.com/go-sprout/sprout/sprigin"
 	v1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	log "github.com/sirupsen/logrus"
@@ -50,8 +53,19 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 			if err := viper.BindPFlag("constraint-template-version", cmd.PersistentFlags().Lookup("constraint-template-version")); err != nil {
 				return fmt.Errorf("bind constraint-template-version flag: %w", err)
 			}
+			if err := viper.BindPFlag("constraint-template-custom-template-file", cmd.PersistentFlags().Lookup("constraint-template-custom-template-file")); err != nil {
+				return fmt.Errorf("bind constraint-template-custom-template-file flag: %w", err)
+			}
+			if err := viper.BindPFlag("constraint-custom-template-file", cmd.PersistentFlags().Lookup("constraint-custom-template-file")); err != nil {
+				return fmt.Errorf("bind constraint-custom-template-file flag: %w", err)
+			}
+
 			if err := viper.BindPFlag("partial-constraints", cmd.PersistentFlags().Lookup("partial-constraints")); err != nil {
 				return fmt.Errorf("bind partial-constraints flag: %w", err)
+			}
+
+			if cmd.PersistentFlags().Lookup("constraint-template-custom-template-file").Changed && cmd.PersistentFlags().Lookup("constraint-template-version").Changed {
+				return fmt.Errorf("need to set either constraint-template-custom-template-file or constraint-template-version")
 			}
 
 			path := "."
@@ -68,6 +82,8 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 	cmd.PersistentFlags().Bool("skip-constraints", false, "Skip generation of constraints")
 	cmd.PersistentFlags().String("constraint-template-version", "v1beta1", "Set the version of ConstraintTemplates")
 	cmd.PersistentFlags().Bool("partial-constraints", false, "Generate partial Constraints for policies with parameters")
+	cmd.PersistentFlags().String("constraint-template-custom-template-file", "", "Path to a custom template file to generate constraint templates")
+	cmd.PersistentFlags().String("constraint-custom-template-file", "", "Path to a custom template file to generate constraints")
 
 	return &cmd
 }
@@ -107,21 +123,36 @@ func runCreateCommand(path string) error {
 		}
 
 		constraintTemplateVersion := viper.GetString("constraint-template-version")
+		constraintTemplateCustomTemplateFile := viper.GetString("constraint-template-custom-template-file")
+
 		var constraintTemplate any
-		switch constraintTemplateVersion {
-		case "v1":
-			constraintTemplate = getConstraintTemplatev1(violation, logger)
-		case "v1beta1":
-			constraintTemplate = getConstraintTemplatev1beta1(violation, logger)
-		default:
-			return fmt.Errorf("unsupported API version for constrainttemplate: %s", constraintTemplateVersion)
-		}
+		var constraintTemplateBytes []byte
 
-		constraintTemplateBytes, err := yaml.Marshal(constraintTemplate)
-		if err != nil {
-			return fmt.Errorf("marshal constrainttemplate: %w", err)
-		}
+		if constraintTemplateCustomTemplateFile != "" {
+			customTemplate, err := os.ReadFile(constraintTemplateCustomTemplateFile)
+			if err != nil {
+				return fmt.Errorf("unable to open/read template file: %w", err)
+			}
+			constraintTemplateBytes, err = renderTemplate(violation, customTemplate, logger)
+			if err != nil {
+				return fmt.Errorf("unable to render custom template: %w", err)
+			}
+		} else {
+			switch constraintTemplateVersion {
+			case "v1":
+				constraintTemplate = getConstraintTemplatev1(violation, logger)
+			case "v1beta1":
+				constraintTemplate = getConstraintTemplatev1beta1(violation, logger)
+			default:
+				return fmt.Errorf("unsupported API version for constrainttemplate: %s", constraintTemplateVersion)
+			}
+			constraintTemplateBytes, err = yaml.Marshal(constraintTemplate)
 
+			if err != nil {
+				return fmt.Errorf("marshal constrainttemplate: %w", err)
+			}
+
+		}
 		if err := os.WriteFile(filepath.Join(outputDir, templateFileName), constraintTemplateBytes, 0644); err != nil {
 			return fmt.Errorf("writing template: %w", err)
 		}
@@ -137,16 +168,28 @@ func runCreateCommand(path string) error {
 			continue
 		}
 
-		constraint, err := getConstraint(violation, logger)
-		if err != nil {
-			return fmt.Errorf("get constraint: %w", err)
-		}
+		constraintCustomTemplateFile := viper.GetString("constraint-custom-template-file")
+		var constraintBytes []byte
+		if constraintCustomTemplateFile != "" {
+			customTemplate, err := os.ReadFile(constraintCustomTemplateFile)
+			if err != nil {
+				return fmt.Errorf("unable to open/read template file: %w", err)
+			}
+			constraintBytes, err = renderTemplate(violation, customTemplate, logger)
+			if err != nil {
+				return fmt.Errorf("unable to render custom constraint: %w", err)
+			}
+		} else {
+			constraint, err := getConstraint(violation, logger)
+			if err != nil {
+				return fmt.Errorf("get constraint: %w", err)
+			}
 
-		constraintBytes, err := yaml.Marshal(constraint)
-		if err != nil {
-			return fmt.Errorf("marshal constraint: %w", err)
+			constraintBytes, err = yaml.Marshal(constraint)
+			if err != nil {
+				return fmt.Errorf("marshal constraint: %w", err)
+			}
 		}
-
 		if err := os.WriteFile(filepath.Join(outputDir, constraintFileName), constraintBytes, 0644); err != nil {
 			return fmt.Errorf("writing constraint: %w", err)
 		}
@@ -155,6 +198,20 @@ func runCreateCommand(path string) error {
 	log.WithField("num_policies", len(violations)).Info("completed successfully")
 
 	return nil
+}
+
+func renderTemplate(violation rego.Rego, appliedTemplate []byte, _ *log.Entry) ([]byte, error) {
+	t, err := template.New("template").Funcs(sprigin.FuncMap()).Parse(string(appliedTemplate))
+	if err != nil {
+		return nil, fmt.Errorf("parsing template: %w", err)
+	}
+	buf := new(bytes.Buffer)
+
+	if err := t.Execute(buf, violation); err != nil {
+		return nil, fmt.Errorf("executing template: %w", err)
+	}
+
+	return buf.Bytes(), nil
 }
 
 func getConstraintTemplatev1(violation rego.Rego, logger *log.Entry) *v1.ConstraintTemplate {
@@ -332,8 +389,8 @@ func getConstraint(violation rego.Rego, logger *log.Entry) (*unstructured.Unstru
 		}
 	}
 
-	metadataMatchers, ok := violation.GetAnnotation("matchers")
-	if ok {
+	metadataMatchers, err := violation.GetAnnotation("matchers")
+	if err == nil {
 		if len(matchers.KindMatchers) > 0 ||
 			len(matchers.MatchLabelsMatcher) > 0 ||
 			len(matchers.MatchExpressionsMatcher) > 0 ||
