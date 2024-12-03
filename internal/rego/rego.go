@@ -42,6 +42,11 @@ const (
 	annoLabels         = "labels"
 )
 
+const (
+	coreAPIGroup     = "core"
+	coreAPIShorthand = ""
+)
+
 type MetaData struct {
 	Annotations map[string]string
 	Labels      map[string]string
@@ -53,10 +58,8 @@ type Rego struct {
 	path           string
 	raw            string
 	sanitizedRaw   string
-	headerComments []string
 	rules          []string
 	dependencies   []string
-	parameters     []Parameter
 	enforcement    string
 	skipTemplate   bool
 	skipConstraint bool
@@ -154,11 +157,6 @@ func GetViolations(directory string) ([]Rego, error) {
 // Path returns the original path of the rego file.
 func (r Rego) Path() string {
 	return r.path
-}
-
-// Parameters returns the list of parsed parameters
-func (r Rego) Parameters() []Parameter {
-	return r.parameters
 }
 
 func (r Rego) AnnotationKindMatchers() []AnnoKindMatcher {
@@ -413,23 +411,7 @@ func (r Rego) Annotations() map[string]string {
 
 // Title returns the title found in the header comment of the rego file.
 func (r Rego) Title() string {
-	if r.annoTitle != "" {
-		return r.annoTitle
-	}
-
-	var title string
-	for _, comment := range r.headerComments {
-		if !commentStartsWith(comment, "@title") {
-			continue
-		}
-
-		title = strings.SplitAfter(comment, "@title")[1]
-		break
-	}
-
-	title = strings.TrimSpace(title)
-	title = strings.Trim(title, "\n")
-	return title
+	return r.annoTitle
 }
 
 // Enforcement returns the enforcement action in the header comment. Defaults
@@ -441,22 +423,6 @@ func (r Rego) Enforcement() string {
 	return "deny"
 }
 
-func getEnforcementTag(headerComments []string) string {
-	enforcement := ""
-	for _, comment := range headerComments {
-		if !commentStartsWith(comment, "@enforcement") {
-			continue
-		}
-
-		enforcement = strings.SplitAfter(comment, "@enforcement")[1]
-		break
-	}
-
-	enforcement = strings.TrimSpace(enforcement)
-	enforcement = strings.Trim(enforcement, "\n")
-	return enforcement
-}
-
 // PolicyID returns the identifier of the policy. The returned value will be a
 // blank string if an id was not specified in the policy body.
 func (r Rego) PolicyID() string {
@@ -466,140 +432,13 @@ func (r Rego) PolicyID() string {
 // Description returns the entire description found in the header comment of
 // the Rego file.
 func (r Rego) Description() string {
-	if r.annoDescription != "" {
-		return r.annoDescription
-	}
-
-	var description string
-	var handlingCodeBlock bool
-	var handlingParamDescription bool
-
-	for _, comment := range r.headerComments {
-		if !handlingCodeBlock && !handlingParamDescription && commentStartsWith(comment, "@parameter") && strings.Contains(comment, "--") {
-			handlingParamDescription = true
-		} else if !handlingCodeBlock && handlingParamDescription && !commentStartsWith(comment, "--") {
-			handlingParamDescription = false
-		}
-
-		if handlingParamDescription || commentStartsWith(comment, "@") {
-			continue
-		}
-
-		// By default, we trim the comments found in the header to produce better looking documentation.
-		// However, when a comment in the Rego starts with a code block, we do not want to format
-		// any of the text within the code block.
-		if commentStartsWith(comment, "```") {
-			// Everytime we see a code block marker, we want to flip the status of whether or
-			// not we are currently handling a code block.
-			//
-			// i.e. The first time we see a codeblock marker we are handling a codeblock.
-			//      The second time we see a codeblock marker, we are no longer handling that codeblock.
-			handlingCodeBlock = !handlingCodeBlock
-		}
-
-		if handlingCodeBlock {
-			description += comment
-		} else {
-			description += strings.TrimSpace(comment)
-		}
-
-		description += "\n"
-	}
-
-	description = strings.Trim(description, "\n")
-	return description
+	return r.annoDescription
 }
 
 // HasMetadataAnnotations checks whether rego file has
 // OPA Metadata Annotations
 func (r Rego) HasMetadataAnnotations() bool {
 	return r.annotations != nil
-}
-
-// ConvertedLegacyAnnotations holds OPA Metadata Annotations,
-// which were converted from legacy style annotations
-type ConvertedLegacyAnnotations struct {
-	Title       string         `json:"title,omitempty"`
-	Description string         `json:"description,omitempty"`
-	Custom      map[string]any `json:"custom,omitempty"`
-}
-
-// ConvertLegacyAnnotations converts legacy annotations to ConvertedLegacyAnnotations
-func (r Rego) ConvertLegacyAnnotations() (*ConvertedLegacyAnnotations, error) {
-	custom := make(map[string]any)
-	if r.enforcement != "" {
-		custom[annoEnforcement] = r.enforcement
-	}
-	if r.skipTemplate {
-		custom[annoSkipTemplate] = r.skipTemplate
-	}
-	if r.skipConstraint {
-		custom[annoSkipConstraint] = r.skipConstraint
-	}
-	if len(r.parameters) > 0 {
-		custom[annoParameters] = r.GetOpenAPISchemaProperties()
-	}
-
-	matchers, err := r.Matchers()
-	if err != nil {
-		return nil, fmt.Errorf("cant get legacy matchers: %w", err)
-	}
-
-	matcherMap := make(map[string]any)
-
-	if len(matchers.KindMatchers) > 0 {
-		matcherMap["kinds"] = matchers.KindMatchers.ToSpec()
-	}
-
-	labelSelector := make(map[string]any)
-	if len(matchers.MatchLabelsMatcher) > 0 {
-		labelSelector["matchLabels"] = matchers.MatchLabelsMatcher
-	}
-	if len(matchers.MatchExpressionsMatcher) > 0 {
-		labelSelector["matchExpressions"] = matchers.MatchExpressionsMatcher
-	}
-	if len(labelSelector) > 0 {
-		matcherMap["labelSelector"] = labelSelector
-	}
-
-	if len(matchers.NamespaceMatcher) > 0 {
-		matcherMap["namespaces"] = matchers.NamespaceMatcher
-	}
-	if len(matchers.ExcludedNamespaceMatcher) > 0 {
-		matcherMap["excludedNamespaces"] = matchers.ExcludedNamespaceMatcher
-	}
-
-	if len(matcherMap) > 0 {
-		custom[annoMatchers] = matcherMap
-	}
-
-	return &ConvertedLegacyAnnotations{
-		Title:       r.Title(),
-		Description: r.Description(),
-		Custom:      custom,
-	}, nil
-}
-
-func (r Rego) GetOpenAPISchemaProperties() map[string]apiextensionsv1.JSONSchemaProps {
-	properties := make(map[string]apiextensionsv1.JSONSchemaProps)
-	for _, p := range r.Parameters() {
-		if p.IsArray {
-			properties[p.Name] = apiextensionsv1.JSONSchemaProps{
-				Type:        "array",
-				Description: p.Description,
-				Items: &apiextensionsv1.JSONSchemaPropsOrArray{
-					Schema: &apiextensionsv1.JSONSchemaProps{Type: p.Type},
-				},
-			}
-		} else {
-			properties[p.Name] = apiextensionsv1.JSONSchemaProps{
-				Type:        p.Type,
-				Description: p.Description,
-			}
-		}
-	}
-
-	return properties
 }
 
 // Source returns the original source code inside
@@ -614,13 +453,6 @@ func (r Rego) FullSource() string {
 	withoutHeader := removeHeaderComments(r.sanitizedRaw)
 
 	return strings.Trim(withoutHeader, "\n\t ")
-}
-
-// LegacyConversionSource returns the original source code
-// with comments except header,
-// but doesn't trim any trailing whitespace
-func (r Rego) LegacyConversionSource() string {
-	return removeHeaderComments(r.raw)
 }
 
 func removeHeaderComments(input string) string {
@@ -715,50 +547,24 @@ func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 			}
 		}
 
-		var headerComments []string
-		for _, c := range file.Parsed.Comments {
-			// If the line number of the comment comes before the line number
-			// that the package is declared on, we can safely assume that it is
-			// a header comment.
-			if c.Location.Row < file.Parsed.Package.Location.Row {
-				headerComments = append(headerComments, string(c.Text))
-			} else {
-				break
-			}
-		}
-
 		bodyParams := getRuleParamNames(file.Parsed.Rules)
-		var paramsDiff []string
 
-		var headerParams []Parameter
-		if annotations == nil {
-			headerParams, err = getHeaderParamsLegacy(headerComments)
-			if err != nil {
-				return nil, fmt.Errorf("parse header parameters: %w", err)
-			}
-			paramsDiff = paramDiff(bodyParams, headerParams)
-		} else {
+		if annotations != nil {
 			tempHeaderParams := getHeaderParams(annotations)
-			paramsDiff = paramDiff(bodyParams, tempHeaderParams)
-		}
+			paramsDiff := paramDiff(bodyParams, tempHeaderParams)
+			if len(paramsDiff) > 0 {
+				return nil, fmt.Errorf("missing definitions for parameters %v found in the policy `%s`", paramsDiff, file.Name)
+			}
 
-		if len(paramsDiff) > 0 {
-			return nil, fmt.Errorf("missing definitions for parameters %v found in the policy `%s`", paramsDiff, file.Name)
 		}
-
 		rego := Rego{
-			id:             getPolicyID(file.Parsed.Rules),
-			path:           file.Name,
-			dependencies:   dependencies,
-			rules:          rules,
-			parameters:     headerParams,
-			headerComments: headerComments,
-			raw:            string(file.Raw),
-			sanitizedRaw:   sanitizeRawSource(file.Raw),
-			skipTemplate:   hasSkipTemplateTag(headerComments),
-			skipConstraint: hasSkipConstraintTag(headerComments),
-			enforcement:    getEnforcementTag(headerComments),
-			annotations:    annotations,
+			id:           getPolicyID(file.Parsed.Rules),
+			path:         file.Name,
+			dependencies: dependencies,
+			rules:        rules,
+			raw:          string(file.Raw),
+			sanitizedRaw: sanitizeRawSource(file.Raw),
+			annotations:  annotations,
 		}
 
 		if annotations != nil {
@@ -766,7 +572,6 @@ func parseDirectory(directory string, parseImports bool) ([]Rego, error) {
 				return nil, fmt.Errorf("parse OPA Metadata annotations: %w", err)
 			}
 		}
-
 		regos = append(regos, rego)
 	}
 
@@ -815,59 +620,6 @@ func getHeaderParams(annotations *ast.Annotations) []Parameter {
 	return parameters
 }
 
-func getHeaderParamsLegacy(comments []string) ([]Parameter, error) {
-	var parameters []Parameter
-	for i := 0; i < len(comments); i++ {
-		comment := comments[i]
-
-		if !commentStartsWith(comment, "@parameter ") {
-			continue
-		}
-
-		params := strings.SplitAfter(comment, "@parameter ")[1]
-		paramsDesc := strings.SplitN(params, " --", 2)
-		params = paramsDesc[0]
-		paramsSplit := strings.Split(params, " ")
-		if len(paramsSplit) == 0 {
-			return nil, fmt.Errorf("parameter name and type must be specified")
-		}
-		if len(paramsSplit) == 1 {
-			return nil, fmt.Errorf("type must be supplied with parameter name: %s", paramsSplit[0])
-		}
-
-		p := Parameter{Name: paramsSplit[0]}
-		if paramsSplit[1] == "array" {
-			if len(paramsSplit) == 2 {
-				return nil, fmt.Errorf("array type must be supplied with parameter name: %s", paramsSplit[0])
-			}
-			p.IsArray = true
-			p.Type = paramsSplit[2]
-		} else {
-			p.Type = paramsSplit[1]
-		}
-
-		if len(paramsDesc) > 1 {
-			p.Description = strings.TrimSpace(paramsDesc[1])
-
-			for i++; i != len(comments); i++ {
-				extraComment := strings.TrimSpace(comments[i])
-				if !strings.HasPrefix(extraComment, "--") {
-					i--
-					break
-				}
-				extraComment = strings.TrimSpace(extraComment[2:])
-				p.Description += " " + extraComment
-			}
-
-			p.Description = strings.TrimSpace(p.Description)
-		}
-
-		parameters = append(parameters, p)
-	}
-
-	return parameters, nil
-}
-
 func trimEachLine(raw string) string {
 	var result string
 
@@ -877,26 +629,6 @@ func trimEachLine(raw string) string {
 	}
 
 	return result
-}
-
-func hasSkipTemplateTag(comments []string) bool {
-	for _, comment := range comments {
-		if commentStartsWith(comment, "@skip-template") {
-			return true
-		}
-	}
-
-	return false
-}
-
-func hasSkipConstraintTag(comments []string) bool {
-	for _, comment := range comments {
-		if commentStartsWith(comment, "@skip-constraint") {
-			return true
-		}
-	}
-
-	return false
 }
 
 func removeComments(raw string) string {

@@ -24,7 +24,6 @@ func NewDefaultCommand() *cobra.Command {
 
 	cmd.AddCommand(newCreateCommand())
 	cmd.AddCommand(newDocCommand())
-	cmd.AddCommand(newConvertCommand())
 
 	return &cmd
 }
