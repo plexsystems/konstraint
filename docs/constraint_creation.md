@@ -117,9 +117,7 @@ in the custom metadata section.
 
 ### Legacy annotations
 
-Previously Konstraint had custom annotation format, such as `@title` or `@kinds`, which is a legacy format and will be removed in future releases.
-
-To aid with transition to OPA Metadata format, a conversion tool is provided as `konstraint convert`
+Previously Konstraint had custom annotation format, such as `@title` or `@kinds`, which is a legacy format and were removed in release v0.42.0.
 
 ## Using Input Parameters
 
