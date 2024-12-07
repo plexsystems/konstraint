@@ -220,6 +220,9 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		if len(policy.AnnotationParameters()) > 0 {
 			parameters = annoParamsToLegacyFormat(policy.AnnotationParameters())
 		}
+		sort.Slice(parameters, func(i, j int) bool {
+			return parameters[i].Name < parameters[j].Name
+		})
 
 		header := Header{
 			Title:       documentTitle,
