@@ -188,20 +188,11 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		anchor := strings.ToLower(strings.ReplaceAll(documentTitle, " ", "-"))
 		anchor = strings.ReplaceAll(anchor, ":", "")
 
-		legacyMatchers, err := policy.Matchers()
-		if err != nil {
-			return nil, fmt.Errorf("parse matchers from legacy annotations: %w", err)
-		}
-
 		var matchResources []string
 		if len(policy.AnnotationKindMatchers()) > 0 {
 			for _, akm := range policy.AnnotationKindMatchers() {
 				s := strings.Split(akm.String(), " ")
 				matchResources = append(matchResources, s...)
-			}
-		} else {
-			if len(legacyMatchers.KindMatchers) > 0 {
-				matchResources = strings.Split(legacyMatchers.KindMatchers.String(), " ")
 			}
 		}
 		if len(matchResources) == 0 {
@@ -212,14 +203,9 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		var matchLabels string
 		if policy.AnnotationLabelSelectorMatcher() != nil {
 			matchLabels = labelSelectorDocString(policy.AnnotationLabelSelectorMatcher())
-		} else {
-			matchLabels = legacyMatchers.MatchLabelsMatcher.String()
 		}
 
-		parameters := policy.Parameters()
-		if len(policy.AnnotationParameters()) > 0 {
-			parameters = annoParamsToLegacyFormat(policy.AnnotationParameters())
-		}
+		parameters := annoParamsToLegacyFormat(policy.AnnotationParameters())
 		sort.Slice(parameters, func(i, j int) bool {
 			return parameters[i].Name < parameters[j].Name
 		})

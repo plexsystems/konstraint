@@ -34,32 +34,58 @@ func TestName(t *testing.T) {
 }
 
 func TestTitle(t *testing.T) {
-	comments := []string{
-		"@title The title",
-	}
+	comments := `
+# METADATA
+# title: The Title
+# description: |- 
+#  The description
+#  Extra comment
+package foo
+foo = "bar" { true }
+`
+	rule, err := ast.ParseModuleWithOpts("", comments, ast.ParserOptions{ProcessAnnotation: true})
 
-	rego := Rego{
-		headerComments: comments,
+	if err != nil {
+		t.Errorf("Error parsing module: %s", err)
 	}
+	rego := Rego{}
 
+	err = rego.parseAnnotations(rule.Annotations[0])
+
+	if err != nil {
+		t.Errorf("Error parsing annotations: %s", err)
+	}
 	actual := rego.Title()
 
-	const expected = "The title"
+	const expected = "The Title"
 	if actual != expected {
 		t.Errorf("unexpected Title. expected %v, actual %v", expected, actual)
 	}
 }
 
 func TestDescription(t *testing.T) {
-	comments := []string{
-		"@title The title",
-		"The description",
-		"@kinds The kinds",
-		"Extra comment",
+	comments := `
+# METADATA
+# title: The Title
+# description: |- 
+#  The description
+#  Extra comment
+package foo
+foo = "bar" { true }
+		`
+
+	rule, err := ast.ParseModuleWithOpts("", comments, ast.ParserOptions{ProcessAnnotation: true})
+
+	if err != nil {
+		t.Errorf("Error parsing module: %s", err)
 	}
 
-	rego := Rego{
-		headerComments: comments,
+	rego := Rego{}
+
+	err = rego.parseAnnotations(rule.Annotations[0])
+
+	if err != nil {
+		t.Errorf("Error parsing annotations: %s", err)
 	}
 
 	actual := rego.Description()
@@ -110,19 +136,6 @@ third`
 }
 
 func TestEnforcement(t *testing.T) {
-	comments := []string{
-		"@title Test",
-		"description",
-		"@enforcement dryrun",
-		"@kinds apps/Deployment",
-	}
-
-	actual := getEnforcementTag(comments)
-	const expected = "dryrun"
-	if actual != expected {
-		t.Errorf("unexpected Enforcement. expected %v, actual %v", expected, actual)
-	}
-
 	actualDefault := Rego{}.Enforcement()
 	const expectedDefault = "deny"
 	if actualDefault != expectedDefault {
@@ -205,73 +218,5 @@ func TestGetRuleParamNamesFromInput(t *testing.T) {
 				t.Errorf("unexpected bodyParams. expected %+v, actual %+v", tc.want, actual)
 			}
 		})
-	}
-}
-
-func TestGetHeaderParams(t *testing.T) {
-	comments := []string{
-		"@title Title",
-		"Description",
-		"@parameter foo string -- with description",
-		"@parameter bar array string",
-		"@parameter baz array string -- with multiline",
-		"-- description",
-		"@kinds another/thing",
-	}
-
-	expected := []Parameter{
-		{
-			Name:        "foo",
-			Type:        "string",
-			Description: "with description",
-		},
-		{
-			Name:    "bar",
-			Type:    "string",
-			IsArray: true,
-		},
-		{
-			Name:        "baz",
-			Type:        "string",
-			IsArray:     true,
-			Description: "with multiline description",
-		},
-	}
-
-	actual, err := getHeaderParamsLegacy(comments)
-	if err != nil {
-		t.Fatalf("get header params: %s", err)
-	}
-
-	if !(reflect.DeepEqual(expected, actual)) {
-		t.Errorf("unexpected headerParams. expected %+v, actual %+v", expected, actual)
-	}
-}
-
-func TestHasSkipTemplateTag(t *testing.T) {
-	comments := []string{
-		"@title Title",
-		"Description",
-		"@kinds another/thing",
-		"@skip-template",
-	}
-
-	skip := hasSkipTemplateTag(comments)
-	if !skip {
-		t.Error("SkipTemplate is false when the @skip-template comment tag is present")
-	}
-}
-
-func TestHasSkipConstraintTag(t *testing.T) {
-	comments := []string{
-		"@title Title",
-		"Description",
-		"@kinds another/thing",
-		"@skip-constraint",
-	}
-
-	skip := hasSkipConstraintTag(comments)
-	if !skip {
-		t.Error("SkipConstraint is false when the @skip-constraint comment tag is present")
 	}
 }
