@@ -1,11 +1,15 @@
 package lib.psps
 
+import future.keywords.contains
+import future.keywords.if
+import future.keywords.in
+
 import data.lib.core
 
 # PodSecurityPolicies are not namespace scoped, so the default PSPs included
 # in managed Kubernetes offerings cannot be excluded using the normal
 # methods in Gatekeeper.
-is_exception {
+is_exception if {
 	exceptions := {
 		"gce.privileged", # GKE
 		"gce.persistent-volume-binder", # GKE
@@ -16,10 +20,10 @@ is_exception {
 		"gce.fluentd-gcp", # GKE
 	}
 
-	core.name == exceptions[_]
+	core.name in exceptions
 }
 
-psps[psp] {
+psps contains psp if {
 	lower(core.kind) = "podsecuritypolicy"
 	not is_exception
 	psp = core.resource
