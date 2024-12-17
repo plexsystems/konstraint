@@ -21,7 +21,7 @@
 * [P2001: Images must not use the latest tag](#p2001-images-must-not-use-the-latest-tag)
 * [P2002: Containers must define resource constraints](#p2002-containers-must-define-resource-constraints)
 * [P2005: Roles must not allow use of privileged PodSecurityPolicies](#p2005-roles-must-not-allow-use-of-privileged-podsecuritypolicies)
-* [P2006: Tenants' containers must not run as privileged](#p2006-tenants'-containers-must-not-run-as-privileged)
+* [P2006: Tenants' containers must not run as privileged](#p2006-tenants-containers-must-not-run-as-privileged)
 
 ## Warnings
 
