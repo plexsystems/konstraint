@@ -186,7 +186,14 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		}
 
 		anchor := strings.ToLower(strings.ReplaceAll(documentTitle, " ", "-"))
-		anchor = strings.ReplaceAll(anchor, ":", "")
+		// Tab and all ASCII punctuation except - and _
+		punctReplacer := strings.NewReplacer(
+			"\t", "", "!", "", "\"", "", "#", "", "$", "", "%", "", "&", "", "'", "", "(", "", ")", "",
+			"*", "", "+", "", ",", "", ".", "", "/", "", ":", "", ";", "", "<", "", "=", "", ">", "",
+			"?", "", "@", "", "[", "", "\\", "", "]", "", "^", "", "`", "", "{", "", "|", "", "}", "",
+			"~", "",
+		)
+		anchor = punctReplacer.Replace(anchor)
 
 		legacyMatchers, err := policy.Matchers()
 		if err != nil {
