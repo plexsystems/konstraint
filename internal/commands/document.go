@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"text/template"
+	"unicode"
 
 	"github.com/go-sprout/sprout/sprigin"
 	"github.com/plexsystems/konstraint/internal/rego"
@@ -38,6 +40,29 @@ type Document struct {
 
 //go:embed document_template.tpl
 var docTemplate string
+
+var (
+	// One or more spaces
+	multiSpaceRE = regexp.MustCompile(` +`)
+
+	// Escape the characters on this list: https://www.markdownguide.org/basic-syntax/#characters-you-can-escape
+	// (Admittedly, a few of these seem... odd.)
+	markdownReplacer = strings.NewReplacer(
+		"\\", "\\\\", "`", "\\`", "*", "\\*", "_", "\\_", "{", "\\{", "}", "\\}", "[", "\\[", "]", "\\]", "<", "\\<",
+		">", "\\>", "(", "\\(", ")", "\\)", "#", "\\#", "+", "\\+", "-", "\\-", ".", "\\.", "!", "\\!", "|", "\\|",
+	)
+
+	// Space -> -, remove all ASCII punctuation except - and _
+	//
+	// (This is part of the GitHub anchor algorithm, but see below regarding tabs and other whitespace.  Ref:
+	// https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#section-links)
+	anchorReplacer = strings.NewReplacer(
+		" ", "-",
+		"!", "", "\"", "", "#", "", "$", "", "%", "", "&", "", "'", "", "(", "", ")", "", "*", "", "+", "", ",", "",
+		".", "", "/", "", ":", "", ";", "", "<", "", "=", "", ">", "", "?", "", "@", "", "[", "", "\\", "", "]", "",
+		"^", "", "`", "", "{", "", "|", "", "}", "", "~", "",
+	)
+)
 
 func newDocCommand() *cobra.Command {
 	cmd := cobra.Command{
@@ -186,8 +211,37 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 			documentTitle = fmt.Sprintf("%s: %s", policy.PolicyID(), documentTitle)
 		}
 
-		anchor := strings.ToLower(strings.ReplaceAll(documentTitle, " ", "-"))
-		anchor = strings.ReplaceAll(anchor, ":", "")
+		// Tabs in Markdown headings are handled inconsistently across different parsers when it comes to matching
+		// anchors; some expect them to be removed (which is what GitHub does), while some expect them to be changed to
+		// -.  Changing tabs to spaces beforehand solves that problem, and we'll handle other whitespace the same way
+		// just in case.  Incidentally, handling of other Unicode characters varies; for instance, letters with accents
+		// are handled normally, but emoji seem to break some parsers, and a circled s (ⓢ, U+24E2) works, but
+		// markdownlint complains about it.  Here, I think, is the place to draw the line in terms of how much
+		// intervention to do to be sure the anchors work.
+		var spacedDocumentTitle strings.Builder
+		for _, rune := range documentTitle {
+			if unicode.IsSpace(rune) {
+				spacedDocumentTitle.WriteString(" ")
+			} else {
+				spacedDocumentTitle.WriteString(string(rune))
+			}
+		}
+		documentTitle = spacedDocumentTitle.String()
+
+		// Similarly, parsers differ in whether they collapse multiple spaces when matching anchors.  The safe thing is
+		// to collapse them before it can become an issue.
+		documentTitle = multiSpaceRE.ReplaceAllString(documentTitle, " ")
+
+		// The GitHub anchor algorithm says that Markdown is removed before conversion.  However, '_foo_bar_' counts as
+		// 'foo_bar' in italics (which are removed), whereas 'foo_bar' is just text.  Since only full parsing can
+		// determine what is actually functional Markdown, it's safest to just escape all of the Markdown characters.
+		// (That means that Markdown won't work in titles, but it's probably a reasonable tradeoff.)  Plus, of course,
+		// some characters (such as []) would actually break the generated link otherwise.
+		documentTitle = markdownReplacer.Replace(documentTitle)
+
+		// Skip non-U+0020-whitespace and Markdown removal because we handled them above.  Ref:
+		// https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#section-links
+		anchor := anchorReplacer.Replace(strings.TrimSpace(strings.ToLower(documentTitle)))
 
 		legacyMatchers, err := policy.Matchers()
 		if err != nil {
@@ -209,6 +263,9 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 			logger.Warn("No kind matchers set, this can lead to poor policy performance.")
 			matchResources = append(matchResources, "Any Resource")
 		}
+		for i := range matchResources {
+			matchResources[i] = markdownReplacer.Replace(matchResources[i])
+		}
 
 		var matchLabels string
 		if policy.AnnotationLabelSelectorMatcher() != nil {
@@ -216,6 +273,7 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		} else {
 			matchLabels = legacyMatchers.MatchLabelsMatcher.String()
 		}
+		matchLabels = markdownReplacer.Replace(matchLabels)
 
 		parameters := policy.Parameters()
 		if len(policy.AnnotationParameters()) > 0 {
@@ -224,6 +282,9 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 		sort.Slice(parameters, func(i, j int) bool {
 			return parameters[i].Name < parameters[j].Name
 		})
+		for i := range parameters {
+			parameters[i].Name = markdownReplacer.Replace(parameters[i].Name)
+		}
 
 		header := Header{
 			Title:       documentTitle,
