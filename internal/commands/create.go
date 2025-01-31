@@ -403,15 +403,15 @@ func setMatchLabelsMatcher(constraint *unstructured.Unstructured, matcher rego.M
 }
 
 func setMatchExpressionsMatcher(constraint *unstructured.Unstructured, matcher []rego.MatchExpressionMatcher) error {
-	marshalled, err := json.Marshal(matcher)
+	marshaled, err := json.Marshal(matcher)
 	if err != nil {
 		return err
 	}
-	var unmarshalled []interface{}
-	if err := json.Unmarshal(marshalled, &unmarshalled); err != nil {
+	var unmarshaled []interface{}
+	if err := json.Unmarshal(marshaled, &unmarshaled); err != nil {
 		return err
 	}
-	return unstructured.SetNestedSlice(constraint.Object, unmarshalled, "spec", "match", "labelSelector", "matchExpressions")
+	return unstructured.SetNestedSlice(constraint.Object, unmarshaled, "spec", "match", "labelSelector", "matchExpressions")
 }
 
 func setNestedStringSlice(constraint *unstructured.Unstructured, slice []string, path ...string) error {
