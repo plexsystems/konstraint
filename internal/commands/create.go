@@ -133,7 +133,7 @@ func runCreateCommand(path string) error {
 			if err != nil {
 				return fmt.Errorf("unable to open/read template file: %w", err)
 			}
-			constraintTemplateBytes, err = renderTemplate(violation, customTemplate, logger)
+			constraintTemplateBytes, err = renderTemplate(violation, customTemplate)
 			if err != nil {
 				return fmt.Errorf("unable to render custom template: %w", err)
 			}
@@ -175,7 +175,7 @@ func runCreateCommand(path string) error {
 			if err != nil {
 				return fmt.Errorf("unable to open/read template file: %w", err)
 			}
-			constraintBytes, err = renderTemplate(violation, customTemplate, logger)
+			constraintBytes, err = renderTemplate(violation, customTemplate)
 			if err != nil {
 				return fmt.Errorf("unable to render custom constraint: %w", err)
 			}
@@ -200,7 +200,7 @@ func runCreateCommand(path string) error {
 	return nil
 }
 
-func renderTemplate(violation rego.Rego, appliedTemplate []byte, _ *log.Entry) ([]byte, error) {
+func renderTemplate(violation rego.Rego, appliedTemplate []byte) ([]byte, error) {
 	t, err := template.New("template").Funcs(sprigin.FuncMap()).Parse(string(appliedTemplate))
 	if err != nil {
 		return nil, fmt.Errorf("parsing template: %w", err)
