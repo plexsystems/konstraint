@@ -13,18 +13,20 @@ spec:
     - |-
       package lib.core
 
+      import future.keywords.if
+
       default is_gatekeeper := false
 
-      is_gatekeeper {
+      is_gatekeeper if {
         has_field(input, "review")
         has_field(input.review, "object")
       }
 
-      resource := input.review.object {
+      resource := input.review.object if {
         is_gatekeeper
       }
 
-      resource := input {
+      resource := input if {
         not is_gatekeeper
       }
 
@@ -47,54 +49,57 @@ spec:
 
       gv := split(apiVersion, "/")
 
-      group := gv[0] {
+      group := gv[0] if {
         contains(apiVersion, "/")
       }
 
-      group := "core" {
+      group := "core" if {
         not contains(apiVersion, "/")
       }
 
       version := gv[count(gv) - 1]
 
-      has_field(obj, field) {
+      has_field(obj, field) if {
         not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
       }
 
-      missing_field(obj, field) {
+      missing_field(obj, field) if {
         obj[field] == ""
       }
 
-      missing_field(obj, field) {
+      missing_field(obj, field) if {
         not has_field(obj, field)
       }
     - |-
       package lib.pods
 
+      import future.keywords.contains
+      import future.keywords.if
+
       import data.lib.core
 
       default pod := false
 
-      pod := core.resource.spec.template {
+      pod := core.resource.spec.template if {
         pod_templates := ["daemonset", "deployment", "job", "replicaset", "replicationcontroller", "statefulset"]
         lower(core.kind) == pod_templates[_]
       }
 
-      pod := core.resource {
+      pod := core.resource if {
         lower(core.kind) == "pod"
       }
 
-      pod := core.resource.spec.jobTemplate.spec.template {
+      pod := core.resource.spec.jobTemplate.spec.template if {
         lower(core.kind) == "cronjob"
       }
 
-      containers[container] {
+      containers contains container if {
         keys := {"containers", "initContainers"}
         all_containers := [c | some k; keys[k]; c = pod.spec[k][_]]
         container := all_containers[_]
       }
 
-      volumes[pod.spec.volumes[_]]
+      volumes contains pod.spec.volumes[_]
     rego: |-
       package pod_deny_without_runasnonroot
 

@@ -1,6 +1,8 @@
 package lib.pods
 
-test_input_as_other {
+import future.keywords.if
+
+test_input_as_other if {
 	resource := pod with input as {
 		"kind": "Other",
 		"spec": {"containers": [{}]},
@@ -9,7 +11,7 @@ test_input_as_other {
 	not resource
 }
 
-test_input_as_pod {
+test_input_as_pod if {
 	resource := pod with input as {
 		"kind": "Pod",
 		"spec": {"containers": [{}]},
@@ -18,7 +20,7 @@ test_input_as_pod {
 	resource.spec.containers
 }
 
-test_input_as_deployment {
+test_input_as_deployment if {
 	resource := pod with input as {
 		"kind": "Deployment",
 		"spec": {"template": {"spec": {"containers": [{}]}}},
@@ -27,7 +29,7 @@ test_input_as_deployment {
 	resource.spec.containers
 }
 
-test_input_as_cronjob {
+test_input_as_cronjob if {
 	resource := pod with input as {
 		"kind": "CronJob",
 		"spec": {"jobTemplate": {"spec": {"template": {"spec": {"containers": [{}]}}}}},
@@ -36,7 +38,7 @@ test_input_as_cronjob {
 	resource.spec.containers
 }
 
-test_containers {
+test_containers if {
 	podcontainers := containers with input as {
 		"kind": "Pod",
 		"spec": {"containers": [{"name": "container"}]},
@@ -45,7 +47,7 @@ test_containers {
 	podcontainers[_].name == "container"
 }
 
-test_volumes {
+test_volumes if {
 	podvolumes := volumes with input as {
 		"kind": "Pod",
 		"spec": {"volumes": [{"name": "volume"}]},
