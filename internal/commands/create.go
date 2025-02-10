@@ -125,36 +125,13 @@ func runCreateCommand(path string) error {
 		constraintTemplateVersion := viper.GetString("constraint-template-version")
 		constraintTemplateCustomTemplateFile := viper.GetString("constraint-template-custom-template-file")
 
-		var constraintTemplate any
-		var constraintTemplateBytes []byte
-
-		if constraintTemplateCustomTemplateFile != "" {
-			customTemplate, err := os.ReadFile(constraintTemplateCustomTemplateFile)
-			if err != nil {
-				return fmt.Errorf("unable to open/read template file: %w", err)
-			}
-			constraintTemplateBytes, err = renderTemplate(violation, customTemplate)
-			if err != nil {
-				return fmt.Errorf("unable to render custom template: %w", err)
-			}
-		} else {
-			switch constraintTemplateVersion {
-			case "v1":
-				constraintTemplate = getConstraintTemplatev1(violation, logger)
-			case "v1beta1":
-				constraintTemplate = getConstraintTemplatev1beta1(violation, logger)
-			default:
-				return fmt.Errorf("unsupported API version for constrainttemplate: %s", constraintTemplateVersion)
-			}
-			constraintTemplateBytes, err = yaml.Marshal(constraintTemplate)
-
-			if err != nil {
-				return fmt.Errorf("marshal constrainttemplate: %w", err)
-			}
-
+		constraintTemplate, err := renderConstraintTemplate(violation, constraintTemplateVersion, constraintTemplateCustomTemplateFile, logger)
+		if err != nil {
+			return fmt.Errorf("rendering ConstraintTemplate: %w", err)
 		}
-		if err := os.WriteFile(filepath.Join(outputDir, templateFileName), constraintTemplateBytes, 0644); err != nil {
-			return fmt.Errorf("writing template: %w", err)
+
+		if err := os.WriteFile(filepath.Join(outputDir, templateFileName), constraintTemplate, 0644); err != nil {
+			return fmt.Errorf("writing ConstraintTemplate: %w", err)
 		}
 
 		if viper.GetBool("skip-constraints") || violation.SkipConstraint() {
@@ -169,26 +146,11 @@ func runCreateCommand(path string) error {
 		}
 
 		constraintCustomTemplateFile := viper.GetString("constraint-custom-template-file")
-		var constraintBytes []byte
-		if constraintCustomTemplateFile != "" {
-			customTemplate, err := os.ReadFile(constraintCustomTemplateFile)
-			if err != nil {
-				return fmt.Errorf("unable to open/read template file: %w", err)
-			}
-			constraintBytes, err = renderTemplate(violation, customTemplate)
-			if err != nil {
-				return fmt.Errorf("unable to render custom constraint: %w", err)
-			}
-		} else {
-			constraint, err := getConstraint(violation, logger)
-			if err != nil {
-				return fmt.Errorf("get constraint: %w", err)
-			}
 
-			constraintBytes, err = yaml.Marshal(constraint)
-			if err != nil {
-				return fmt.Errorf("marshal constraint: %w", err)
-			}
+		constraintBytes, err := renderConstraint(violation, constraintCustomTemplateFile, logger)
+
+		if err != nil {
+			return fmt.Errorf("rendering Constraint: %w", err)
 		}
 		if err := os.WriteFile(filepath.Join(outputDir, constraintFileName), constraintBytes, 0644); err != nil {
 			return fmt.Errorf("writing constraint: %w", err)
@@ -198,6 +160,65 @@ func runCreateCommand(path string) error {
 	log.WithField("num_policies", len(violations)).Info("completed successfully")
 
 	return nil
+}
+
+func renderConstraintTemplate(violation rego.Rego, constraintTemplateVersion string, constraintTemplateCustomTemplateFile string, logger *log.Entry) ([]byte, error) {
+	var constraintTemplate any
+	var constraintTemplateBytes []byte
+
+	if constraintTemplateCustomTemplateFile != "" {
+		customTemplate, err := os.ReadFile(constraintTemplateCustomTemplateFile)
+		if err != nil {
+			return nil, fmt.Errorf("unable to open/read template file: %w", err)
+		}
+		constraintTemplateBytes, err = renderTemplate(violation, customTemplate)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render custom template: %w", err)
+		}
+	} else {
+		switch constraintTemplateVersion {
+		case "v1":
+			constraintTemplate = getConstraintTemplatev1(violation, logger)
+		case "v1beta1":
+			constraintTemplate = getConstraintTemplatev1beta1(violation, logger)
+		default:
+			return nil, fmt.Errorf("unsupported API version for constrainttemplate: %s", constraintTemplateVersion)
+		}
+		var err error
+		constraintTemplateBytes, err = yaml.Marshal(constraintTemplate)
+
+		if err != nil {
+			return nil, fmt.Errorf("marshal constrainttemplate: %w", err)
+		}
+	}
+
+	return constraintTemplateBytes, nil
+
+}
+func renderConstraint(violation rego.Rego, constraintCustomTemplateFile string, logger *log.Entry) ([]byte, error) {
+	var constraintBytes []byte
+	if constraintCustomTemplateFile != "" {
+		customTemplate, err := os.ReadFile(constraintCustomTemplateFile)
+		if err != nil {
+			return nil, fmt.Errorf("unable to open/read template file: %w", err)
+		}
+		constraintBytes, err = renderTemplate(violation, customTemplate)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render custom constraint: %w", err)
+		}
+	} else {
+		constraint, err := getConstraint(violation, logger)
+		if err != nil {
+			return nil, fmt.Errorf("get constraint: %w", err)
+		}
+
+		constraintBytes, err = yaml.Marshal(constraint)
+		if err != nil {
+			return nil, fmt.Errorf("marshal constraint: %w", err)
+		}
+	}
+	return constraintBytes, nil
+
 }
 
 func renderTemplate(violation rego.Rego, appliedTemplate []byte) ([]byte, error) {

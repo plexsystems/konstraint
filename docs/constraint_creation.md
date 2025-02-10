@@ -108,7 +108,6 @@ violation[{"msg": msg}] {
 In some cases there might be the need to further customize the rendered Constraint and ConstraintTemplates. This is particularly helpful, if you want to create e.g. template for Helm charts, where certain values are additional fields to be rendered through Helm. 
 You can provide custom templates through the `--constraint-template-custom-template-file` and `--constraint-custom-template-file` command line flags. 
 
-
 ### Skipping generation of the Constraint and/or ConstraintTemplate resource
 
 In some scenarios, you may wish for Konstraint to skip the generation of the `Constraint` resource for a policy and manage that externally. To do so, add the `skipConstraint: true` annotation in the custom metadata section.
