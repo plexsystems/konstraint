@@ -4,6 +4,7 @@ go 1.23.4
 
 require (
 	github.com/go-sprout/sprout v1.0.0
+	github.com/google/go-cmp v0.6.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220218180203-c2a0d8cdf85a
 	github.com/open-policy-agent/opa v1.1.0
 	github.com/sirupsen/logrus v1.9.3
