@@ -1,4 +1,4 @@
-name: Push Tagged Container
+name: Push Tagged Container And Release
 on:
   push:
     tags:
@@ -27,7 +27,7 @@ jobs:
     - name: test build
       run: make build
 
-  container-image:
+  release:
     runs-on: ubuntu-latest
     needs: [unit-test]
 
@@ -64,3 +64,11 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

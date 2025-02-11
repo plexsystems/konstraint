@@ -24,3 +24,5 @@ konstraint*
 ## File-based project format:
 *.iws
 *.iml
+# Added by goreleaser init:
+dist/
