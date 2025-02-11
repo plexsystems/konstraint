@@ -1,3 +1,4 @@
+# This is a custom template for a constraint template
 apiVersion: templates.gatekeeper.sh/v1
 kind: ConstraintTemplate
 metadata:

@@ -23,3 +23,9 @@
   [ "$status" -eq 0 ]
   git diff --quiet -- test/
 }
+
+@test "[CREATE] Creating constraints using --constraint-custom-template-file, --constraint-template-custom-template-file and --output matches expected output" {
+  run ./build/konstraint create test --constraint-custom-template-file internal/commands/constraint_template.tpl --constraint-template-custom-template-file internal/commands/constrainttemplate_template.tpl --partial-constraints --output test/custom
+  [ "$status" -eq 0 ]
+  git diff --quiet -- test/custom
+}

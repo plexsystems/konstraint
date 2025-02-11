@@ -1,3 +1,4 @@
+# This is a custom template for constraints
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: {{ .Kind }}
 metadata:
