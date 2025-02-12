@@ -5,6 +5,8 @@ rules:
   idiomatic:
     no-defined-entrypoint:
       level: ignore
+    directory-package-mismatch:
+       level: ignore
   imports:
     prefer-package-imports:
       level: ignore
@@ -16,6 +18,8 @@ rules:
     prefer-some-in-iteration:
       level: ignore
     prefer-snake-case:
+      level: ignore
+    rule-name-repeats-package:
       level: ignore
   testing:
     test-outside-test-package:
