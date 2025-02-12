@@ -15,7 +15,7 @@
 
 **Resources:**
 {{ range .Header.Resources }}
-- {{ . }}
+* {{ . }}
 {{- end }}
 
 {{- if .Header.MatchLabels }}
@@ -34,14 +34,15 @@
 {{- end }}
 
 {{ .Header.Description }}
-{{ if ne .Rego "" }}
+
+{{ if ne .Rego "" -}}
 ### Rego
 {{ $codeblock := "```" }}
 {{ $codeblock }}rego
 {{ .Rego }}
-{{ $codeblock }}{{- end }}
+{{ $codeblock }}
 
+{{ end -}}
 _source: [{{ .URL }}]({{ .URL }})_
-{{ end }}
-
-{{- end }}
+{{end -}}
+{{end -}}
