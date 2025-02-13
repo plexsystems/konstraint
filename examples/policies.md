@@ -50,24 +50,28 @@ This policy allows you to require certain labels are set on a resource. Adapted 
 package required_labels
 
 import data.lib.core
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P0002"
 
-violation[msg] {
-  missing := missing_labels
-  count(missing) > 0
+violation contains msg if {
+  count(missing_labels) > 0
 
-  msg := core.format_with_id(sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing]), policyID)
+  msg := core.format_with_id(
+    sprintf("%s/%s: Missing required labels: %v", [core.kind, core.name, missing_labels]),
+    policyID,
+  )
 }
 
-missing_labels := missing {
-  provided := {label | core.labels[label]}
+missing_labels := missing if {
+  provided := object.keys(core.labels)
   required := {label | label := input.parameters.labels[_]}
   missing := required - provided
 }
 ```
 
-_source: [required-labels](required-labels)_
+_source: [required_labels](required_labels)_
 
 ## P1001: Containers must drop all capabilities
 
@@ -92,10 +96,12 @@ package container_deny_added_caps
 import data.lib.core
 import data.lib.pods
 import data.lib.security
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P1001"
 
-violation[msg] {
+violation contains msg if {
   some container
   pods.containers[container]
   not container_dropped_all_capabilities(container)
@@ -106,12 +112,12 @@ violation[msg] {
   )
 }
 
-container_dropped_all_capabilities(container) {
+container_dropped_all_capabilities(container) if {
   security.dropped_capability(container, "all")
 }
 ```
 
-_source: [container-deny-added-caps](container-deny-added-caps)_
+_source: [container_deny_added_caps](container_deny_added_caps)_
 
 ## P1002: Containers must not allow for privilege escalation
 
@@ -134,10 +140,12 @@ package container_deny_escalation
 
 import data.lib.core
 import data.lib.pods
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P1002"
 
-violation[msg] {
+violation contains msg if {
   some container
   pods.containers[container]
   container_allows_escalation(container)
@@ -145,20 +153,20 @@ violation[msg] {
   msg := core.format_with_id(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]), policyID)
 }
 
-container_allows_escalation(c) {
+container_allows_escalation(c) if {
   c.securityContext.allowPrivilegeEscalation == true
 }
 
-container_allows_escalation(c) {
+container_allows_escalation(c) if {
   core.missing_field(c, "securityContext")
 }
 
-container_allows_escalation(c) {
+container_allows_escalation(c) if {
   core.missing_field(c.securityContext, "allowPrivilegeEscalation")
 }
 ```
 
-_source: [container-deny-escalation](container-deny-escalation)_
+_source: [container_deny_escalation](container_deny_escalation)_
 
 ## P1003: Containers must not run as privileged
 
@@ -183,10 +191,12 @@ package container_deny_privileged
 import data.lib.core
 import data.lib.pods
 import data.lib.security
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P1003"
 
-violation[msg] {
+violation contains msg if {
   some container
   pods.containers[container]
   container_is_privileged(container)
@@ -197,16 +207,16 @@ violation[msg] {
   )
 }
 
-container_is_privileged(container) {
+container_is_privileged(container) if {
   container.securityContext.privileged
 }
 
-container_is_privileged(container) {
+container_is_privileged(container) if {
   security.added_capability(container, "CAP_SYS_ADMIN")
 }
 ```
 
-_source: [container-deny-privileged](container-deny-privileged)_
+_source: [container_deny_privileged](container_deny_privileged)_
 
 ## P1004: Pods must not have access to the host aliases
 
@@ -226,6 +236,9 @@ Pods that can change aliases in the host's /etc/hosts file can redirect traffic 
 ```rego
 package pod_deny_host_alias
 
+import future.keywords.contains
+import future.keywords.if
+
 import data.lib.core.format_with_id
 import data.lib.core.kind
 import data.lib.core.name
@@ -233,18 +246,18 @@ import data.lib.pods
 
 policyID := "P1004"
 
-violation[msg] {
+violation contains msg if {
   pod_host_alias
 
   msg := format_with_id(sprintf("%s/%s: Pod has hostAliases defined", [kind, name]), policyID)
 }
 
-pod_host_alias {
+pod_host_alias if {
   pods.pod.spec.hostAliases
 }
 ```
 
-_source: [pod-deny-host-alias](pod-deny-host-alias)_
+_source: [pod_deny_host_alias](pod_deny_host_alias)_
 
 ## P1005: Pods must not run with access to the host IPC
 
@@ -267,21 +280,23 @@ package pod_deny_host_ipc
 
 import data.lib.core
 import data.lib.pods
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P1005"
 
-violation[msg] {
+violation contains msg if {
   pod_has_hostipc
 
   msg := core.format_with_id(sprintf("%s/%s: Pod allows for accessing the host IPC", [core.kind, core.name]), policyID)
 }
 
-pod_has_hostipc {
+pod_has_hostipc if {
   pods.pod.spec.hostIPC
 }
 ```
 
-_source: [pod-deny-host-ipc](pod-deny-host-ipc)_
+_source: [pod_deny_host_ipc](pod_deny_host_ipc)_
 
 ## P1006: Pods must not run with access to the host networking
 
@@ -304,10 +319,12 @@ package pod_deny_host_network
 
 import data.lib.core
 import data.lib.pods
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P1006"
 
-violation[msg] {
+violation contains msg if {
   pod_has_hostnetwork
 
   msg := core.format_with_id(
@@ -316,12 +333,12 @@ violation[msg] {
   )
 }
 
-pod_has_hostnetwork {
+pod_has_hostnetwork if {
   pods.pod.spec.hostNetwork
 }
 ```
 
-_source: [pod-deny-host-network](pod-deny-host-network)_
+_source: [pod_deny_host_network](pod_deny_host_network)_
 
 ## P1007: Pods must not run with access to the host PID namespace
 
@@ -345,10 +362,12 @@ package pod_deny_host_pid
 
 import data.lib.core
 import data.lib.pods
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P1007"
 
-violation[msg] {
+violation contains msg if {
   pod_has_hostpid
 
   msg := core.format_with_id(
@@ -357,12 +376,12 @@ violation[msg] {
   )
 }
 
-pod_has_hostpid {
+pod_has_hostpid if {
   pods.pod.spec.hostPID
 }
 ```
 
-_source: [pod-deny-host-pid](pod-deny-host-pid)_
+_source: [pod_deny_host_pid](pod_deny_host_pid)_
 
 ## P1008: Pods must run as non-root
 
@@ -385,22 +404,24 @@ package pod_deny_without_runasnonroot
 
 import data.lib.core
 import data.lib.pods
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P1008"
 
-violation[msg] {
+violation contains msg if {
   pods.pod
   not pod_runasnonroot
 
   msg := core.format_with_id(sprintf("%s/%s: Pod allows running as root", [core.kind, core.name]), policyID)
 }
 
-pod_runasnonroot {
+pod_runasnonroot if {
   pods.pod.spec.securityContext.runAsNonRoot
 }
 ```
 
-_source: [pod-deny-without-runasnonroot](pod-deny-without-runasnonroot)_
+_source: [pod_deny_without_runasnonroot](pod_deny_without_runasnonroot)_
 
 ## P1009: PodSecurityPolicies must require all capabilities are dropped
 
@@ -422,10 +443,12 @@ package psp_deny_added_caps
 import data.lib.core
 import data.lib.psps
 import data.lib.security
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P1009"
 
-violation[msg] {
+violation contains msg if {
   not psp_dropped_all_capabilities
 
   msg := core.format_with_id(
@@ -434,14 +457,14 @@ violation[msg] {
   )
 }
 
-psp_dropped_all_capabilities {
+psp_dropped_all_capabilities if {
   some psp
   psps.psps[psp]
   security.dropped_capability(psp, "all")
 }
 ```
 
-_source: [psp-deny-added-caps](psp-deny-added-caps)_
+_source: [psp_deny_added_caps](psp_deny_added_caps)_
 
 ## P1010: PodSecurityPolicies must not allow privileged escalation
 
@@ -461,10 +484,12 @@ package psp_deny_escalation
 
 import data.lib.core
 import data.lib.psps
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P1010"
 
-violation[msg] {
+violation contains msg if {
   some psp
   psps.psps[psp]
   allows_escalation(psp)
@@ -472,16 +497,16 @@ violation[msg] {
   msg := core.format_with_id(sprintf("%s/%s: Allows privilege escalation", [core.kind, core.name]), policyID)
 }
 
-allows_escalation(p) {
+allows_escalation(p) if {
   p.spec.allowPrivilegeEscalation == true
 }
 
-allows_escalation(p) {
+allows_escalation(p) if {
   core.missing_field(p.spec, "allowPrivilegeEscalation")
 }
 ```
 
-_source: [psp-deny-escalation](psp-deny-escalation)_
+_source: [psp_deny_escalation](psp_deny_escalation)_
 
 ## P1011: PodSecurityPolicies must not allow access to the host aliases
 
@@ -501,21 +526,23 @@ package psp_deny_host_alias
 
 import data.lib.core
 import data.lib.psps
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P1011"
 
-violation[msg] {
+violation contains msg if {
   psp_allows_hostaliases
 
   msg := core.format_with_id(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]), policyID)
 }
 
-psp_allows_hostaliases {
+psp_allows_hostaliases if {
   psps.psps[_].spec.hostAliases
 }
 ```
 
-_source: [psp-deny-host-alias](psp-deny-host-alias)_
+_source: [psp_deny_host_alias](psp_deny_host_alias)_
 
 ## P1012: PodSecurityPolicies must not allow access to the host IPC
 
@@ -535,10 +562,12 @@ package psp_deny_host_ipc
 
 import data.lib.core
 import data.lib.psps
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P1012"
 
-violation[msg] {
+violation contains msg if {
   psp_allows_hostipc
 
   msg := core.format_with_id(
@@ -547,12 +576,12 @@ violation[msg] {
   )
 }
 
-psp_allows_hostipc {
+psp_allows_hostipc if {
   psps.psps[_].spec.hostIPC
 }
 ```
 
-_source: [psp-deny-host-ipc](psp-deny-host-ipc)_
+_source: [psp_deny_host_ipc](psp_deny_host_ipc)_
 
 ## P1013: PodSecurityPolicies must not allow access to the host network
 
@@ -573,21 +602,23 @@ package psp_deny_host_network
 
 import data.lib.core
 import data.lib.psps
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P1013"
 
-violation[msg] {
+violation contains msg if {
   psp_allows_hostnetwork
 
   msg := core.format_with_id(sprintf("%s/%s: Allows for accessing the host network", [core.kind, core.name]), policyID)
 }
 
-psp_allows_hostnetwork {
+psp_allows_hostnetwork if {
   psps.psps[_].spec.hostNetwork
 }
 ```
 
-_source: [psp-deny-host-network](psp-deny-host-network)_
+_source: [psp_deny_host_network](psp_deny_host_network)_
 
 ## P1014: PodSecurityPolicies must not allow access to the host PID namespace
 
@@ -608,10 +639,12 @@ package psp_deny_host_pid
 
 import data.lib.core
 import data.lib.psps
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P1014"
 
-violation[msg] {
+violation contains msg if {
   psp_allows_hostpid
 
   msg = core.format_with_id(
@@ -620,12 +653,12 @@ violation[msg] {
   )
 }
 
-psp_allows_hostpid {
+psp_allows_hostpid if {
   psps.psps[_].spec.hostPID
 }
 ```
 
-_source: [psp-deny-host-pid](psp-deny-host-pid)_
+_source: [psp_deny_host_pid](psp_deny_host_pid)_
 
 ## P1015: PodSecurityPolicies must require containers to not run as privileged
 
@@ -645,21 +678,23 @@ package psp_deny_privileged
 
 import data.lib.core
 import data.lib.psps
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P1015"
 
-violation[msg] {
+violation contains msg if {
   psp_allows_privileged
 
   msg := core.format_with_id(sprintf("%s/%s: Allows for privileged workloads", [core.kind, core.name]), policyID)
 }
 
-psp_allows_privileged {
+psp_allows_privileged if {
   psps.psps[_].spec.privileged
 }
 ```
 
-_source: [psp-deny-privileged](psp-deny-privileged)_
+_source: [psp_deny_privileged](psp_deny_privileged)_
 
 ## P2001: Images must not use the latest tag
 
@@ -697,10 +732,12 @@ package container_deny_latest_tag
 
 import data.lib.core
 import data.lib.pods
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P2001"
 
-violation[msg] {
+violation contains msg if {
   some container
   pods.containers[container]
   has_latest_tag(container)
@@ -711,16 +748,16 @@ violation[msg] {
   )
 }
 
-has_latest_tag(c) {
+has_latest_tag(c) if {
   endswith(c.image, ":latest")
 }
 
-has_latest_tag(c) {
+has_latest_tag(c) if {
   contains(c.image, ":") == false
 }
 ```
 
-_source: [container-deny-latest-tag](container-deny-latest-tag)_
+_source: [container_deny_latest_tag](container_deny_latest_tag)_
 
 ## P2002: Containers must define resource constraints
 
@@ -743,10 +780,12 @@ package container_deny_without_resource_constraints
 
 import data.lib.core
 import data.lib.pods
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P2002"
 
-violation[msg] {
+violation contains msg if {
   some container
   pods.containers[container]
   not container_resources_provided(container)
@@ -757,7 +796,7 @@ violation[msg] {
   )
 }
 
-container_resources_provided(container) {
+container_resources_provided(container) if {
   container.resources.requests.cpu
   container.resources.requests.memory
   container.resources.limits.cpu
@@ -765,7 +804,7 @@ container_resources_provided(container) {
 }
 ```
 
-_source: [container-deny-without-resource-constraints](container-deny-without-resource-constraints)_
+_source: [container_deny_without_resource_constraints](container_deny_without_resource_constraints)_
 
 ## P2005: Roles must not allow use of privileged PodSecurityPolicies
 
@@ -785,10 +824,12 @@ package role_deny_use_privileged_psps
 import data.lib.core
 import data.lib.rbac
 import data.lib.security
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P2005"
 
-violation[msg] {
+violation contains msg if {
   role_uses_privileged_psp
 
   msg := core.format_with_id(
@@ -797,28 +838,28 @@ violation[msg] {
   )
 }
 
-role_uses_privileged_psp {
+role_uses_privileged_psp if {
   rule := core.resource.rules[_]
   rbac.rule_has_resource_type(rule, "podsecuritypolicies")
   rbac.rule_has_verb(rule, "use")
   rbac.rule_has_resource_name(rule, privileged_psps[_].metadata.name)
 }
 
-privileged_psps[psp] {
+privileged_psps contains psp if {
   psp := data.inventory.cluster["policy/v1beta1"].PodSecurityPolicy[_]
   psp_is_privileged(psp)
 }
 
-psp_is_privileged(psp) {
+psp_is_privileged(psp) if {
   psp.spec.privileged
 }
 
-psp_is_privileged(psp) {
+psp_is_privileged(psp) if {
   security.added_capability(psp, "SYS_ADMIN")
 }
 ```
 
-_source: [role-deny-use-privileged-psp](role-deny-use-privileged-psp)_
+_source: [role_deny_use_privileged_psps](role_deny_use_privileged_psps)_
 
 ## P2006: Tenants' containers must not run as privileged
 
@@ -847,10 +888,12 @@ package container_deny_privileged_if_tenant
 import data.lib.core
 import data.lib.pods
 import data.lib.security
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P2006"
 
-violation[msg] {
+violation contains msg if {
   some container
   pods.containers[container]
   container_is_privileged(container)
@@ -861,16 +904,16 @@ violation[msg] {
   )
 }
 
-container_is_privileged(container) {
+container_is_privileged(container) if {
   container.securityContext.privileged
 }
 
-container_is_privileged(container) {
+container_is_privileged(container) if {
   security.added_capability(container, "CAP_SYS_ADMIN")
 }
 ```
 
-_source: [container-deny-privileged-if-tenant](container-deny-privileged-if-tenant)_
+_source: [container_deny_privileged_if_tenant](container_deny_privileged_if_tenant)_
 
 ## P0001: Deprecated Deployment and DaemonSet API
 
@@ -891,13 +934,16 @@ the version for both of these resources must be `apps/v1`.
 package any_warn_deprecated_api_versions
 
 import data.lib.core
+import future.keywords.contains
+import future.keywords.if
+import future.keywords.in
 
 policyID := "P0001"
 
-warn[msg] {
-  resources := ["DaemonSet", "Deployment"]
+warn contains msg if {
   core.apiVersion == "extensions/v1beta1"
-  core.kind == resources[_]
+  resources := ["DaemonSet", "Deployment"]
+  core.kind in resources
 
   msg := core.format_with_id(
     sprintf("API extensions/v1beta1 for %s has been deprecated, use apps/v1 instead.", [core.kind]),
@@ -906,7 +952,7 @@ warn[msg] {
 }
 ```
 
-_source: [any-warn-deprecated-api-versions](any-warn-deprecated-api-versions)_
+_source: [any_warn_deprecated_api_versions](any_warn_deprecated_api_versions)_
 
 ## P2003: Containers should not have a writable root filesystem
 
@@ -929,10 +975,12 @@ package container_warn_no_ro_fs
 
 import data.lib.core
 import data.lib.pods
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P2003"
 
-warn[msg] {
+warn contains msg if {
   some container
   pods.containers[container]
   no_read_only_filesystem(container)
@@ -943,17 +991,17 @@ warn[msg] {
   )
 }
 
-no_read_only_filesystem(container) {
+no_read_only_filesystem(container) if {
   core.has_field(container.securityContext, "readOnlyRootFilesystem")
   not container.securityContext.readOnlyRootFilesystem
 }
 
-no_read_only_filesystem(container) {
+no_read_only_filesystem(container) if {
   core.missing_field(container.securityContext, "readOnlyRootFilesystem")
 }
 ```
 
-_source: [container-warn-no-ro-fs](container-warn-no-ro-fs)_
+_source: [container_warn_no_ro_fs](container_warn_no_ro_fs)_
 
 ## P2004: PodSecurityPolicies should require that a read-only root filesystem is set
 
@@ -973,10 +1021,12 @@ package psp_warn_no_ro_fs
 
 import data.lib.core
 import data.lib.psps
+import future.keywords.contains
+import future.keywords.if
 
 policyID := "P2004"
 
-warn[msg] {
+warn contains msg if {
   some psp
   psps.psps[psp]
   no_read_only_filesystem(psp)
@@ -984,14 +1034,14 @@ warn[msg] {
   msg := core.format_with_id(sprintf("%s/%s: Allows for a writeable root filesystem", [core.kind, core.name]), policyID)
 }
 
-no_read_only_filesystem(psp) {
+no_read_only_filesystem(psp) if {
   core.missing_field(psp.spec, "readOnlyRootFilesystem")
 }
 
-no_read_only_filesystem(psp) {
+no_read_only_filesystem(psp) if {
   not psp.spec.readOnlyRootFilesystem
 }
 ```
 
-_source: [psp-warn-no-ro-fs](psp-warn-no-ro-fs)_
+_source: [psp_warn_no_ro_fs](psp_warn_no_ro_fs)_
 

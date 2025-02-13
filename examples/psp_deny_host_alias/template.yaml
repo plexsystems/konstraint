@@ -1,0 +1,120 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  creationTimestamp: null
+  name: pspdenyhostalias
+spec:
+  crd:
+    spec:
+      names:
+        kind: PspDenyHostAlias
+  targets:
+  - libs:
+    - |-
+      package lib.core
+
+      import future.keywords.if
+
+      default is_gatekeeper := false
+
+      is_gatekeeper if {
+        has_field(input, "review")
+        has_field(input.review, "object")
+      }
+
+      resource := input.review.object if {
+        is_gatekeeper
+      }
+
+      resource := input if {
+        not is_gatekeeper
+      }
+
+      format(msg) := {"msg": msg}
+
+      format_with_id(msg, id) := {
+        "msg": sprintf("%s: %s", [id, msg]),
+        "details": {"policyID": id},
+      }
+
+      apiVersion := resource.apiVersion
+
+      name := resource.metadata.name
+
+      kind := resource.kind
+
+      labels := resource.metadata.labels
+
+      annotations := resource.metadata.annotations
+
+      gv := split(apiVersion, "/")
+
+      group := gv[0] if {
+        contains(apiVersion, "/")
+      }
+
+      group := "core" if {
+        not contains(apiVersion, "/")
+      }
+
+      version := gv[count(gv) - 1]
+
+      has_field(obj, field) if {
+        not object.get(obj, field, "N_DEFINED") == "N_DEFINED"
+      }
+
+      missing_field(obj, field) if {
+        obj[field] == ""
+      }
+
+      missing_field(obj, field) if {
+        not has_field(obj, field)
+      }
+    - |-
+      package lib.psps
+
+      import data.lib.core
+      import future.keywords.contains
+      import future.keywords.if
+      import future.keywords.in
+
+      is_exception if {
+        exceptions := {
+          "gce.privileged", # GKE
+          "gce.persistent-volume-binder", # GKE
+          "gce.event-exporter", # GKE
+          "gce.gke-metrics-agent", # GKE
+          "gce.unprivileged-addon", # GKE
+          "gce.fluentd-gke", # GKE
+          "gce.fluentd-gcp", # GKE
+        }
+
+        core.name in exceptions
+      }
+
+      psps contains psp if {
+        lower(core.kind) = "podsecuritypolicy"
+        not is_exception
+        psp = core.resource
+      }
+    rego: |-
+      package psp_deny_host_alias
+
+      import data.lib.core
+      import data.lib.psps
+      import future.keywords.contains
+      import future.keywords.if
+
+      policyID := "P1011"
+
+      violation contains msg if {
+        psp_allows_hostaliases
+
+        msg := core.format_with_id(sprintf("%s/%s: Allows for managing host aliases", [core.kind, core.name]), policyID)
+      }
+
+      psp_allows_hostaliases if {
+        psps.psps[_].spec.hostAliases
+      }
+    target: admission.k8s.gatekeeper.sh
+status: {}

@@ -45,7 +45,7 @@
 This policy allows you to require certain labels are set on a resource. Adapted from https://github.com/open-policy-agent/gatekeeper/blob/master/example/templates/k8srequiredlabels_template.yaml
 
 
-_source: [required-labels](required-labels)_
+_source: [required_labels](required_labels)_
 
 ## P1001: Containers must drop all capabilities
 
@@ -63,7 +63,7 @@ for containers to escalate their privileges. As such, this is not allowed
 outside of Kubernetes controller namespaces.
 
 
-_source: [container-deny-added-caps](container-deny-added-caps)_
+_source: [container_deny_added_caps](container_deny_added_caps)_
 
 ## P1002: Containers must not allow for privilege escalation
 
@@ -80,7 +80,7 @@ Privileged containers can much more easily obtain root on the node.
 As such, they are not allowed.
 
 
-_source: [container-deny-escalation](container-deny-escalation)_
+_source: [container_deny_escalation](container_deny_escalation)_
 
 ## P1003: Containers must not run as privileged
 
@@ -98,7 +98,7 @@ such containers running as privileged or with sufficient capabilities granted
 to obtain the same effect are not allowed.
 
 
-_source: [container-deny-privileged](container-deny-privileged)_
+_source: [container_deny_privileged](container_deny_privileged)_
 
 ## P1004: Pods must not have access to the host aliases
 
@@ -114,7 +114,7 @@ _source: [container-deny-privileged](container-deny-privileged)_
 Pods that can change aliases in the host's /etc/hosts file can redirect traffic to malicious servers.
 
 
-_source: [pod-deny-host-alias](pod-deny-host-alias)_
+_source: [pod_deny_host_alias](pod_deny_host_alias)_
 
 ## P1005: Pods must not run with access to the host IPC
 
@@ -131,7 +131,7 @@ Pods that are allowed to access the host IPC can read memory of
 the other containers, breaking that security boundary.
 
 
-_source: [pod-deny-host-ipc](pod-deny-host-ipc)_
+_source: [pod_deny_host_ipc](pod_deny_host_ipc)_
 
 ## P1006: Pods must not run with access to the host networking
 
@@ -148,7 +148,7 @@ Pods that can access the host's network interfaces can potentially
 access and tamper with traffic the pod should not have access to.
 
 
-_source: [pod-deny-host-network](pod-deny-host-network)_
+_source: [pod_deny_host_network](pod_deny_host_network)_
 
 ## P1007: Pods must not run with access to the host PID namespace
 
@@ -166,7 +166,7 @@ modify processes outside of their namespace, breaking that security
 boundary.
 
 
-_source: [pod-deny-host-pid](pod-deny-host-pid)_
+_source: [pod_deny_host_pid](pod_deny_host_pid)_
 
 ## P1008: Pods must run as non-root
 
@@ -183,7 +183,7 @@ Pods running as root (uid of 0) can much more easily escalate privileges
 to root on the node. As such, they are not allowed.
 
 
-_source: [pod-deny-without-runasnonroot](pod-deny-without-runasnonroot)_
+_source: [pod_deny_without_runasnonroot](pod_deny_without_runasnonroot)_
 
 ## P1009: PodSecurityPolicies must require all capabilities are dropped
 
@@ -198,7 +198,7 @@ for containers to escalate their privileges. As such, this is not allowed
 outside of Kubernetes controller namespaces.
 
 
-_source: [psp-deny-added-caps](psp-deny-added-caps)_
+_source: [psp_deny_added_caps](psp_deny_added_caps)_
 
 ## P1010: PodSecurityPolicies must not allow privileged escalation
 
@@ -212,7 +212,7 @@ Allowing privileged containers can much more easily obtain root on the node.
 As such, they are not allowed.
 
 
-_source: [psp-deny-escalation](psp-deny-escalation)_
+_source: [psp_deny_escalation](psp_deny_escalation)_
 
 ## P1011: PodSecurityPolicies must not allow access to the host aliases
 
@@ -226,7 +226,7 @@ Allowing pods to can change aliases in the host's /etc/hosts file can
 redirect traffic to malicious servers.
 
 
-_source: [psp-deny-host-alias](psp-deny-host-alias)_
+_source: [psp_deny_host_alias](psp_deny_host_alias)_
 
 ## P1012: PodSecurityPolicies must not allow access to the host IPC
 
@@ -240,7 +240,7 @@ Allowing pods to access the host IPC can read memory of
 the other containers, breaking that security boundary.
 
 
-_source: [psp-deny-host-ipc](psp-deny-host-ipc)_
+_source: [psp_deny_host_ipc](psp_deny_host_ipc)_
 
 ## P1013: PodSecurityPolicies must not allow access to the host network
 
@@ -255,7 +255,7 @@ modify processes outside of their namespace, breaking that security
 boundary.
 
 
-_source: [psp-deny-host-network](psp-deny-host-network)_
+_source: [psp_deny_host_network](psp_deny_host_network)_
 
 ## P1014: PodSecurityPolicies must not allow access to the host PID namespace
 
@@ -270,7 +270,7 @@ modify processes outside of their namespace, breaking that security
 boundary.
 
 
-_source: [psp-deny-host-pid](psp-deny-host-pid)_
+_source: [psp_deny_host_pid](psp_deny_host_pid)_
 
 ## P1015: PodSecurityPolicies must require containers to not run as privileged
 
@@ -284,7 +284,7 @@ Allowing privileged containers can much more easily obtain root on the node.
 As such, they are not allowed.
 
 
-_source: [psp-deny-privileged](psp-deny-privileged)_
+_source: [psp_deny_privileged](psp_deny_privileged)_
 
 ## P2001: Images must not use the latest tag
 
@@ -316,7 +316,7 @@ The following snippet is an example of how to satisfy this requirement:
 ```
 
 
-_source: [container-deny-latest-tag](container-deny-latest-tag)_
+_source: [container_deny_latest_tag](container_deny_latest_tag)_
 
 ## P2002: Containers must define resource constraints
 
@@ -333,7 +333,7 @@ Resource constraints on containers ensure that a given workload does not take up
 and potentially starve other applications that need to run.
 
 
-_source: [container-deny-without-resource-constraints](container-deny-without-resource-constraints)_
+_source: [container_deny_without_resource_constraints](container_deny_without_resource_constraints)_
 
 ## P2005: Roles must not allow use of privileged PodSecurityPolicies
 
@@ -346,7 +346,7 @@ _source: [container-deny-without-resource-constraints](container-deny-without-re
 Workloads not running in the exempted namespaces must not use PodSecurityPolicies with privileged permissions.
 
 
-_source: [role-deny-use-privileged-psp](role-deny-use-privileged-psp)_
+_source: [role_deny_use_privileged_psps](role_deny_use_privileged_psps)_
 
 ## P2006: Tenants' containers must not run as privileged
 
@@ -368,7 +368,7 @@ To take advantage of this policy, it must be combined with another policy
 that enforces the 'is-tenant' label.
 
 
-_source: [container-deny-privileged-if-tenant](container-deny-privileged-if-tenant)_
+_source: [container_deny_privileged_if_tenant](container_deny_privileged_if_tenant)_
 
 ## P0001: Deprecated Deployment and DaemonSet API
 
@@ -384,7 +384,7 @@ remove this API so to ensure that the Deployment or DaemonSet can be successfull
 the version for both of these resources must be `apps/v1`.
 
 
-_source: [any-warn-deprecated-api-versions](any-warn-deprecated-api-versions)_
+_source: [any_warn_deprecated_api_versions](any_warn_deprecated_api_versions)_
 
 ## P2003: Containers should not have a writable root filesystem
 
@@ -401,7 +401,7 @@ In order to prevent persistence in the case of a compromise, it is
 important to make the root filesystem read-only.
 
 
-_source: [container-warn-no-ro-fs](container-warn-no-ro-fs)_
+_source: [container_warn_no_ro_fs](container_warn_no_ro_fs)_
 
 ## P2004: PodSecurityPolicies should require that a read-only root filesystem is set
 
@@ -415,5 +415,5 @@ Allowing pods to access the host's network interfaces can potentially
 access and tamper with traffic the pod should not have access to.
 
 
-_source: [psp-warn-no-ro-fs](psp-warn-no-ro-fs)_
+_source: [psp_warn_no_ro_fs](psp_warn_no_ro_fs)_
 

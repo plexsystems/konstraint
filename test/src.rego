@@ -38,10 +38,11 @@
 #     - prod
 package test
 
+import future.keywords.if
 import data.lib.libraryA
 
 policyID := "P123456"
 
-violation[{"msg": "msg"}] {
+violation if {
     true # some comment
 }

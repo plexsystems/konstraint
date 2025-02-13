@@ -1,10 +1,9 @@
 package lib.psps
 
+import data.lib.core
 import future.keywords.contains
 import future.keywords.if
 import future.keywords.in
-
-import data.lib.core
 
 # PodSecurityPolicies are not namespace scoped, so the default PSPs included
 # in managed Kubernetes offerings cannot be excluded using the normal
