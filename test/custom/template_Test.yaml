@@ -1,0 +1,37 @@
+# This is a custom template for a constraint template
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: test
+spec:
+  crd:
+    spec:
+      names:
+        kind: Test
+      validation:
+        openAPIV3Schema:
+          properties:
+            super:
+              description: |-
+                super duper cool parameter with a description
+                on two lines.
+              type: string
+  targets:
+  - libs:
+    - |-
+      package lib.libraryA
+      
+      import data.lib.libraryB
+    - |-
+      package lib.libraryB
+    rego: |-
+      package test
+      
+      import data.lib.libraryA
+      
+      policyID := "P123456"
+      
+      violation[{"msg": "msg"}] {
+          true # some comment
+      }
+    target: admission.k8s.gatekeeper.sh
