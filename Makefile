@@ -37,14 +37,6 @@ fmt: ## Ensures consistent formatting on policy tests.
 ##@ Releases
 #
 
-.PHONY: docker-build
-docker-build: ## Builds the docker image. Can optionally pass in a version.
-ifeq ($(version),)
-	docker build -t konstraint:latest .
-else
-	docker build -t konstraint:latest -t konstraint:$(version) --build-arg KONSTRAINT_VER=$(version) .
-endif
-
 .PHONY: release
 release: ## Builds the binaries for each OS and creates the checksums.
 	@test $(version)
