@@ -20,7 +20,7 @@ acceptance: build ## Runs the acceptance tests.
 
 .PHONY: policy
 policy: ## Runs the policy tests.
-	conftest verify -p examples
+	conftest verify -p examples -d examples/test-data
 
 .PHONY: update-static
 update-static: build ## Updates the static assets in the repository.
