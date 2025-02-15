@@ -1,6 +1,10 @@
 name: Pull Request
 on: [pull_request]
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   lint:
     name: Lint
@@ -74,19 +78,44 @@ jobs:
     name: Docker Tests
     needs: [lint]
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: docker build
-        run: make docker-build
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          build-args: |
+            KONSTRAINT_VER="${{ env.DOCKER_METADATA_OUTPUT_VERSION }}"
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: test create command
-        run: docker run -v $PWD:/konstraint konstraint create /konstraint/examples
+        run: docker run -v $PWD:/konstraint ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DOCKER_METADATA_OUTPUT_VERSION }} create /konstraint/examples
 
       - name: test doc command
-        run: docker run -v $PWD:/konstraint konstraint doc /konstraint/examples
+        run: docker run -v $PWD:/konstraint ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DOCKER_METADATA_OUTPUT_VERSION }} doc /konstraint/examples
 
   policy-checks:
     name: Policy Checks
