@@ -64,10 +64,20 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 				return fmt.Errorf("bind partial-constraints flag: %w", err)
 			}
 
+			if err := viper.BindPFlag("log-level", cmd.PersistentFlags().Lookup("log-level")); err != nil {
+				return fmt.Errorf("bind log-level flag: %w", err)
+			}
+
 			if cmd.PersistentFlags().Lookup("constraint-template-custom-template-file").Changed && cmd.PersistentFlags().Lookup("constraint-template-version").Changed {
 				return fmt.Errorf("need to set either constraint-template-custom-template-file or constraint-template-version")
 			}
-
+			if cmd.PersistentFlags().Lookup("log-level").Changed {
+				level, err := log.ParseLevel(viper.GetString("log-level"))
+				if err != nil {
+					return fmt.Errorf("Unknown log level: Need to use either error, info, debug or trace")
+				}
+				log.SetLevel(level)
+			}
 			path := "."
 			if len(args) > 0 {
 				path = args[0]
@@ -78,13 +88,13 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 	}
 
 	cmd.PersistentFlags().StringP("output", "o", "", "Specify an output directory for the Gatekeeper resources")
-	cmd.PersistentFlags().BoolP("dryrun", "d", false, "Sets the enforcement action of the constraints to dryrun, overriding the @enforcement tag")
+	cmd.PersistentFlags().BoolP("dryrun", "d", false, "Set the enforcement action of the constraints to dryrun, overriding the @enforcement tag")
 	cmd.PersistentFlags().Bool("skip-constraints", false, "Skip generation of constraints")
 	cmd.PersistentFlags().String("constraint-template-version", "v1beta1", "Set the version of ConstraintTemplates")
 	cmd.PersistentFlags().Bool("partial-constraints", false, "Generate partial Constraints for policies with parameters")
 	cmd.PersistentFlags().String("constraint-template-custom-template-file", "", "Path to a custom template file to generate constraint templates")
 	cmd.PersistentFlags().String("constraint-custom-template-file", "", "Path to a custom template file to generate constraints")
-
+	cmd.PersistentFlags().String("log-level", "info", "Set a log level. Options: error, info, debug, trace")
 	return &cmd
 }
 
@@ -99,6 +109,8 @@ func runCreateCommand(path string) error {
 			"name": violation.Kind(),
 			"src":  violation.Path(),
 		})
+
+		logger.Debug("Rendering policy")
 
 		if violation.SkipTemplate() {
 			logger.Info("Skipping constrainttemplate generation due to configuration")
