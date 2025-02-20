@@ -10,12 +10,21 @@ metadata:
   {{- end }}
   name: {{ .Name }}
 spec:
-  {{- if .Matchers }}
-  match: {{- .GetAnnotation "matchers" | toIndentYAML 2 | nindent 4 }}
-  {{- end }}
   {{- if ne .Enforcement "deny" }}
   enforcementAction: {{ .Enforcement }}
   {{- end -}}
-  {{- if .AnnotationParameters }}
-  parameters: {{- .AnnotationParameters | toIndentYAML 2 | nindent 4 }}
+  {{- if or .AnnotationKindMatchers .AnnotationNamespaceMatchers .AnnotationExcludedNamespaceMatchers .AnnotationLabelSelectorMatcher }}
+  match:
+  {{- if .AnnotationExcludedNamespaceMatchers }}
+    excludedNamespaces: {{- .AnnotationExcludedNamespaceMatchers | toIndentYAML 2 | nindent 6 }}
+  {{- end }}
+  {{- if .AnnotationKindMatchers }}
+    kinds: {{- .AnnotationKindMatchers | toJSON | fromJSON | toIndentYAML 2 | nindent 6 }}
+  {{- end }}
+  {{- if .AnnotationLabelSelectorMatcher }}
+    labelSelector: {{- .AnnotationLabelSelectorMatcher | toJSON | fromJSON | toIndentYAML 2 | nindent 6 }}
+  {{- end }}
+  {{- if .AnnotationNamespaceMatchers }}
+    namespaces: {{- .AnnotationNamespaceMatchers | toIndentYAML 2 | nindent 6 }}
+  {{- end }}
   {{- end }}
