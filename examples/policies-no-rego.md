@@ -10,7 +10,7 @@
 * [P1005: Pods must not run with access to the host IPC](#p1005-pods-must-not-run-with-access-to-the-host-ipc)
 * [P1006: Pods must not run with access to the host networking](#p1006-pods-must-not-run-with-access-to-the-host-networking)
 * [P1007: Pods must not run with access to the host PID namespace](#p1007-pods-must-not-run-with-access-to-the-host-pid-namespace)
-* [P1008: Pods must run as non-root](#p1008-pods-must-run-as-non-root)
+* [P1008: Pods must run as non\-root](#p1008-pods-must-run-as-non-root)
 * [P1009: PodSecurityPolicies must require all capabilities are dropped](#p1009-podsecuritypolicies-must-require-all-capabilities-are-dropped)
 * [P1010: PodSecurityPolicies must not allow privileged escalation](#p1010-podsecuritypolicies-must-not-allow-privileged-escalation)
 * [P1011: PodSecurityPolicies must not allow access to the host aliases](#p1011-podsecuritypolicies-must-not-allow-access-to-the-host-aliases)
@@ -21,13 +21,14 @@
 * [P2001: Images must not use the latest tag](#p2001-images-must-not-use-the-latest-tag)
 * [P2002: Containers must define resource constraints](#p2002-containers-must-define-resource-constraints)
 * [P2005: Roles must not allow use of privileged PodSecurityPolicies](#p2005-roles-must-not-allow-use-of-privileged-podsecuritypolicies)
-* [P2006: Tenants' containers must not run as privileged](#p2006-tenants'-containers-must-not-run-as-privileged)
+* [P2006: Tenants' containers must not run as privileged](#p2006-tenants-containers-must-not-run-as-privileged)
 
 ## Warnings
 
 * [P0001: Deprecated Deployment and DaemonSet API](#p0001-deprecated-deployment-and-daemonset-api)
+* [P0003: Title \_wórds\_ with\-punct\_uation\_ \!"\#$%&'\(\)\*\+,\./:;\<=\>?@\[\\\]^\`\{\|\}~mark ](#p0003-title-_wórds_-with-punct_uation_-mark)
 * [P2003: Containers should not have a writable root filesystem](#p2003-containers-should-not-have-a-writable-root-filesystem)
-* [P2004: PodSecurityPolicies should require that a read-only root filesystem is set](#p2004-podsecuritypolicies-should-require-that-a-read-only-root-filesystem-is-set)
+* [P2004: PodSecurityPolicies should require that a read\-only root filesystem is set](#p2004-podsecuritypolicies-should-require-that-a-read-only-root-filesystem-is-set)
 
 ## P0002: Required Labels
 
@@ -168,7 +169,7 @@ boundary.
 
 _source: [pod_deny_host_pid](pod_deny_host_pid)_
 
-## P1008: Pods must run as non-root
+## P1008: Pods must run as non\-root
 
 **Severity:** Violation
 
@@ -341,7 +342,7 @@ _source: [container_deny_without_resource_constraints](container_deny_without_re
 
 **Resources:**
 
-- rbac.authorization.k8s.io/Role
+- rbac\.authorization\.k8s\.io/Role
 
 Workloads not running in the exempted namespaces must not use PodSecurityPolicies with privileged permissions.
 
@@ -359,7 +360,7 @@ _source: [role_deny_use_privileged_psps](role_deny_use_privileged_psps)_
 - apps/Deployment
 - apps/StatefulSet
 
-**MatchLabels:** is-tenant=true
+**MatchLabels:** is\-tenant=true
 
 Privileged containers can easily escalate to root privileges on the node. As
 such containers running as privileged or with sufficient capabilities granted
@@ -386,6 +387,25 @@ the version for both of these resources must be `apps/v1`.
 
 _source: [any_warn_deprecated_api_versions](any_warn_deprecated_api_versions)_
 
+## P0003: Title \_wórds\_ with\-punct\_uation\_ \!"\#$%&'\(\)\*\+,\./:;\<=\>?@\[\\\]^\`\{\|\}~mark 
+
+**Severity:** Warning
+
+**Resources:**
+
+- \*/Pod
+
+**MatchLabels:** \_test\_=true
+
+**Parameters:**
+
+* \_param\_name\_: array of string
+
+This is only here to test and illustrate _punctuation_ / Markdown handling
+
+
+_source: [policy_markdown_punctuation](policy_markdown_punctuation)_
+
 ## P2003: Containers should not have a writable root filesystem
 
 **Severity:** Warning
@@ -403,7 +423,7 @@ important to make the root filesystem read-only.
 
 _source: [container_warn_no_ro_fs](container_warn_no_ro_fs)_
 
-## P2004: PodSecurityPolicies should require that a read-only root filesystem is set
+## P2004: PodSecurityPolicies should require that a read\-only root filesystem is set
 
 **Severity:** Warning
 
