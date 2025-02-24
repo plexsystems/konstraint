@@ -1,4 +1,4 @@
-apiVersion: templates.gatekeeper.sh/v1beta1
+apiVersion: templates.gatekeeper.sh/v1
 kind: ConstraintTemplate
 metadata:
   creationTimestamp: null
@@ -16,6 +16,7 @@ spec:
                 super duper cool parameter with a description
                 on two lines.
               type: string
+          type: object
   targets:
   - libs:
     - |-

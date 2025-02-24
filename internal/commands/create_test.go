@@ -85,7 +85,7 @@ func TestRenderConstraintTemplate(t *testing.T) {
 	// Need to remove carriage return for testing on windows
 	expected = bytes.Replace(expected, []byte("\r"), []byte(""), -1)
 
-	actual, err := renderConstraintTemplate(violations[0], "v1beta1", "", entry.LastEntry())
+	actual, err := renderConstraintTemplate(violations[0], "v1", "", entry.LastEntry())
 	if err != nil {
 		t.Errorf("Error rendering constrainttemplate: %v", err)
 	}

@@ -90,7 +90,7 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 	cmd.PersistentFlags().StringP("output", "o", "", "Specify an output directory for the Gatekeeper resources")
 	cmd.PersistentFlags().BoolP("dryrun", "d", false, "Set the enforcement action of the constraints to dryrun, overriding the @enforcement tag")
 	cmd.PersistentFlags().Bool("skip-constraints", false, "Skip generation of constraints")
-	cmd.PersistentFlags().String("constraint-template-version", "v1beta1", "Set the version of ConstraintTemplates")
+	cmd.PersistentFlags().String("constraint-template-version", "v1", "Set the version of ConstraintTemplates")
 	cmd.PersistentFlags().Bool("partial-constraints", false, "Generate partial Constraints for policies with parameters")
 	cmd.PersistentFlags().String("constraint-template-custom-template-file", "", "Path to a custom template file to generate constraint templates")
 	cmd.PersistentFlags().String("constraint-custom-template-file", "", "Path to a custom template file to generate constraints")
