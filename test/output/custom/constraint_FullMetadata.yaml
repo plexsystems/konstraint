@@ -1,0 +1,34 @@
+# This is a custom template for constraints
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: FullMetadata
+metadata:
+  name: fullmetadata
+spec:
+  match:
+    excludedNamespaces:
+      - kube-system
+      - gatekeeper-system
+    kinds:
+      - apiGroups:
+          - ""
+        kinds:
+          - Pod
+      - apiGroups:
+          - apps
+        kinds:
+          - DaemonSet
+          - Deployment
+          - StatefulSet
+    labelSelector:
+      matchExpressions:
+        - key: foo
+          operator: In
+          values:
+            - bar
+            - baz
+        - key: doggos
+          operator: Exists
+    namespaces:
+      - dev
+      - stage
+      - prod

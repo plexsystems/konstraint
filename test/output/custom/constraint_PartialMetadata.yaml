@@ -1,0 +1,11 @@
+# This is a custom template for constraints
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: PartialMetadata
+metadata:
+  name: partialmetadata
+spec:
+  match:
+    namespaces:
+      - dev
+      - stage
+      - prod
