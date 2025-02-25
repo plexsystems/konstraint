@@ -36,6 +36,7 @@ type Document struct {
 	Header Header
 	URL    string
 	Rego   string
+	Policy rego.Rego
 }
 
 //go:embed document_template.tpl
@@ -308,6 +309,7 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 			Header: header,
 			URL:    url,
 			Rego:   rego,
+			Policy: policy,
 		}
 
 		if policy.Severity() == "" {
