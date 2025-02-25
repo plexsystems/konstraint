@@ -1,4 +1,4 @@
-apiVersion: templates.gatekeeper.sh/v1beta1
+apiVersion: templates.gatekeeper.sh/v1
 kind: ConstraintTemplate
 metadata:
   creationTimestamp: null
@@ -16,7 +16,7 @@ spec:
       import data.lib.libraryB
     - package lib.libraryB
     rego: |-
-      package test_partial_metadata
+      package test_partialmetadata
 
       import future.keywords.if
       import data.lib.libraryA

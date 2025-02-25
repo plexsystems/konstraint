@@ -25,7 +25,7 @@ spec:
     - |-
       package lib.libraryB
     rego: |-
-      package test
+      package test_fullmetadata
       
       import future.keywords.if
       import data.lib.libraryA

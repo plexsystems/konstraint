@@ -7,7 +7,7 @@
 #     - dev
 #     - stage
 #     - prod
-package test_partial_metadata
+package test_partialmetadata
 
 import future.keywords.if
 import data.lib.libraryA
