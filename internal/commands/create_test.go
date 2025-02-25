@@ -19,7 +19,7 @@ func TestRenderConstraint(t *testing.T) {
 		t.Errorf("Error getting violations: %v", err)
 	}
 
-	expected, err := os.ReadFile("../../test/constraint_Test.yaml")
+	expected, err := os.ReadFile("../../test/output/standard/constraint_Test.yaml")
 	if err != nil {
 		t.Errorf("Error reading expected file: %v", err)
 	}
@@ -48,7 +48,7 @@ func TestRenderConstraintWithCustomTemplate(t *testing.T) {
 		t.Errorf("Error getting violations: %v", err)
 	}
 
-	expected, err := os.ReadFile("../../test/custom/constraint_Test.yaml")
+	expected, err := os.ReadFile("../../test/output/custom/constraint_Test.yaml")
 	if err != nil {
 		t.Errorf("Error reading expected file: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestRenderConstraintTemplate(t *testing.T) {
 		t.Errorf("Error getting violations: %v", err)
 	}
 
-	expected, err := os.ReadFile("../../test/template_Test.yaml")
+	expected, err := os.ReadFile("../../test/output/standard/template_Test.yaml")
 	if err != nil {
 		t.Errorf("Error reading expected file: %v", err)
 	}
@@ -106,7 +106,7 @@ func TestRenderConstraintTemplateWithCustomTemplate(t *testing.T) {
 		t.Errorf("Error getting violations: %v", err)
 	}
 
-	expected, err := os.ReadFile("../../test/custom/template_Test.yaml")
+	expected, err := os.ReadFile("../../test/output/custom/template_Test.yaml")
 	if err != nil {
 		t.Errorf("Error reading expected file: %v", err)
 	}

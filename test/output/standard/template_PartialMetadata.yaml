@@ -1,0 +1,30 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  creationTimestamp: null
+  name: partialmetadata
+spec:
+  crd:
+    spec:
+      names:
+        kind: PartialMetadata
+  targets:
+  - libs:
+    - |-
+      package lib.libraryA
+
+      import data.lib.libraryB
+    - package lib.libraryB
+    rego: |-
+      package test_partial_metadata
+
+      import future.keywords.if
+      import data.lib.libraryA
+
+      policyID := "P123456"
+
+      violation if {
+          true # some comment
+      }
+    target: admission.k8s.gatekeeper.sh
+status: {}
