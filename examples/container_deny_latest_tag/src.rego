@@ -6,17 +6,17 @@
 #
 #   The following snippet is an example of how to satisfy this requirement:
 #
-#    ```
-#    apiVersion: apps/v1
-#    kind: Deployment
-#    metadata:
-#      name: redis
-#    spec:
-#      template:
-#        spec:
-#          containers:
-#            - name: redis
-#              image: redis:6.2
+#   ```yaml
+#   apiVersion: apps/v1
+#   kind: Deployment
+#   metadata:
+#     name: redis
+#   spec:
+#     template:
+#       spec:
+#         containers:
+#           - name: redis
+#             image: redis:6.2
 #   ```
 # custom:
 #   matchers:
