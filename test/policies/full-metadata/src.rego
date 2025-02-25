@@ -36,7 +36,7 @@
 #     - dev
 #     - stage
 #     - prod
-package test
+package test_fullmetadata
 
 import future.keywords.if
 import data.lib.libraryA

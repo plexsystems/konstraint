@@ -1,7 +1,7 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: Test
+kind: FullMetadata
 metadata:
-  name: test
+  name: fullmetadata
 spec:
   match:
     excludedNamespaces:
