@@ -193,9 +193,8 @@ func (r Rego) GetAnnotation(name string) (any, error) {
 	default:
 		if v, ok := r.annotations.Custom[name]; ok {
 			return v, nil
-		} else {
-			return nil, fmt.Errorf("Couldn't lookup %s in annotations", name)
 		}
+		return nil, fmt.Errorf("Couldn't lookup %s in annotations", name)
 	}
 }
 
