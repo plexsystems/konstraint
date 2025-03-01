@@ -1,6 +1,7 @@
 module github.com/plexsystems/konstraint
 
-go 1.23.4
+go 1.23.6
+
 require (
 	github.com/go-sprout/sprout v1.0.0
 	github.com/google/go-cmp v0.7.0
