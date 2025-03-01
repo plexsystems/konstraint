@@ -19,13 +19,13 @@
 }
 
 @test "[CREATE] Creating constraints using --output matches expected output" {
-  run ./build/konstraint create test --output test
+  run ./build/konstraint create test/policies --output test/output/standard
   [ "$status" -eq 0 ]
-  git diff --quiet -- test/
+  git diff --quiet -- test/output/standard
 }
 
 @test "[CREATE] Creating constraints using --constraint-custom-template-file, --constraint-template-custom-template-file and --output matches expected output" {
-  run ./build/konstraint create test --constraint-custom-template-file internal/commands/constraint_template.tpl --constraint-template-custom-template-file internal/commands/constrainttemplate_template.tpl --partial-constraints --output test/custom
+  run ./build/konstraint create test/policies --constraint-custom-template-file internal/commands/constraint_template.tpl --constraint-template-custom-template-file internal/commands/constrainttemplate_template.tpl --partial-constraints --output test/output/custom
   [ "$status" -eq 0 ]
-  git diff --quiet -- test/custom
+  git diff --quiet -- test/output/custom
 }

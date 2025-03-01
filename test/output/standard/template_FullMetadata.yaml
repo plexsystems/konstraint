@@ -1,0 +1,39 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  creationTimestamp: null
+  name: fullmetadata
+spec:
+  crd:
+    spec:
+      names:
+        kind: FullMetadata
+      validation:
+        openAPIV3Schema:
+          properties:
+            super:
+              description: |-
+                super duper cool parameter with a description
+                on two lines.
+              type: string
+          type: object
+  targets:
+  - libs:
+    - |-
+      package lib.libraryA
+
+      import data.lib.libraryB
+    - package lib.libraryB
+    rego: |-
+      package test_fullmetadata
+
+      import future.keywords.if
+      import data.lib.libraryA
+
+      policyID := "P123456"
+
+      violation if {
+          true # some comment
+      }
+    target: admission.k8s.gatekeeper.sh
+status: {}

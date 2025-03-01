@@ -2,21 +2,12 @@ apiVersion: templates.gatekeeper.sh/v1
 kind: ConstraintTemplate
 metadata:
   creationTimestamp: null
-  name: test
+  name: partialmetadata
 spec:
   crd:
     spec:
       names:
-        kind: Test
-      validation:
-        openAPIV3Schema:
-          properties:
-            super:
-              description: |-
-                super duper cool parameter with a description
-                on two lines.
-              type: string
-          type: object
+        kind: PartialMetadata
   targets:
   - libs:
     - |-
@@ -25,7 +16,7 @@ spec:
       import data.lib.libraryB
     - package lib.libraryB
     rego: |-
-      package test
+      package test_partialmetadata
 
       import future.keywords.if
       import data.lib.libraryA
