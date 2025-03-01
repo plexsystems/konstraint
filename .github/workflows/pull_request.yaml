@@ -13,7 +13,7 @@ jobs:
       - name: setup go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.23.x
+          go-version: 1.24.x
 
       - name: checkout
         uses: actions/checkout@v4
@@ -21,7 +21,7 @@ jobs:
       - name: lint go
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.61
+          version: v1.64
           args: --timeout=5m --color=always --max-same-issues=0 --max-issues-per-linter=0
 
   acceptance:
@@ -35,7 +35,7 @@ jobs:
       - name: setup go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.23.x
+          go-version: 1.24.x
 
       - name: checkout source
         uses: actions/checkout@v4
