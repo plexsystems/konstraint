@@ -25,7 +25,7 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
       --constraint-custom-template-file string            Path to a custom template file to generate constraints
       --constraint-template-custom-template-file string   Path to a custom template file to generate constraint templates
       --constraint-template-version string                Set the version of ConstraintTemplates (default "v1")
-  -d, --dryrun                                            Set the enforcement action of the constraints to dryrun, overriding the @enforcement tag
+  -d, --dryrun                                            Set the enforcement action of the constraints to dryrun, overriding the enforcement setting
   -h, --help                                              help for create
       --log-level string                                  Set a log level. Options: error, info, debug, trace (default "info")
   -o, --output string                                     Specify an output directory for the Gatekeeper resources
