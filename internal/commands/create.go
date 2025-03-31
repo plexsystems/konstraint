@@ -74,7 +74,7 @@ Create constraints with the Gatekeeper enforcement action set to dryrun
 			if cmd.PersistentFlags().Lookup("log-level").Changed {
 				level, err := log.ParseLevel(viper.GetString("log-level"))
 				if err != nil {
-					return fmt.Errorf("Unknown log level: Need to use either error, info, debug or trace")
+					return fmt.Errorf("unknown log level: Need to use either error, info, debug or trace")
 				}
 				log.SetLevel(level)
 			}
