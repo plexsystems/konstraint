@@ -1,19 +1,9 @@
-linters-settings:
-  misspell:
-    locale: US
-  staticcheck:
-    checks:
-      - "all" # Include all checks except the ones below.
-      - "-SA1019" # Do not block the build if deprecated functions or packages are used.
-
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
     - errcheck
     - goconst
-    - gofmt
-    - goimports
-    - gosimple
     - govet
     - ineffassign
     - makezero
@@ -22,8 +12,35 @@ linters:
     - predeclared
     - revive
     - staticcheck
-    - typecheck
     - unconvert
     - unparam
     - unused
     - wastedassign
+  settings:
+    misspell:
+      locale: US
+    staticcheck:
+      checks:
+        - all
+        - -SA1019 # Do not block the build if deprecated functions or packages are used.
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

@@ -25,7 +25,7 @@ func TestRenderConstraint(t *testing.T) {
 	}
 
 	// Need to remove carriage return for testing on Windows
-	expected = bytes.Replace(expected, []byte("\r"), []byte(""), -1)
+	expected = bytes.ReplaceAll(expected, []byte("\r"), []byte(""))
 
 	actual, err := renderConstraint(violations[0], "", entry.LastEntry())
 	if err != nil {
@@ -33,7 +33,7 @@ func TestRenderConstraint(t *testing.T) {
 	}
 
 	// Need to remove carriage return for testing on Windows
-	actual = bytes.Replace(actual, []byte("\r"), []byte(""), -1)
+	actual = bytes.ReplaceAll(actual, []byte("\r"), []byte(""))
 
 	if !bytes.Equal(actual, expected) {
 		t.Errorf("Unexpected rendered template:\n %v", cmp.Diff(string(expected), string(actual)))
@@ -54,7 +54,7 @@ func TestRenderConstraintWithCustomTemplate(t *testing.T) {
 	}
 
 	// Need to remove carriage return for testing on Windows
-	expected = bytes.Replace(expected, []byte("\r"), []byte(""), -1)
+	expected = bytes.ReplaceAll(expected, []byte("\r"), []byte(""))
 
 	actual, err := renderConstraint(violations[0], "constraint_template.tpl", entry.LastEntry())
 	if err != nil {
@@ -62,7 +62,7 @@ func TestRenderConstraintWithCustomTemplate(t *testing.T) {
 	}
 
 	// Need to remove carriage return for testing on Windows
-	actual = bytes.Replace(actual, []byte("\r"), []byte(""), -1)
+	actual = bytes.ReplaceAll(actual, []byte("\r"), []byte(""))
 
 	if !bytes.Equal(actual, expected) {
 		t.Errorf("Unexpected rendered template:\n %v", cmp.Diff(string(expected), string(actual)))
@@ -83,7 +83,7 @@ func TestRenderConstraintTemplate(t *testing.T) {
 	}
 
 	// Need to remove carriage return for testing on windows
-	expected = bytes.Replace(expected, []byte("\r"), []byte(""), -1)
+	expected = bytes.ReplaceAll(expected, []byte("\r"), []byte(""))
 
 	actual, err := renderConstraintTemplate(violations[0], "v1", "", entry.LastEntry())
 	if err != nil {
@@ -91,7 +91,7 @@ func TestRenderConstraintTemplate(t *testing.T) {
 	}
 
 	// Need to remove carriage return for testing on Windows
-	actual = bytes.Replace(actual, []byte("\r"), []byte(""), -1)
+	actual = bytes.ReplaceAll(actual, []byte("\r"), []byte(""))
 
 	if !bytes.Equal(actual, expected) {
 		t.Errorf("Unexpected rendered template:\n %v", cmp.Diff(string(expected), string(actual)))
@@ -112,7 +112,7 @@ func TestRenderConstraintTemplateWithCustomTemplate(t *testing.T) {
 	}
 
 	// Need to remove carriage return for testing on Windows
-	expected = bytes.Replace(expected, []byte("\r"), []byte(""), -1)
+	expected = bytes.ReplaceAll(expected, []byte("\r"), []byte(""))
 
 	actual, err := renderConstraintTemplate(violations[0], "v1", "constrainttemplate_template.tpl", entry.LastEntry())
 
@@ -121,7 +121,7 @@ func TestRenderConstraintTemplateWithCustomTemplate(t *testing.T) {
 	}
 
 	// Need to remove carriage return for testing on Windows
-	actual = bytes.Replace(actual, []byte("\r"), []byte(""), -1)
+	actual = bytes.ReplaceAll(actual, []byte("\r"), []byte(""))
 
 	if !bytes.Equal(actual, expected) {
 		t.Errorf("Unexpected rendered template:\n %v", cmp.Diff(string(expected), string(actual)))
