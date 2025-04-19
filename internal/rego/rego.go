@@ -183,7 +183,7 @@ func (r Rego) AnnotationParameters() map[string]apiextensionsv1.JSONSchemaProps 
 
 func (r Rego) GetAnnotation(name string) (any, error) {
 	if r.annotations == nil {
-		return nil, fmt.Errorf("No annotations set")
+		return nil, fmt.Errorf("no annotations set")
 	}
 	switch name {
 	case "title":
@@ -194,7 +194,7 @@ func (r Rego) GetAnnotation(name string) (any, error) {
 		if v, ok := r.annotations.Custom[name]; ok {
 			return v, nil
 		}
-		return nil, fmt.Errorf("Couldn't lookup %s in annotations", name)
+		return nil, fmt.Errorf("couldn't lookup %s in annotations", name)
 	}
 }
 
