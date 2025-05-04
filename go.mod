@@ -1,7 +1,6 @@
 module github.com/plexsystems/konstraint
 
 go 1.23.8
-
 toolchain go1.24.2
 
 require (
@@ -14,7 +13,7 @@ require (
 	github.com/spf13/viper v1.20.1
 	golang.org/x/text v0.24.0
 	k8s.io/apiextensions-apiserver v0.32.3
-	k8s.io/apimachinery v0.32.3
+	k8s.io/apimachinery v0.33.0
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -36,10 +35,8 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/cel-go v0.22.0 // indirect
-	github.com/google/gnostic-models v0.6.8 // indirect
-	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -85,9 +82,10 @@ require (
 	k8s.io/apiserver v0.32.3 // indirect
 	k8s.io/component-base v0.32.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
+	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738 // indirect
 	sigs.k8s.io/controller-runtime v0.18.4 // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.4.2 // indirect
+	sigs.k8s.io/randfill v1.0.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 )
