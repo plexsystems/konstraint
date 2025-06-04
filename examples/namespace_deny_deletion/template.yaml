@@ -2,12 +2,12 @@ apiVersion: templates.gatekeeper.sh/v1
 kind: ConstraintTemplate
 metadata:
   creationTimestamp: null
-  name: containerdenywithoutresourceconstraints
+  name: namespacedenydeletion
 spec:
   crd:
     spec:
       names:
-        kind: ContainerDenyWithoutResourceConstraints
+        kind: NamespaceDenyDeletion
   targets:
   - libs:
     - |-
@@ -87,62 +87,26 @@ spec:
       missing_field(obj, field) if {
         not has_field(obj, field)
       }
-    - |-
-      package lib.pods
-
-      import future.keywords.contains
-      import future.keywords.if
-
-      import data.lib.core
-
-      default pod := false
-
-      pod := core.resource.spec.template if {
-        pod_templates := ["daemonset", "deployment", "job", "replicaset", "replicationcontroller", "statefulset"]
-        lower(core.kind) == pod_templates[_]
-      }
-
-      pod := core.resource if {
-        lower(core.kind) == "pod"
-      }
-
-      pod := core.resource.spec.jobTemplate.spec.template if {
-        lower(core.kind) == "cronjob"
-      }
-
-      containers contains container if {
-        keys := {"containers", "initContainers"}
-        all_containers := [c | some k; keys[k]; c = pod.spec[k][_]]
-        container := all_containers[_]
-      }
-
-      volumes contains pod.spec.volumes[_]
     rego: |-
-      package container_deny_without_resource_constraints
+      package namespace_deny_delete
 
       import data.lib.core
-      import data.lib.pods
       import future.keywords.contains
       import future.keywords.if
+      import future.keywords.if
 
-      policyID := "P2002"
+      policyID := "P2007"
 
       violation contains msg if {
-        some container
-        pods.containers[container]
-        not container_resources_provided(container)
+        core.kind == "Namespace"
+        core.operation == "DELETE"
+        not allow_namespace_deletion
 
-        msg := core.format_with_id(
-          sprintf("%s/%s/%s: Container resource constraints must be specified", [core.kind, core.name, container.name]),
-          policyID,
-        )
+        msg := core.format_with_id(sprintf("%s/%s: Deletion of Namespace is not allowed", [core.kind, core.name]), policyID)
       }
 
-      container_resources_provided(container) if {
-        container.resources.requests.cpu
-        container.resources.requests.memory
-        container.resources.limits.cpu
-        container.resources.limits.memory
+      allow_namespace_deletion if {
+        core.annotations["allow-deletion"] == "true"
       }
     target: admission.k8s.gatekeeper.sh
 status: {}

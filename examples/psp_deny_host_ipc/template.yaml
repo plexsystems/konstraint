@@ -22,11 +22,22 @@ spec:
         has_field(input.review, "object")
       }
 
-      resource := input.review.object if {
-        is_gatekeeper
+      is_gatekeeper if {
+        has_field(input, "review")
+        has_field(input.review, "oldObject")
       }
 
-      resource := input if {
+      resource := input.review.object if {
+        is_gatekeeper
+        has_field(input.review, "object")
+      }
+
+      else := input.review.oldObject if {
+        is_gatekeeper
+        has_field(input.review, "oldObject")
+      }
+
+      else := input if {
         not is_gatekeeper
       }
 
@@ -46,6 +57,12 @@ spec:
       labels := resource.metadata.labels
 
       annotations := resource.metadata.annotations
+
+      operation := input.review.operation if {
+        is_gatekeeper
+      } else := input.operation if {
+        not is_gatekeeper
+      }
 
       gv := split(apiVersion, "/")
 
