@@ -10,6 +10,10 @@ test_is_gk if {
 	is_gatekeeper with input as {"review": {"object": {"kind": "test"}}}
 }
 
+test_is_gk_oldobject if {
+	is_gatekeeper with input as {"review": {"oldObject": {"kind": "test"}}}
+}
+
 test_has_field_pos if {
 	has_field({"kind": "test"}, "kind")
 }

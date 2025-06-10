@@ -22,6 +22,7 @@
 * [P2002: Containers must define resource constraints](#p2002-containers-must-define-resource-constraints)
 * [P2005: Roles must not allow use of privileged PodSecurityPolicies](#p2005-roles-must-not-allow-use-of-privileged-podsecuritypolicies)
 * [P2006: Tenants' containers must not run as privileged](#p2006-tenants-containers-must-not-run-as-privileged)
+* [P2007: Namespace deletion must be denied unless explicitly allowed](#p2007-namespace-deletion-must-be-denied-unless-explicitly-allowed)
 
 ## Warnings
 
@@ -915,6 +916,43 @@ container_is_privileged(container) if {
 ```
 
 _source: [container_deny_privileged_if_tenant](container_deny_privileged_if_tenant)_
+
+## P2007: Namespace deletion must be denied unless explicitly allowed
+
+**Severity:** Violation
+
+**Resources:**
+
+* core/Namespace
+
+Prevent deletion of Kubernetes namespaces to avoid accidental or unauthorized removal of critical workloads.
+
+### Rego
+
+```rego
+package namespace_deny_delete
+
+import data.lib.core
+import future.keywords.contains
+import future.keywords.if
+import future.keywords.if
+
+policyID := "P2007"
+
+violation contains msg if {
+  core.kind == "Namespace"
+  core.operation == "DELETE"
+  not allow_namespace_deletion
+
+  msg := core.format_with_id(sprintf("%s/%s: Deletion of Namespace is not allowed", [core.kind, core.name]), policyID)
+}
+
+allow_namespace_deletion if {
+  core.annotations["allow-deletion"] == "true"
+}
+```
+
+_source: [namespace_deny_deletion](namespace_deny_deletion)_
 
 ## P0001: Deprecated Deployment and DaemonSet API
 
