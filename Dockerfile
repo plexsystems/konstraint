@@ -12,6 +12,6 @@ COPY internal/ internal
 
 RUN go build -o /konstraint -ldflags="-X 'github.com/plexsystems/konstraint/internal/commands.version=${KONSTRAINT_VER}'"
 
-FROM alpine:3.21.3
+FROM alpine:3.22.0
 COPY --from=build /konstraint /usr/bin/konstraint
 ENTRYPOINT ["konstraint"]
