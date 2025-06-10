@@ -2,7 +2,7 @@ module github.com/plexsystems/konstraint
 
 go 1.24.0
 
-toolchain go1.24.2
+toolchain go1.24.4
 
 require (
 	github.com/go-sprout/sprout v1.0.0
