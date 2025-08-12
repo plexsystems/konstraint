@@ -16,7 +16,7 @@ jobs:
           go-version: 1.24.x
 
       - name: checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: build
         run: make build
@@ -34,7 +34,7 @@ jobs:
       - build
     steps:
       - name: checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: fetch gatekeeper versions
         id: fetch-gk-versions
@@ -54,7 +54,7 @@ jobs:
 
     steps:
       - name: checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: download build
         uses: actions/download-artifact@v4
