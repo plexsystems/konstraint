@@ -130,8 +130,11 @@ jobs:
         with:
           version: latest
 
-      - name: opa check strict
+      - name: opa check strict (v0)
         run: opa check --v0-compatible --strict --ignore "*.yaml" examples
+
+      - name: opa check strict (v1)
+        run: opa check --strict --ignore "*.yaml" examples
 
       - name: setup regal
         uses: styrainc/setup-regal@v1.0.0
@@ -190,10 +193,14 @@ jobs:
         with:
           name: konstraint-ubuntu-latest
 
-      - name: generate resources
+      - name: generate resources (v0)
         run: |
           chmod +x ./konstraint
           ./konstraint create -o e2e-resources examples
+
+      - name: generate resources (v1)
+        run: |
+          ./konstraint create -o e2e-resources-v1 --rego-version v1 examples
 
       - name: create kind cluster
         run: kind create cluster
@@ -206,8 +213,22 @@ jobs:
           kubectl create ns gatekeeper-system
           helm install gatekeeper gk/gatekeeper -n gatekeeper-system --set replicas=1 --version ${GK_VERSION} --set psp.enabled=false
 
-      - name: apply resources
+      - name: apply resources (v0)
         working-directory: e2e-resources
+        run: |
+          for ct in $(ls template*); do kubectl apply -f $ct; done
+          sleep 60 # gatekeeper takes some time to create the CRDs
+          for c in $(ls constraint*); do kubectl apply -f $c; done
+
+      - name: cleanup resources (v0)
+        working-directory: e2e-resources
+        run: |
+          for c in $(ls constraint*); do kubectl delete -f $c --ignore-not-found; done
+          for ct in $(ls template*); do kubectl delete -f $ct --ignore-not-found; done
+          sleep 30 # wait for cleanup
+
+      - name: apply resources (v1)
+        working-directory: e2e-resources-v1
         run: |
           for ct in $(ls template*); do kubectl apply -f $ct; done
           sleep 60 # gatekeeper takes some time to create the CRDs

@@ -2,6 +2,7 @@ package commands
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -99,6 +100,18 @@ Set the URL where the policies are hosted at
 				return fmt.Errorf("bind include-comments flag: %w", err)
 			}
 
+			if err := viper.BindPFlag("rego-version", cmd.Flags().Lookup("rego-version")); err != nil {
+				return fmt.Errorf("bind rego-version flag: %w", err)
+			}
+
+			if err := viper.BindPFlag("strip-v0-imports", cmd.Flags().Lookup("strip-v0-imports")); err != nil {
+				return fmt.Errorf("bind strip-v0-imports flag: %w", err)
+			}
+
+			if cmd.Flags().Lookup("strip-v0-imports").Changed && viper.GetString("rego-version") != "v1" {
+				return errors.New("--strip-v0-imports can only be used with --rego-version v1")
+			}
+
 			path := "."
 			if len(args) > 0 {
 				path = args[0]
@@ -113,6 +126,8 @@ Set the URL where the policies are hosted at
 	cmd.Flags().String("url", "", "The URL where the policy files are hosted at (e.g. https://github.com/policies)")
 	cmd.Flags().Bool("no-rego", false, "Do not include the Rego in the policy documentation")
 	cmd.Flags().Bool("include-comments", false, "Include comments from the rego source in the documentation")
+	cmd.Flags().String("rego-version", "v0", "Rego version for parsing policies (v0, v1)")
+	cmd.Flags().Bool("strip-v0-imports", false, "Strip v0 compatibility imports from documentation: import future.keywords[.if|.in|.every|.contains], import rego.v1 (only valid with --rego-version v1)")
 
 	return &cmd
 }
@@ -125,7 +140,14 @@ func runDocCommand(path string) error {
 		return fmt.Errorf("create output dir: %w", err)
 	}
 
-	docs, err := getDocumentation(path, outputDirectory)
+	regoVersion, err := rego.ParseVersion(viper.GetString("rego-version"))
+	if err != nil {
+		return fmt.Errorf("parse rego-version flag: %w", err)
+	}
+
+	stripV0Imports := viper.GetBool("strip-v0-imports")
+
+	docs, err := getDocumentation(path, outputDirectory, regoVersion, stripV0Imports)
 	if err != nil {
 		return fmt.Errorf("get documentation: %w", err)
 	}
@@ -162,8 +184,8 @@ func runDocCommand(path string) error {
 	return nil
 }
 
-func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]Document, error) {
-	policies, err := rego.GetAllSeveritiesWithoutImports(path)
+func getDocumentation(path string, outputDirectory string, regoVersion rego.Version, stripV0Imports bool) (map[rego.Severity][]Document, error) {
+	policies, err := rego.GetAllSeveritiesWithoutImports(path, regoVersion)
 	if err != nil {
 		return nil, fmt.Errorf("get all severities: %w", err)
 	}
@@ -282,27 +304,31 @@ func getDocumentation(path string, outputDirectory string) (map[rego.Severity][]
 			Parameters:  parameters,
 		}
 
-		var rego string
+		var regoSource string
 		if viper.GetBool("include-comments") {
-			rego = policy.FullSource()
+			regoSource = policy.FullSource()
 		} else {
-			rego = policy.Source()
+			regoSource = policy.Source()
+		}
+		if stripV0Imports {
+			regoSource = rego.StripV1Imports(regoSource)
 		}
 		if viper.GetBool("no-rego") {
-			rego = ""
+			regoSource = ""
 		}
 		document := Document{
 			Header: header,
 			URL:    url,
-			Rego:   rego,
+			Rego:   regoSource,
 			Policy: policy,
 		}
 
-		if policy.Severity() == "" {
+		switch {
+		case policy.Severity() == "":
 			documents["Other"] = append(documents["Other"], document)
-		} else if policy.Enforcement() == "dryrun" {
+		case policy.Enforcement() == "dryrun":
 			documents["Not Enforced"] = append(documents["Not Enforced"], document)
-		} else {
+		default:
 			documents[policy.Severity()] = append(documents[policy.Severity()], document)
 		}
 	}

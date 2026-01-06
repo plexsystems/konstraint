@@ -61,10 +61,13 @@ jobs:
         with:
           name: konstraint
 
-      - name: generate resources
+      - name: generate resources (v0)
         run: |
           chmod +x ./konstraint
           ./konstraint create -o e2e-resources examples
+
+      - name: generate resources (v1)
+        run: ./konstraint create -o e2e-resources-v1 --rego-version v1 examples
 
       - name: create kind cluster
         run: kind create cluster
@@ -77,8 +80,22 @@ jobs:
           kubectl create ns gatekeeper-system
           helm install gatekeeper gk/gatekeeper -n gatekeeper-system --set replicas=1 --version ${GK_VERSION} --set psp.enabled=false
 
-      - name: apply resources
+      - name: apply resources (v0)
         working-directory: e2e-resources
+        run: |
+          for ct in $(ls template*); do kubectl apply -f $ct; done
+          sleep 60 # gatekeeper takes some time to create the CRDs
+          for c in $(ls constraint*); do kubectl apply -f $c; done
+
+      - name: cleanup resources (v0)
+        working-directory: e2e-resources
+        run: |
+          for c in $(ls constraint*); do kubectl delete -f $c; done
+          for ct in $(ls template*); do kubectl delete -f $ct; done
+          sleep 60
+
+      - name: apply resources (v1)
+        working-directory: e2e-resources-v1
         run: |
           for ct in $(ls template*); do kubectl apply -f $ct; done
           sleep 60 # gatekeeper takes some time to create the CRDs

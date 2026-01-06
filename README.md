@@ -25,7 +25,7 @@ To create the Gatekeeper resources, use `konstraint create <policy_dir>`.
 
 To generate the accompanying documentation, use `konstraint doc <policy_dir>`.
 
-Both commands support the `--output` flag to specify where to save the output. For more detailed usage documentation, see the [CLI Documentation](docs/cli/konstraint.md).
+Both commands support the `--output` flag to specify where to save the output. Use `--rego-version v1` to generate OPA Rego v1 compatible ConstraintTemplates with the `code` field structure. For more detailed usage documentation, see the [CLI Documentation](docs/cli/konstraint.md).
 
 ## Why this tool exists
 
